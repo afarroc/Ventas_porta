@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>Ventas</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Tipo Línea</th>
+                <th>Fecha</th>
+                <th>Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venta in ventas %}
+            <tr>
+                <td>{{ venta.id }}</td>
+                <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
+                <td>{{ venta.get_tipo_linea_display }}</td>
+                <td>{{ venta.fecha_venta }}</td>
+                <td>{{ venta.precio_venta }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No hay ventas registradas</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

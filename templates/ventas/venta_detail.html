@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>Venta #{{ venta.id }}</h1>
+    <dl class="row">
+        <dt class="col-sm-3">Cliente</dt>
+        <dd class="col-sm-9">{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}</dd>
+        
+        <dt class="col-sm-3">Documento</dt>
+        <dd class="col-sm-9">{{ venta.cliente_documento }}</dd>
+        
+        <dt class="col-sm-3">Tipo Línea</dt>
+        <dd class="col-sm-9">{{ venta.get_tipo_linea_display }}</dd>
+        
+        <dt class="col-sm-3">Precio Venta</dt>
+        <dd class="col-sm-9">{{ venta.precio_venta }}</dd>
+        
+        <dt class="col-sm-3">Fecha</dt>
+        <dd class="col-sm-9">{{ venta.fecha_venta }}</dd>
+    </dl>
+</div>
+{% endblock %}

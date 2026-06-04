@@ -2,30 +2,92 @@
 
 {% block content %}
 <div class="container py-4">
-    <h1>Bases de Llamada</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Teléfono</th>
-                <th>Nombre</th>
-                <th>Callable</th>
-                <th>Resultado</th>
-                <th>Fecha Gestión</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for base in bases %}
-            <tr>
-                <td>{{ base.telefono }}</td>
-                <td>{{ base.nombres }} {{ base.paterno }}</td>
-                <td>{{ base.get_es_callable_display }}</td>
-                <td>{{ base.resultado_gestion }}</td>
-                <td>{{ base.fecha_gestion }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5">No hay registros</td></tr>
+    <h1>{{ title }}</h1>
+    <p class="text-muted">Total registros: {{ total_records }}</p>
+    <form method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Buscar por teléfono, nombre, apellido o documento" value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Teléfono Base</th>
+                    <th>Nombres Base</th>
+                    <th>Paterno Base</th>
+                    <th>Materno Base</th>
+                    <th>Correo Base</th>
+                    <th>Documento Base</th>
+                    <th>Observaciones Base</th>
+                    <th>Gestionado Por</th>
+                    <th>Estado de la Llamada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for base in bases %}
+                <tr>
+                    <td>
+                        <a href="{% url 'discador:base_detail' base.id %}">{{ base.telefono }}</a>
+                    </td>
+                    <td>{{ base.nombres }}</td>
+                    <td>{{ base.paterno }}</td>
+                    <td>{{ base.materno }}</td>
+                    <td>{{ base.correo }}</td>
+                    <td>{{ base.documento }}</td>
+                    <td>{{ base.observaciones|truncatechars:50 }}</td>
+                    <td>
+                        {% if base.last_call_agent %}
+                            {{ base.last_call_agent }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if base.last_call_disposition %}
+                            {{ base.last_call_disposition }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9">No hay registros</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for num in paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }} <span class="sr-only">(current)</span></span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?q={{ search_query }}&page={{ num }}">{{ num }}</a></li>
+            {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ search_query }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}

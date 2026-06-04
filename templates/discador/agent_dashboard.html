@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>Panel del Agente</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Estado Actual</h5>
+                </div>
+                <div class="card-body">
+                    <p class="display-6">
+                        {% if profile.estado == 'DISPONIBLE' %}
+                            <span class="badge bg-success">{{ profile.get_estado_display }}</span>
+                        {% elif profile.estado == 'PAUSA' %}
+                            <span class="badge bg-warning text-dark">{{ profile.get_estado_display }}</span>
+                        {% elif profile.estado == 'LISTO_NO' %}
+                            <span class="badge bg-danger">{{ profile.get_estado_display }}</span>
+                        {% elif profile.estado == 'COACH' %}
+                            <span class="badge bg-info">{{ profile.get_estado_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ profile.get_estado_display }}</span>
+                        {% endif %}
+                    </p>
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Cambiar Estado:</label>
+                            <select class="form-select" id="estado" name="estado">
+                                {% for value, label in profile.ESTADO_CHOICES %}
+                                    <option value="{{ value }}" {% if profile.estado == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" name="cambiar_estado" class="btn btn-primary w-100">Cambiar Estado</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Obtener Lead</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile.estado == 'DISPONIBLE' and not ongoing_call and not pending_disposition %}
+                        <button type="button" name="obtener_lead" class="btn btn-success w-100 mb-3" onclick="if(confirm('¿Obtener un lead aleatorio?')){ document.getElementById('leadForm').submit(); }">Obtener Registro Aleatorio</button>
+                        <form id="leadForm" method="post" style="display: none;">
+                            {% csrf_token %}
+                            <input type="hidden" name="obtener_lead" value="1">
+                        </form>
+                    {% else %}
+                        {% if profile.estado != 'DISPONIBLE' %}
+                            <p class="text-muted">Solo disponible cuando el estado es "Disponible"</p>
+                        {% elif ongoing_call %}
+                            <p class="text-muted">Hay una llamada en curso. Debe finalizarla antes de obtener uno nuevo.</p>
+                        {% elif pending_disposition %}
+                            <p class="text-muted">Hay una llamada pendiente de tipificación. Complete el proceso.</p>
+                        {% else %}
+                            <p class="text-muted">Debe liberar el lead actual para obtener uno nuevo.</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Llamada en Curso</h5>
+                </div>
+                <div class="card-body">
+                    {% if ongoing_call %}
+                        <p><strong>Lead:</strong> {{ ongoing_call.base_llamada.telefono }}</p>
+                        <p><strong>Inicio:</strong> {{ ongoing_call.inicio }}</p>
+                        <p><strong>Resultado:</strong> {{ ongoing_call.get_resultado_display }}</p>
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="finalizar_llamada" value="1">
+                            <button type="submit" class="btn btn-danger w-100">Finalizar Llamada</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">No hay llamada en curso</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if active_lead or current_lead %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>
+                Lead Actual
+                {% if ongoing_call and not current_lead %}(Llamada Pegada){% endif %}
+                {% if pending_disposition and not ongoing_call %}(Pendiente Tipificación){% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Teléfono:</strong> {{ active_lead.telefono }}</p>
+                    <p><strong>Nombres:</strong> {{ active_lead.nombres }}</p>
+                    <p><strong>Paterno:</strong> {{ active_lead.paterno }}</p>
+                    <p><strong>Materno:</strong> {{ active_lead.materno }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Correo:</strong> {{ active_lead.correo }}</p>
+                    <p><strong>Documento:</strong> {{ active_lead.documento }}</p>
+                    <p><strong>Observaciones:</strong> {{ active_lead.observaciones|truncatechars:100 }}</p>
+                </div>
+            </div>
+            <div class="mt-4 d-flex flex-wrap gap-2">
+                {% if ongoing_call %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="finalizar_llamada" value="1">
+                    <button type="submit" class="btn btn-danger">Finalizar</button>
+                </form>
+                {% elif pending_disposition %}
+                <p class="text-warning mb-0"><strong>Complete la tipificación antes de iniciar otra llamada.</strong></p>
+                {% else %}
+                <form method="post" class="me-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="iniciar_llamada" value="1">
+                    <button type="submit" class="btn btn-primary">Llamar</button>
+                </form>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="liberar_lead" value="1">
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('¿Liberar este lead? Podrá obtener un nuevo lead después.');">Liberar Lead</button>
+                </form>
+                {% endif %}
+                <a href="{% url 'ventas:venta_create_with_base' active_lead.id %}" class="btn btn-success" target="_blank" rel="noopener noreferrer">
+                    Registrar Venta
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if pending_disposition %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Tipificar Registro (ACW)</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Lead:</strong> {{ pending_disposition.base_llamada.telefono }}</p>
+            <p><strong>Inicio de la llamada:</strong> {{ pending_disposition.inicio }}</p>
+            <p><strong>Fin de la llamada:</strong> {{ pending_disposition.fin }}</p>
+            {% if pending_disposition.acw_start %}
+                <p><strong>Inicio de ACW:</strong> {{ pending_disposition.acw_start }}</p>
+            {% endif %}
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="pending_disposition_id" value="{{ pending_disposition.id }}">
+                <div class="mb-3">
+                    <label for="disposition" class="form-label">Tipificación:</label>
+                    <select class="form-select" id="disposition" name="disposition" required>
+                        <option value="">-- Seleccione una opción --</option>
+                        {% for value, label in pending_disposition.DISPOSITION_CHOICES %}
+                            <option value="{{ value }}"{% if pending_disposition.disposition == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="observaciones" class="form-label">Observaciones (ACW):</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ pending_disposition.observaciones }}</textarea>
+                </div>
+                <button type="submit" name="submit_disposition" class="btn btn-primary">Guardar Tipificación</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+        <div class="mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

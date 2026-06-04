@@ -11,9 +11,20 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'ventas:home' %}">Gestión Ventas</a>
             <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="{% url 'ventas:venta_list' %}">Ventas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'ventas:venta_create' %}">Nueva Venta</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'discador:agent_dashboard' %}">Panel Agente</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'discador:base_list' %}">Bases</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:logout' %}">Cerrar Sesión ({{ user.username }})</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Iniciar Sesión</a></li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

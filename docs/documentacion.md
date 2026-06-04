@@ -2,10 +2,11 @@
 
 ## 1. Descripción General
 
-Sistema Django de gestión de ventas con dos módulos principales:
+Sistema Django de gestión de ventas con tres módulos principales:
 
-- **Módulo Discador**: Gestión de bases de llamadas con resultados de contacto
-- **Módulo Ventas**: Registro de ventas con ítems y seguimiento backoffice
+- **Módulo Discador**: Gestión de bases de llamadas, asignación de leads a agentes y registro de llamadas (CallRecord) con tipificación y ACW
+- **Módulo Ventas**: Registro de ventas con ítems y seguimiento backoffice, integrado con clientes y bases de discador
+- **Módulo Usuarios**: Autenticación, perfiles de usuario con roles (Agente/Supervisor/Administrador) y estados operativos
 
 ---
 
@@ -19,33 +20,93 @@ Contactos de la base de discado con sus resultados de gestión.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `telefono` | CharField | Teléfono del contacto (PK implícita por ID) |
+| `id_lead` | UUIDField | Identificador único del lead |
+| `telefono` | CharField | Teléfono del contacto (único) |
 | `nombres` | CharField | Nombres del contacto |
 | `paterno` | CharField | Apellido paterno |
 | `materno` | CharField | Apellido materno |
 | `correo` | EmailField | Email del contacto |
-| `documento` | CharField | Número de documento |
-| `numero_base` | CharField | Número de identificación en la base |
+| `documento` | CharField | Número de documento (DNI, RUT) |
 | `observaciones` | TextField | Notas adicionales |
+| `contact_callable` | CharField | ¿Es contactable? (Sí/No) |
+| `ultimo_intento` | CharField | Último intento registrado en CRM |
+| `ultimo_resultado_crm` | CharField | Último resultado en CRM |
 | `es_callable` | CharField | ¿Es contactable? (Sí/No) |
 | `fecha_gestion` | DateField | Fecha de gestión |
+| `hora_gestion` | TimeField | Hora de gestión |
 | `resultado_gestion` | CharField | Resultado del contacto |
-| `tipo_valido` | CharField | Tipo de validación (Válido/Inválido/No definido) |
+| `tipo_contacto` | CharField | Tipo de contacto |
+| `tipo_valido` | CharField | Válido/Inválido/No definido |
+| `status_java` | CharField | Status JAVA |
+| `supervisor_nombre` | CharField | Nombre del supervisor |
 | `creado` | DateTimeField | Timestamp de creación |
 | `actualizado` | DateTimeField | Timestamp de actualización |
 
+**Modelo: `CallRecord`** (`discador_llamada`)
+
+Registro individual de llamada por agente con resultado, ACW y tipificación.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `agente` | ForeignKey(User) | Agente que realizó la llamada |
+| `base_llamada` | ForeignKey(BaseLlamada) | Lead asociado |
+| `inicio` | DateTimeField | Inicio de la llamada |
+| `fin` | DateTimeField | Fin de la llamada |
+| `duracion` | DurationField | Duración calculada (inicio - fin) |
+| `resultado` | CharField | Contestada/No contestada/Ocupada/Desconectada/No voz/Fax/Otro/Liberado sin uso |
+| `observaciones` | TextField | Observaciones del agente |
+| `acw_start` | DateTimeField | Inicio de trabajo post-llamada |
+| `acw_end` | DateTimeField | Fin de trabajo post-llamada |
+| `disposition` | CharField | Tipificación: Venta/No contesta/Cuelga/Fax/No desea/Otro/Liberado sin uso |
+| `liberado_sin_uso` | BooleanField | Marcado como liberado sin gestión |
+
 ---
 
-### 2.2 Módulo Ventas
+### 2.2 Módulo Usuarios
+
+**Modelo: `UserProfile`** (`users_profile`)
+
+Perfil extendido del usuario de Django con rol, estado operativo y supervisión.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `user` | OneToOneField(User) | Relación con usuario Django |
+| `rol` | CharField | Rol: Agente/Supervisor/Administrador |
+| `codigo_agente` | CharField | Código único de agente (opcional) |
+| `telefono` | CharField | Teléfono del usuario |
+| `supervisor` | ForeignKey(self) | Supervisor asignado (solo supervisores) |
+| `zona` | CharField | Zona de trabajo |
+| `turno` | CharField | Turno asignado |
+| `activo` | BooleanField | Usuario activo |
+| `estado` | CharField | Estado: Disponible/Pausa/Listo No/Coach |
+
+---
+
+### 2.3 Módulo Ventas
+
+**Modelo: `Cliente`** (`ventas_cliente`)
+
+Cliente maestro con documento único.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `documento` | CharField | Documento único (DNI/RUT) |
+| `nombres` | CharField | Nombres |
+| `paterno` | CharField | Apellido paterno |
+| `materno` | CharField | Apellido materno |
+| `numero` | CharField | Número adicional |
+| `telefono_1` | CharField | Teléfono principal |
+| `telefono_2` | CharField | Teléfono secundario |
+| `activo` | BooleanField | Cliente activo |
 
 **Modelo: `Venta`** (`ventas_venta`)
 
 Registro maestro de operaciones de venta.
 
-**Subsecciones:**
+**Secciones:**
 
 #### Agente
-- `agente_nombre`: Nombre del vendedor/agente
+- `agente_nombre`: Nombre del vendedor/agente (requerido)
 
 #### Cliente (Transitorio)
 - `cliente_nombres`, `cliente_paterno`, `cliente_materno`
@@ -54,18 +115,15 @@ Registro maestro de operaciones de venta.
 
 #### Recibo Electrónico
 - `recibo_electronico`: Sí/No/Si desea/No desea
-- `correo_electronico_recibo`
-- `horario_visita`
+- `correo_electronico_recibo`, `horario_visita`
 - `clausulas`: Aceptación de cláusulas
 - `abdcp`: Autorización para datos de portabilidad
 
 #### Producto y Venta
-- `producto_nombre` (deprecated → usar ItemVenta)
-- `origen`, `operador`, `telefono_portar`
+- `producto_nombre`, `origen`, `operador`, `telefono_portar`
 - `modelo_producto`, `plan_producto`
 - `tipo_linea`: Prepago/Postpago/Línea nueva/Portabilidad
-- `precio_venta`, `precio_plan`
-- `tipo_pago`
+- `precio_venta`, `precio_plan`, `tipo_pago`
 
 #### Dirección de Despacho
 - `tipo_via`, `nombre_via`, `numero_via`
@@ -73,26 +131,30 @@ Registro maestro de operaciones de venta.
 - `zona_tipo`, `zona_nombre`, `zona_referencia`
 - `departamento`, `provincia`, `distrito`
 
+#### Facturación
+- `facturacion_requerida`: ¿Requiere Factura? (Sí/No)
+
+#### Gestión del Discador (heredados)
+- `contact_callable`, `es_callable`, `fecha_gestion`, `hora_gestion`
+- `resultado_gestion`, `tipo_contacto`, `tipo_valido`
+- `status_java`, `supervisor_nombre`
+
 #### Backoffice/Resumen
 - `base`, `tipo_renta`, `tipo_renta2`, `base3`
 - `q_ventas`: Cantidad de ventas
 - `fecha_venta`, `hora_venta`
-- `facturacion_requerida`
-
----
+- `observaciones`
 
 **Modelo: `ItemVenta`** (`ventas_item`)
 
-Desglose de productos/servicios en una venta (hasta 2 ítems).
+Desglose de productos/servicios en una venta (máximo 2 ítems).
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `venta` | ForeignKey | Referencia a Venta (1:N) |
-| `tipo_venta` | CharField | Tipo de venta asociada |
+| `tipo_venta` | CharField | Tipo de venta |
 | `tipo_producto` | CharField | Tipo de producto/servicio |
-| `precio_plan` | DecimalField | Precio del plan/producto |
-
----
+| `precio_plan` | DecimalField | Precio del plan |
 
 **Modelo: `SeguimientoBO`** (`ventas_backoffice`)
 
@@ -104,7 +166,7 @@ Estado administrativo de la venta (backoffice, courier, supervisor).
 | `status_bo` | CharField | Estado Backoffice |
 | `fecha_bo` | DateField | Fecha de estado BO |
 | `sts_courier` | CharField | Estado del courier |
-| `fch_courier` | DateField | Fecha de entrega/courier |
+| `fch_courier` | DateField | Fecha del courier |
 | `supervisor` | CharField | Nombre del supervisor |
 | `intervalo` | CharField | Intervalo de tiempo |
 
@@ -116,8 +178,20 @@ Estado administrativo de la venta (backoffice, courier, supervisor).
 Venta (1) ─────→ (N) ItemVenta
   │
   └─────→ (1) SeguimientoBO
+  │
+  └─────→ (1) Cliente (FK)
+  │
+  └─────→ (0..1) BaseLlamada (FK, opcional)
 
-BaseLlamada (futuro) ─────→ Venta (relación FK aún no implementada)
+BaseLlamada (1) ─────→ (N) CallRecord
+  │
+  └─────→ (0..1) Venta (FK, opcional)
+
+User (1) ─────→ (1) UserProfile
+  │
+  └─────→ (N) CallRecord (como agente)
+
+UserProfile (1) ─────→ (N) UserProfile (supervisores → agentes)
 ```
 
 ---
@@ -125,139 +199,161 @@ BaseLlamada (futuro) ─────→ Venta (relación FK aún no implementada
 ## 4. Estructura del Proyecto
 
 ```
-gestion_ventas/
-├── manage.py
-├── venv/                      # Entorno virtual Python
+Ventas_Porta/
+├── manage.py                                    # Punto de entrada Django
+├── requirements.txt                             # Dependencias: Django, PyMySQL, python-decouple
+├── README.md                                    # Documentación rápida
+├── DEPLOYMENT.md                                # Guía de despliegue
+├── .env                                         # Variables de entorno (NO versionar)
 ├── config/
-│   ├── __init__.py
-│   ├── settings.py           # Configuración (BD, apps, etc.)
-│   ├── urls.py               # URLs principales
-│   └── wsgi.py
+│   ├── __init__.py                             # pymysql.install_as_MySQLdb()
+│   ├── settings.py                             # Configuración principal Django
+│   ├── urls.py                                 # URLs raíz del proyecto
+│   ├── wsgi.py                                 # WSGI para producción
+│   └── asgi.py                                 # ASGI para producción
 ├── apps/
-│   ├── __init__.py
+│   ├── __init__.py                             # Paquete apps
 │   ├── discador/
-│   │   ├── __init__.py
-│   │   ├── models.py         # Modelo BaseLlamada
-│   │   ├── admin.py          # Admin para BaseLlamada
-│   │   ├── views.py          # Vistas
-│   │   ├── urls.py           # URLs
-│   │   └── tests.py          # Tests unitarios
+│   │   ├── __init__.py                         # Vacío
+│   │   ├── apps.py                             # AppConfig: DiscadorConfig
+│   │   ├── models.py                           # Modelo: BaseLlamada (tabla discador_base)
+│   │   ├── admin.py                            # Admin: BaseLlamadaAdmin con fieldsets
+│   │   ├── views.py                            # Views: BaseLlamadaListView (paginado 50)
+│   │   ├── urls.py                             # URLs: /discador/bases/
+│   │   ├── tests.py                            # Tests unitarios
+│   │   └── migrations/
+│   │       ├── __init__.py
+│   │       └── 0001_initial.py                 # Migración inicial BaseLlamada
+│   ├── users/
+│   │   ├── __init__.py                         # Vacío
+│   │   ├── apps.py                             # AppConfig: UsersConfig
+│   │   ├── models.py                           # Modelo: UserProfile (roles, estados, supervisor)
+│   │   ├── admin.py                            # Admin: UserAdmin + UserProfileAdmin con inlines
+│   │   ├── views.py                            # Views: HomeView, logout
+│   │   ├── urls.py                             # URLs: /users/login/, /users/logout/
+│   │   ├── tests.py                            # Tests unitarios
+│   │   ├── signals.py                          # Señales: auto-crear perfil
+│   │   └── migrations/
+│   │       ├── __init__.py
+│   │       ├── 0001_initial.py                 # Migración inicial UserProfile
+│   │       ├── 0002_userprofile_rol_*.py       # Agregó rol, codigo_agente
+│   │       └── 0003_userprofile_estado.py      # Agregó estado
 │   └── ventas/
-│       ├── __init__.py
-│       ├── models.py         # Modelos Venta, ItemVenta, SeguimientoBO
-│       ├── admin.py          # Admin para ventas
-│       ├── views.py          # Vistas
-│       ├── urls.py           # URLs
-│       └── tests.py          # Tests unitarios
-├── static/                   # Archivos estáticos (CSS, JS)
-├── templates/                # Plantillas HTML
-├── docs/
-│   └── documentacion.md      # Esta documentación
-└── db/
-    └── (migraciones de BD)
+│       ├── __init__.py                         # Vacío
+│       ├── apps.py                             # AppConfig: VentasConfig
+│       ├── models.py                           # Modelos: Venta, ItemVenta, SeguimientoBO
+│       ├── forms.py                            # Formularios: VentaForm, ItemVentaForm, SeguimientoBOForm
+│       ├── admin.py                            # Admin: VentaAdmin + Inlines
+│       ├── views.py                            # Views: Home, VentaListView, VentaDetailView, VentaCreateView
+│       ├── urls.py                             # URLs: /ventas/, /ventas/nueva/, /ventas/<id>/
+│       ├── tests.py                            # Tests unitarios
+│       └── migrations/
+│           ├── __init__.py
+│           ├── 0001_initial.py                 # Migración inicial
+│           ├── 0002_alter_venta_options_venta_*.py  # Agregó campos discador
+│           └── 0003_alter_venta_verbose_names.py    # Verbose names
+└── templates/
+    ├── base.html                               # Layout Bootstrap 5 base
+    ├── home.html                               # Dashboard principal
+    ├── users/
+    │   └── registration/
+    │       └── login.html                      # Login de usuarios
+    ├── discador/
+    │   ├── agent_dashboard.html                # Dashboard del agente (estado, leads, llamadas)
+    │   ├── base_llamada_list.html              # Lista de bases de llamada con búsqueda
+    │   └── base_llamada_detail.html            # Detalle de base con historial de llamadas
+    └── ventas/
+        ├── venta_list.html                     # Lista de ventas (tabla)
+        ├── venta_detail.html                   # Detalle de venta
+        └── venta_form.html                     # Formulario alta/edición (accordion, 8 secciones)
 ```
 
 ---
 
-## 5. Configuración de Base de Datos
+## 5. Detalles por Archivo
 
-**Motor:** MySQL/MariaDB  
-**Nombre:** `gestion_ventas`  
-**Usuario:** `ventas_user`  
-**Contraseña:** `tu-password`  
-**Host:** `192.169.18.59`  
-**Puerto:** `3306`
+### config/__init__.py
+Instala PyMySQL como driver MySQLdb para Django.
 
-### Crear Base de Datos y Usuario
+### config/settings.py
+Configura BD con parámetros desde `.env`, charset utf8mb4, LANGUAGE_CODE='es-pe'.
 
-Ver [db/README.md](../db/README.md) para instrucciones detalladas.
+### config/urls.py
+Incluye URLs de las tres apps: `ventas` (raíz), `discador` y `users`.
 
-**Script SQL automatizado:**
+### apps/users/models.py
+Modelo `UserProfile` extendiendo `User` con roles (Agente/Supervisor/Administrador), estados operativos y supervisión jerárquica.
 
-```sql
--- Crear base de datos
-CREATE DATABASE IF NOT EXISTS gestion_ventas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+### apps/users/admin.py
+UserAdmin custom con inline de UserProfile, fieldsets y list_display extendido. Filtra supervisores a solo usuarios con rol SUPERVISOR.
 
--- Crear usuario con permisos
-CREATE USER IF NOT EXISTS 'ventas_user'@'%' IDENTIFIED BY 'tu-password';
-GRANT ALL PRIVILEGES ON gestion_ventas.* TO 'ventas_user'@'%';
-FLUSH PRIVILEGES;
+### apps/users/views.py
+HomeView (dashboard) con contexto de perfil, y logout_view personalizado.
+
+### apps/users/urls.py
+URLs de autenticación: login y logout.
+
+### apps/discador/models.py
+Modelo `BaseLlamada` en tabla `discador_base` con choices `CONTACT_CALLABLE`, `TIPO_VALIDO`.
+Modelo `CallRecord` en tabla implícita con campos de llamada, ACW y tipificación. Actualiza `ultimo_intento` y `ultimo_resultado_crm` en BaseLlamada al guardar.
+
+### apps/discador/admin.py
+BaseLlamadaAdmin con fieldsets, filters, readonly y búsqueda. CallRecordAdmin con fieldsets de información y ACW.
+
+### apps/discador/views.py
+BaseLlamadaListView (paginado 50, filtrado por rol), BaseLlamadaDetailView, AgentDashboardView (dashboard de agente con gestión de leads y llamadas en tiempo real).
+
+### apps/discador/urls.py
+URLs: dashboard del agente, listado de bases y detalle de base.
+
+### apps/ventas/models.py
+Tres modelos: Venta (50+ campos), ItemVenta (FK), SeguimientoBO (OneToOne).
+
+### apps/ventas/forms.py
+VentaForm con widgets select/date/time/textarea, ItemVentaForm, SeguimientoBOForm.
+
+### apps/ventas/views.py
+VentaCreateView con inlineformset_factory (extra=2, max_num=2).
+
+### templates/ventas/venta_form.html
+Formulario organizado en 8 secciones accordion Bootstrap.
+
+---
+
+## 6. Configuración de Base de Datos
+
+La configuración se carga exclusivamente desde `.env` (no hardcodeada).
+
 ```
-
-### Configuración en `.env`:
-
-```env
 DATABASE_ENGINE=django.db.backends.mysql
-DATABASE_NAME=gestion_ventas
-DATABASE_USER=ventas_user
-DATABASE_PASSWORD=tu-password
-DATABASE_HOST=192.169.18.59
+DATABASE_NAME=<nombre_bd>
+DATABASE_USER=<usuario>
+DATABASE_PASSWORD=<password>
+DATABASE_HOST=<host>
 DATABASE_PORT=3306
 ```
 
+- Motor: MySQL/MariaDB  
+- Charset: `utf8mb4`  
+- Variables requeridas: `DATABASE_ENGINE`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_HOST`, `DATABASE_PORT`
+
 ---
 
-## 6. Comandos Útiles
+## 7. Dependencias
 
-### Activar entorno virtual
-```bash
-source venv/bin/activate
+```
+Django==4.2.13
+PyMySQL==1.1.0
+python-decouple==3.8
 ```
 
-### Crear migraciones
-```bash
-python manage.py makemigrations
-```
+---
 
-### Aplicar migraciones
+## 8. Comandos
+
 ```bash
+pip install -r requirements.txt
 python manage.py migrate
-```
-
-### Crear superusuario para admin
-```bash
 python manage.py createsuperuser
-```
-
-### Ejecutar servidor de desarrollo
-```bash
 python manage.py runserver
 ```
-
-### Ejecutar tests
-```bash
-python manage.py test
-```
-
----
-
-## 7. Panel de Administración
-
-Accesible en `http://localhost:8000/admin/` con credenciales de superusuario.
-
-**Módulos disponibles:**
-- Bases de Llamada (filtrable por fecha, tipo_valido)
-- Ventas (filtrable por tipo_linea, fecha_venta)
-- Ítems de Venta
-- Seguimientos Backoffice
-
----
-
-## 8. Notas de Desarrollo
-
-- **ItemVenta**: Diseñada para hasta 2 ítems por venta (límite sugerido)
-- **Cliente Transitorio**: Los datos se almacenan como texto en Venta hasta implementar entidad "Cliente"
-- **BaseLlamada**: Sin FK directa a Venta aún; preparada para futura relación
-- **Charset**: UTF8MB4 para soportar caracteres especiales y emojis
-
----
-
-## 9. Dependencias
-
-- Django 4.2.13
-- PyMySQL 1.1.0
-
----
-
-**Fecha de creación:** 1 de junio de 2026  
-**Estado:** Proyecto inicial - estructura de modelos completada

@@ -52,5 +52,16 @@ db.sqlite3
 .coverage
 htmlcov/
 
+# Static test data
+/static/labasedepruebas
+
 # Database
 *.sql
+*.sqlite3
+
+# Session / testing artifacts
+cookies.txt
+
+# Uploaded media
+/static/media
+/media/

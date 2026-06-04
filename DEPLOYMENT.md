@@ -7,7 +7,7 @@ DATABASE_ENGINE=django.db.backends.mysql
 DATABASE_NAME=ventas_<timestamp>
 DATABASE_USER=<tu-usuario>
 DATABASE_PASSWORD=<tu-password>
-DATABASE_HOST=192.168.18.59
+DATABASE_HOST=localhost
 DATABASE_PORT=3306
 ```
 

@@ -54,6 +54,7 @@ htmlcov/
 
 # Static test data
 /static/labasedepruebas
+/static/base_prueba.csv
 
 # Database
 *.sql

@@ -1,45 +1,42 @@
 #!/bin/bash
-# Script de setup inicial del proyecto
+# Project setup script
+
+set -e
 
 echo "================================"
-echo "Setup: Sistema de Gestión Ventas"
+echo "Setup: Ventas Porta"
 echo "================================"
 echo ""
 
-# Verificar entorno virtual
 if [ ! -d "venv" ]; then
-    echo "Creando entorno virtual..."
+    echo "Creating virtual environment..."
     python3 -m venv venv
 fi
 
-echo "Activando entorno virtual..."
+echo "Activating virtual environment..."
 source venv/bin/activate
 
-# Verificar y crear archivo .env si no existe
 if [ ! -f ".env" ]; then
-    echo "⚠️  Creando archivo .env desde .env.example..."
+    echo "Creating .env from .env.example..."
     cp .env.example .env
-    echo "✏️  Por favor, edita .env con tus credenciales reales"
+    echo "Edit .env with your credentials"
     echo ""
 fi
 
-echo "Instalando dependencias..."
+echo "Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
 echo ""
-echo "Aplicando migraciones..."
+echo "Running migrations..."
 python manage.py migrate
 
 echo ""
 echo "================================"
-echo "✅ Setup completado"
+echo "Setup complete"
 echo "================================"
 echo ""
-echo "Próximos pasos:"
-echo "1. Editar .env con credenciales correctas si es necesario"
-echo "2. Crear superusuario: python manage.py createsuperuser"
-echo "3. Iniciar servidor: python manage.py runserver"
-echo "4. Acceder admin: http://localhost:8000/admin/"
-echo ""
-
+echo "Next steps:"
+echo "1. Update .env with your credentials"
+echo "2. Create superuser: python manage.py createsuperuser"
+echo "3. Run server: python manage.py runserver"

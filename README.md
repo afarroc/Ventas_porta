@@ -1,6 +1,6 @@
 # Ventas Porta
 
-Aplicación Django para gestión de ventas con módulos de discador y backoffice.
+Aplicación Django para gestión de ventas con módulos de discador, ventas y usuarios.
 
 ## Requisitos
 
@@ -16,12 +16,13 @@ git clone <REPO_URL>
 cd Ventas_Porta
 
 cp .env.example .env
-# Ajustar DATABASE_URL y SECRET_KEY en .env
+# Ajustar SECRET_KEY y DATABASE_* en .env
 
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py createsuperuser
 ```
 
 ## Uso
@@ -36,15 +37,68 @@ Abrir `http://localhost:8000/admin/`.
 
 ```
 ├── apps/
-│   ├── discador/      # BaseLlamada, CallRecord
-│   └── ventas/        # Venta, ItemVenta, SeguimientoBO
+│   ├── discador/
+│   │   ├── admin.py        # BaseLlamadaAdmin, CallRecordAdmin
+│   │   ├── apps.py         # AppConfig
+│   │   ├── models.py       # BaseLlamada, CallRecord
+│   │   ├── tests.py        # Tests
+│   │   ├── urls.py         # /discador/...
+│   │   └── views.py        # Listado, detalle, dashboard agente
+│   ├── users/
+│   │   ├── admin.py        # UserAdmin + UserProfileAdmin
+│   │   ├── apps.py         # UsersConfig
+│   │   ├── models.py       # UserProfile
+│   │   ├── signals.py      # post_save perfil
+│   │   ├── tests.py        # Tests
+│   │   ├── urls.py         # /users/...
+│   │   └── views.py        # Login/logout/dashboard
+│   └── ventas/
+│       ├── admin.py        # VentaAdmin + inlines
+│       ├── apps.py         # VentasConfig
+│       ├── forms.py        # VentaForm, ItemVentaForm, SeguimientoBOForm
+│       ├── models.py       # Venta, ItemVenta, SeguimientoBO, Cliente
+│       ├── tests.py        # Tests
+│       ├── urls.py         # /ventas/...
+│       └── views.py        # CRUD ventas + AJAX cliente
 ├── config/
+│   ├── settings.py         # Configuración Django (desde .env)
+│   ├── urls.py             # Router principal
+│   ├── wsgi.py / asgi.py   # Deployment
+│   └── __init__.py         # PyMySQL bridge
+├── docs/
+│   └── documentacion.md    # Documentación completa
 ├── templates/
-├── static/
+│   ├── base.html
+│   ├── home.html
+│   ├── discador/
+│   │   ├── agent_dashboard.html
+│   │   ├── base_llamada_list.html
+│   │   └── base_llamada_detail.html
+│   ├── users/registration/login.html
+│   └── ventas/
+│       ├── venta_form.html
+│       ├── venta_list.html
+│       └── venta_detail.html
 ├── manage.py
-└── requirements.txt
+├── requirements.txt
+├── setup.sh
+└── .env.example
 ```
+
+## Variables de entorno
+
+| Variable | Descripción |
+|---|---|
+| `SECRET_KEY` | Clave secreta Django |
+| `DEBUG` | Modo debug (`True`/`False`) |
+| `ALLOWED_HOSTS` | Hosts permitidos (CSV) |
+| `DATABASE_ENGINE` | Motor de BD |
+| `DATABASE_NAME` | Nombre de la base |
+| `DATABASE_USER` | Usuario de BD |
+| `DATABASE_PASSWORD` | Contraseña de BD |
+| `DATABASE_HOST` | Host de BD |
+| `DATABASE_PORT` | Puerto de BD |
 
 ## Documentación
 
-Ver `docs/` para detalles de despliegue y configuración.
+Ver `docs/documentacion.md` para detalles de modelos, relaciones y configuración.

@@ -309,6 +309,9 @@ URLs: dashboard del agente, listado de bases y detalle de base.
 ### apps/ventas/models.py
 Tres modelos: Venta (50+ campos), ItemVenta (FK), SeguimientoBO (OneToOne).
 
+### apps/users/signals.py
+Señal `post_save` para `User`: crea automáticamente un `UserProfile` cuando se crea un usuario nuevo.
+
 ### apps/ventas/forms.py
 VentaForm con widgets select/date/time/textarea, ItemVentaForm, SeguimientoBOForm.
 
@@ -317,6 +320,33 @@ VentaCreateView con inlineformset_factory (extra=2, max_num=2).
 
 ### templates/ventas/venta_form.html
 Formulario organizado en 8 secciones accordion Bootstrap.
+
+---
+
+## 5.1 Rutas (URLs)
+
+```
+/                          → HomeView (dashboard principal)
+/users/login/              → LoginView
+/users/logout/             → logout_view
+/discador/                 → AgentDashboardView
+/discador/bases/           → BaseLlamadaListView
+/discador/base/<int:pk>/   → BaseLlamadaDetailView
+/ventas/                   → VentaListView
+/ventas/<int:pk>/          → VentaDetailView
+/ventas/nueva/             → VentaCreateView
+/ventas/nueva/<int:base_llamada_id>/ → VentaCreateView (con base pre-cargada)
+/ventas/buscar-cliente/    → AJAX: buscar cliente por documento
+/ventas/validar-cliente/   → AJAX: validar existencia de cliente
+/admin/                    → Panel de administración Django
+```
+
+**Control de acceso:**
+- `LoginRequiredMixin` en todas las vistas protegidas
+- Filtrado de `BaseLlamada` por rol en views:
+  - `ADMIN`: ve todos los leads
+  - `SUPERVISOR`: ve sus leads y los de sus agentes
+  - `AGENTE`: ve solo sus propios leads
 
 ---
 
@@ -352,8 +382,38 @@ python-decouple==3.8
 ## 8. Comandos
 
 ```bash
+# Setup inicial
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+
+# Migraciones
+python manage.py makemigrations
 python manage.py migrate
+
+# Superusuario (requerido para Admin)
 python manage.py createsuperuser
+
+# Ejecutar servidor
 python manage.py runserver
+
+# Tests
+python manage.py test
+
+# Shell Django (para crear usuarios con perfil)
+python manage.py shell
 ```
+
+## 9. Panel de Administración
+
+Accesible en `http://localhost:8000/admin/`.
+
+**Módulos disponibles:**
+- **Usuarios** (`User`): gestión de usuarios con perfil inline (rol, código, supervisor, estado)
+- **Perfiles de Usuario** (`UserProfile`): listado filtrable por activo, turno, zona; búsqueda por username y código
+- **Bases de Llamada** (`BaseLlamada`): listado con filtros por es_callable, tipo_valido, fecha; búsqueda por teléfono, nombres, documento
+- **Registros de Llamada** (`CallRecord`): historial con filtros por resultado, disposition, fecha
+- **Ventas** (`Venta`): con inlines para ítems y seguimiento backoffice
+- **Clientes** (`Cliente`): listado de clientes por documento
+- **Ítems de Venta** (`ItemVenta`)
+- **Seguimientos Backoffice** (`SeguimientoBO`)

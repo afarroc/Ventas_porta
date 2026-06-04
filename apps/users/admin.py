@@ -14,7 +14,10 @@ class UserProfileInlineForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['supervisor'].queryset = UserProfile.objects.filter(rol=UserProfile.ROL_SUPERVISOR)
-        self.fields['supervisor'].required = True
+        if self.instance and self.instance.rol == UserProfile.ROL_ADMIN:
+            self.fields['supervisor'].required = False
+        else:
+            self.fields['supervisor'].required = True
         self.fields['rol'].required = True
 
 
@@ -63,11 +66,12 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
+    form = UserProfileInlineForm
     list_display = [
         'user', 'get_rol', 'codigo_agente', 'telefono',
-        'get_supervisor_nombre', 'zona', 'turno', 'activo'
+        'get_supervisor_nombre', 'zona', 'turno', 'activo', 'estado'
     ]
-    list_filter = ['activo', 'turno', 'zona']
+    list_filter = ['activo', 'estado', 'turno', 'zona', 'rol']
     search_fields = [
         'user__username', 'user__first_name', 'user__last_name', 'codigo_agente'
     ]

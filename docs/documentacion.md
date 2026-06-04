@@ -78,7 +78,8 @@ Perfil extendido del usuario de Django con rol, estado operativo y supervisión.
 | `zona` | CharField | Zona de trabajo |
 | `turno` | CharField | Turno asignado |
 | `activo` | BooleanField | Usuario activo |
-| `estado` | CharField | Estado: Disponible/Pausa/Listo No/Coach |
+| `estado` | CharField | Estado: Activo/Inactivo |
+| `turno` | CharField | Turno: Diurno/Nocturno/Híbrido |
 
 ---
 

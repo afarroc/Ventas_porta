@@ -139,7 +139,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
         if 'obtener_lead' in request.POST:
             # Only if available
             profile = request.user.profile
-            if profile.estado == UserProfile.ESTADO_DISPONIBLE:
+            if profile.estado == UserProfile.ESTADO_ACTIVO:
                 # Check if there is already a lead in session or an ongoing/stuck call
                 current_lead_id = request.session.get('current_lead_id')
                 ongoing_call = CallRecord.objects.filter(agente=request.user, fin=None).exists()

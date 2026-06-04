@@ -13,16 +13,20 @@ class UserProfile(models.Model):
         (ROL_ADMIN, 'Administrador'),
     ]
 
-    ESTADO_DISPONIBLE = 'DISPONIBLE'
-    ESTADO_PAUSA = 'PAUSA'
-    ESTADO_LISTO_NO = 'LISTO_NO'
-    ESTADO_COACH = 'COACH'
+    ESTADO_ACTIVO = 'ACTIVO'
+    ESTADO_INACTIVO = 'INACTIVO'
     ESTADO_CHOICES = [
-        (ESTADO_DISPONIBLE, 'Disponible'),
-        (ESTADO_PAUSA, 'Pausa'),
-        (ESTADO_LISTO_NO, 'Listo No'),
-        (ESTADO_COACH, 'Coach'),
-        # Add more as needed
+        (ESTADO_ACTIVO, 'Activo'),
+        (ESTADO_INACTIVO, 'Inactivo'),
+    ]
+
+    TURNO_DIURNO = 'DIURNO'
+    TURNO_NOCTURNO = 'NOCTURNO'
+    TURNO_HIBRIDO = 'HIBRIDO'
+    TURNO_CHOICES = [
+        (TURNO_DIURNO, 'Diurno'),
+        (TURNO_NOCTURNO, 'Nocturno'),
+        (TURNO_HIBRIDO, 'Híbrido'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -39,9 +43,9 @@ class UserProfile(models.Model):
         verbose_name="Supervisor Asignado"
     )
     zona = models.CharField(max_length=100, blank=True, verbose_name="Zona de Trabajo")
-    turno = models.CharField(max_length=50, blank=True, verbose_name="Turno")
+    turno = models.CharField(max_length=20, choices=TURNO_CHOICES, blank=True, verbose_name="Turno")
     activo = models.BooleanField(default=True, verbose_name="Activo")
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_DISPONIBLE, verbose_name="Estado")
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_ACTIVO, verbose_name="Estado")
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 

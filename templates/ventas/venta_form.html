@@ -1,0 +1,673 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Nueva Venta</h2>
+  <form method="post" novalidate id="ventaForm">
+    {% csrf_token %}
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Agente</h5></div>
+      <div class="card-body">
+        <p class="form-control-plaintext" style="padding: 0;">{{ agente_nombre_auto|default:'—' }}</p>
+        <p class="form-control-plaintext" style="padding: 0; color: #666; font-size: 0.9em;">Supervisor: {{ supervisor_nombre_auto|default:'—' }}</p>
+      </div>
+    </div>
+
+     <div class="card mb-4">
+       <div class="card-header"><h5>Cliente</h5></div>
+       <div class="card-body">
+         <div class="row align-items-end mb-3">
+           <div class="col-md-4">
+             <div class="mb-3">
+               {{ form.cliente_documento.label_tag }}
+               {{ form.cliente_documento.errors }}
+               {{ form.cliente_documento }}
+             </div>
+           </div>
+           <div class="col-md-4">
+             <button type="button" id="btnBuscarCliente" class="btn btn-secondary w-100">Buscar</button>
+           </div>
+           <div class="col-md-4">
+             <button type="button" id="btnValidarCliente" class="btn btn-info w-100">Validar</button>
+           </div>
+         </div>
+         <div id="clienteMensaje" class="mb-3" style="display:none;"></div>
+         <div class="row">
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_nombres.label_tag }}
+             {{ form.cliente_nombres.errors }}
+             {{ form.cliente_nombres }}
+           </div>
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_paterno.label_tag }}
+             {{ form.cliente_paterno.errors }}
+             {{ form.cliente_paterno }}
+           </div>
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_materno.label_tag }}
+             {{ form.cliente_materno.errors }}
+             {{ form.cliente_materno }}
+           </div>
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_numero.label_tag }}
+             {{ form.cliente_numero.errors }}
+             {{ form.cliente_numero }}
+           </div>
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_telefono_1.label_tag }}
+             {{ form.cliente_telefono_1.errors }}
+             {{ form.cliente_telefono_1 }}
+           </div>
+           <div class="col-md-6 mb-3 cliente-campos">
+             {{ form.cliente_telefono_2.label_tag }}
+             {{ form.cliente_telefono_2.errors }}
+             {{ form.cliente_telefono_2 }}
+           </div>
+         </div>
+         <div class="form-check mb-3">
+           {{ form.registrar_nuevo_cliente }}
+           {{ form.registrar_nuevo_cliente.errors }}
+           {{ form.registrar_nuevo_cliente.label_tag }}
+         </div>
+       </div>
+     </div>
+     <div class="card mb-4">
+       <div class="card-header"><h5>Datos del Discador (Base)</h5></div>
+       <div class="card-body">
+         <div class="row">
+           <div class="col-md-3 mb-3">
+             {{ form.base_telefono.label_tag }}
+             {{ form.base_telefono }}
+           </div>
+           <div class="col-md-3 mb-3">
+             {{ form.base_nombres.label_tag }}
+             {{ form.base_nombres }}
+           </div>
+           <div class="col-md-3 mb-3">
+             {{ form.base_paterno.label_tag }}
+             {{ form.base_paterno }}
+           </div>
+           <div class="col-md-3 mb-3">
+             {{ form.base_materno.label_tag }}
+             {{ form.base_materno }}
+           </div>
+           <div class="col-md-3 mb-3">
+             {{ form.base_correo.label_tag }}
+             {{ form.base_correo }}
+           </div>
+           <div class="col-md-3 mb-3">
+             {{ form.base_documento.label_tag }}
+             {{ form.base_documento }}
+            </div>
+            <div class="col-md-6 mb-3">
+             {{ form.base_observaciones.label_tag }}
+             {{ form.base_observaciones }}
+           </div>
+         </div>
+       </div>
+     </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Recibo Electrónico</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.recibo_electronico.label_tag }}
+            {{ form.recibo_electronico.errors }}
+            {{ form.recibo_electronico }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.correo_electronico_recibo.label_tag }}
+            {{ form.correo_electronico_recibo.errors }}
+            {{ form.correo_electronico_recibo }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.horario_visita.label_tag }}
+            {{ form.horario_visita.errors }}
+            {{ form.horario_visita }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.abdcp.label_tag }}
+            {{ form.abdcp.errors }}
+            {{ form.abdcp }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.clausulas.label_tag }}
+            {{ form.clausulas.errors }}
+            {{ form.clausulas }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Producto y Venta</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.producto_nombre.label_tag }}
+            {{ form.producto_nombre.errors }}
+            {{ form.producto_nombre }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.origen.label_tag }}
+            {{ form.origen.errors }}
+            {{ form.origen }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.operador.label_tag }}
+            {{ form.operador.errors }}
+            {{ form.operador }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.telefono_portar.label_tag }}
+            {{ form.telefono_portar.errors }}
+            {{ form.telefono_portar }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.modelo_producto.label_tag }}
+            {{ form.modelo_producto.errors }}
+            {{ form.modelo_producto }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.plan_producto.label_tag }}
+            {{ form.plan_producto.errors }}
+            {{ form.plan_producto }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.tipo_linea.label_tag }}
+            {{ form.tipo_linea.errors }}
+            {{ form.tipo_linea }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.precio_venta.label_tag }}
+            {{ form.precio_venta.errors }}
+            {{ form.precio_venta }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.precio_plan.label_tag }}
+            {{ form.precio_plan.errors }}
+            {{ form.precio_plan }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.tipo_pago.label_tag }}
+            {{ form.tipo_pago.errors }}
+            {{ form.tipo_pago }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Dirección de Despacho</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            {{ form.tipo_via.label_tag }}
+            {{ form.tipo_via.errors }}
+            {{ form.tipo_via }}
+          </div>
+          <div class="col-md-5 mb-3">
+            {{ form.nombre_via.label_tag }}
+            {{ form.nombre_via.errors }}
+            {{ form.nombre_via }}
+          </div>
+          <div class="col-md-2 mb-3">
+            {{ form.numero_via.label_tag }}
+            {{ form.numero_via.errors }}
+            {{ form.numero_via }}
+          </div>
+          <div class="col-md-2 mb-3">
+            {{ form.manzana.label_tag }}
+            {{ form.manzana.errors }}
+            {{ form.manzana }}
+          </div>
+          <div class="col-md-2 mb-3">
+            {{ form.interior.label_tag }}
+            {{ form.interior.errors }}
+            {{ form.interior }}
+          </div>
+          <div class="col-md-2 mb-3">
+            {{ form.lote.label_tag }}
+            {{ form.lote.errors }}
+            {{ form.lote }}
+          </div>
+          <div class="col-md-2 mb-3">
+            {{ form.piso.label_tag }}
+            {{ form.piso.errors }}
+            {{ form.piso }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.zona_tipo.label_tag }}
+            {{ form.zona_tipo.errors }}
+            {{ form.zona_tipo }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.zona_nombre.label_tag }}
+            {{ form.zona_nombre.errors }}
+            {{ form.zona_nombre }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.zona_referencia.label_tag }}
+            {{ form.zona_referencia.errors }}
+            {{ form.zona_referencia }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.departamento.label_tag }}
+            {{ form.departamento.errors }}
+            {{ form.departamento }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.provincia.label_tag }}
+            {{ form.provincia.errors }}
+            {{ form.provincia }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.distrito.label_tag }}
+            {{ form.distrito.errors }}
+            {{ form.distrito }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Facturación</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.facturacion_requerida.label_tag }}
+            {{ form.facturacion_requerida.errors }}
+            {{ form.facturacion_requerida }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Gestión del Discador</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            {{ form.contact_callable.label_tag }}
+            {{ form.contact_callable.errors }}
+            {{ form.contact_callable }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.es_callable.label_tag }}
+            {{ form.es_callable.errors }}
+            {{ form.es_callable }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.tipo_valido.label_tag }}
+            {{ form.tipo_valido.errors }}
+            {{ form.tipo_valido }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.fecha_gestion.label_tag }}
+            {{ form.fecha_gestion.errors }}
+            {{ form.fecha_gestion }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.hora_gestion.label_tag }}
+            {{ form.hora_gestion.errors }}
+            {{ form.hora_gestion }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.resultado_gestion.label_tag }}
+            {{ form.resultado_gestion.errors }}
+            {{ form.resultado_gestion }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.tipo_contacto.label_tag }}
+            {{ form.tipo_contacto.errors }}
+            {{ form.tipo_contacto }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.status_java.label_tag }}
+            {{ form.status_java.errors }}
+            {{ form.status_java }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.supervisor_nombre.label_tag }}
+            {{ form.supervisor_nombre.errors }}
+            {{ form.supervisor_nombre }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Backoffice / Resumen</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            {{ form.base.label_tag }}
+            {{ form.base.errors }}
+            {{ form.base }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.tipo_renta.label_tag }}
+            {{ form.tipo_renta.errors }}
+            {{ form.tipo_renta }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.tipo_renta2.label_tag }}
+            {{ form.tipo_renta2.errors }}
+            {{ form.tipo_renta2 }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.base3.label_tag }}
+            {{ form.base3.errors }}
+            {{ form.base3 }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.q_ventas.label_tag }}
+            {{ form.q_ventas.errors }}
+            {{ form.q_ventas }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.fecha_venta.label_tag }}
+            {{ form.fecha_venta.errors }}
+            {{ form.fecha_venta }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.hora_venta.label_tag }}
+            {{ form.hora_venta.errors }}
+            {{ form.hora_venta }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Ítems de la Venta</h5></div>
+      <div class="card-body">
+        {{ items_formset.management_form }}
+        <div class="row">
+          {% for item_form in items_formset %}
+          <div class="col-md-6 mb-3">
+            <div class="card bg-light">
+              <div class="card-body">
+                {% for field in item_form %}
+                  {% if field.name != 'id' and field.name != 'DELETE' %}
+                  <div class="mb-3">
+                    {{ field.label_tag }}
+                    {{ field.errors }}
+                    {{ field }}
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5>Seguimiento Backoffice</h5></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.status_bo.label_tag }}
+            {{ backoffice_form.status_bo.errors }}
+            {{ backoffice_form.status_bo }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.fecha_bo.label_tag }}
+            {{ backoffice_form.fecha_bo.errors }}
+            {{ backoffice_form.fecha_bo }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.sts_courier.label_tag }}
+            {{ backoffice_form.sts_courier.errors }}
+            {{ backoffice_form.sts_courier }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.fch_courier.label_tag }}
+            {{ backoffice_form.fch_courier.errors }}
+            {{ backoffice_form.fch_courier }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.supervisor.label_tag }}
+            {{ backoffice_form.supervisor.errors }}
+            {{ backoffice_form.supervisor }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ backoffice_form.intervalo.label_tag }}
+            {{ backoffice_form.intervalo.errors }}
+            {{ backoffice_form.intervalo }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg mb-4">Guardar Venta</button>
+  </form>
+</div>
+
+<script>
+(function() {
+  const urlBuscar = "{% url 'ventas:buscar_cliente' %}";
+  const urlValidar = "{% url 'ventas:validar_cliente' %}";
+  const btnBuscar = document.getElementById('btnBuscarCliente');
+  const btnValidar = document.getElementById('btnValidarCliente');
+  const campoDocumento = document.getElementById('id_cliente_documento');
+  const mensaje = document.getElementById('clienteMensaje');
+  const camposCliente = document.querySelectorAll('.cliente-campos input');
+  const checkboxNuevo = document.getElementById('id_registrar_nuevo_cliente');
+  if (!btnBuscar || !campoDocumento) return;
+
+  function setValue(id, valor) {
+    const el = document.getElementById(id);
+    if (el) el.value = valor;
+  }
+
+  function mostrarMensaje(texto, tipo) {
+    mensaje.className = 'alert alert-' + tipo;
+    mensaje.textContent = texto;
+    mensaje.style.display = 'block';
+  }
+
+  function bloquearCamposCliente(bloquear) {
+    camposCliente.forEach(function(input) {
+      if (input.id === 'id_cliente_documento') return;
+      if (bloquear) {
+        input.classList.remove('form-control');
+        input.classList.add('form-control-plaintext');
+      } else {
+        input.classList.remove('form-control-plaintext');
+        input.classList.add('form-control');
+      }
+      input.disabled = bloquear;
+    });
+  }
+
+  function limpiarErroresCampos() {
+    camposCliente.forEach(function(input) {
+      input.classList.remove('is-invalid');
+      const fb = input.parentElement.querySelector('.invalid-feedback');
+      if (fb) fb.remove();
+    });
+  }
+
+  function mostrarErrorCampo(input, texto) {
+    input.classList.add('is-invalid');
+    let fb = input.parentElement.querySelector('.invalid-feedback');
+    if (!fb) {
+      fb = document.createElement('div');
+      fb.className = 'invalid-feedback';
+      input.parentElement.appendChild(fb);
+    }
+    fb.textContent = texto;
+  }
+
+  function buscarCliente() {
+    const documento = campoDocumento.value.trim();
+    if (!documento) {
+      mostrarMensaje('Ingrese un documento para buscar.', 'warning');
+      return;
+    }
+    limpiarErroresCampos();
+    setValue('id_cliente_numero', '');
+    setValue('id_cliente_telefono_1', '');
+    setValue('id_cliente_telefono_2', '');
+    mostrarMensaje('Buscando cliente...', 'info');
+    fetch(urlBuscar + '?documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.encontrado) {
+        const c = data.cliente;
+        setValue('id_cliente_nombres', c.nombres);
+        setValue('id_cliente_paterno', c.paterno);
+        setValue('id_cliente_materno', c.materno);
+        setValue('id_cliente_documento', c.documento);
+        setValue('id_cliente_numero', c.numero || '');
+        setValue('id_cliente_telefono_1', c.telefono_1 || '');
+        setValue('id_cliente_telefono_2', c.telefono_2 || '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = false;
+          checkboxNuevo.disabled = true;
+        }
+        bloquearCamposCliente(true);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente encontrado: ' + c.nombres + ' ' + c.paterno + ' ' + c.materno, 'success');
+      } else {
+        setValue('id_cliente_nombres', '');
+        setValue('id_cliente_paterno', '');
+        setValue('id_cliente_materno', '');
+        setValue('id_cliente_documento', documento);
+        setValue('id_cliente_numero', '');
+        setValue('id_cliente_telefono_1', '');
+        setValue('id_cliente_telefono_2', '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = true;
+          checkboxNuevo.disabled = false;
+        }
+        bloquearCamposCliente(false);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente no encontrado. Complete los datos para registrar uno nuevo.', 'warning');
+      }
+    })
+    .catch(function() {
+      mostrarMensaje('Error al buscar cliente.', 'danger');
+    });
+  }
+
+  function validarCliente() {
+    const documento = campoDocumento.value.trim();
+    if (!documento) {
+      mostrarMensaje('Ingrese un documento para validar.', 'warning');
+      return;
+    }
+    mostrarMensaje('Validando cliente...', 'info');
+    limpiarErroresCampos();
+    fetch(urlValidar + '?documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.existe) {
+        const c = data.cliente;
+        setValue('id_cliente_nombres', c.nombres);
+        setValue('id_cliente_paterno', c.paterno);
+        setValue('id_cliente_materno', c.materno);
+        setValue('id_cliente_documento', c.documento);
+        setValue('id_cliente_numero', c.numero || '');
+        setValue('id_cliente_telefono_1', c.telefono_1 || '');
+        setValue('id_cliente_telefono_2', c.telefono_2 || '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = false;
+          checkboxNuevo.disabled = true;
+        }
+        bloquearCamposCliente(true);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente existente validado. Datos protegidos.', 'success');
+      } else {
+        bloquearCamposCliente(false);
+        const nombres = document.getElementById('id_cliente_nombres');
+        const paterno = document.getElementById('id_cliente_paterno');
+        const materno = document.getElementById('id_cliente_materno');
+        const doc = document.getElementById('id_cliente_documento');
+        const numero = document.getElementById('id_cliente_numero');
+        const tel1 = document.getElementById('id_cliente_telefono_1');
+        const tel2 = document.getElementById('id_cliente_telefono_2');
+
+        let hayErrores = false;
+
+        if (!doc || !doc.value.trim()) {
+          mostrarErrorCampo(doc, 'Documento es obligatorio.');
+          hayErrores = true;
+        }
+        if (!nombres || !nombres.value.trim()) {
+          mostrarErrorCampo(nombres, 'Nombres es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombres.value.trim())) {
+          mostrarErrorCampo(nombres, 'Nombres solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (!paterno || !paterno.value.trim()) {
+          mostrarErrorCampo(paterno, 'Paterno es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paterno.value.trim())) {
+          mostrarErrorCampo(paterno, 'Paterno solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (!materno || !materno.value.trim()) {
+          mostrarErrorCampo(materno, 'Materno es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(materno.value.trim())) {
+          mostrarErrorCampo(materno, 'Materno solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (!numero || !numero.value.trim()) {
+          mostrarErrorCampo(numero, 'Número es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-Z0-9\s\-]+$/.test(numero.value.trim())) {
+          mostrarErrorCampo(numero, 'Número solo debe contener letras, números y guiones.');
+          hayErrores = true;
+        }
+        if (tel1 && tel1.value.trim() && !/^\d+$/.test(tel1.value.trim())) {
+          mostrarErrorCampo(tel1, 'Teléfono 01 solo debe contener números.');
+          hayErrores = true;
+        }
+        if (tel2 && tel2.value.trim() && !/^\d+$/.test(tel2.value.trim())) {
+          mostrarErrorCampo(tel2, 'Teléfono 02 solo debe contener números.');
+          hayErrores = true;
+        }
+
+        if (!hayErrores) {
+          if (checkboxNuevo) {
+            checkboxNuevo.checked = true;
+            checkboxNuevo.disabled = false;
+          }
+          bloquearCamposCliente(true);
+          limpiarErroresCampos();
+          mostrarMensaje('Cliente no encontrado. Datos válidos. Se guardará como cliente nuevo.', 'success');
+        } else {
+          if (checkboxNuevo) {
+            checkboxNuevo.checked = true;
+            checkboxNuevo.disabled = false;
+          }
+        }
+      }
+    })
+    .catch(function() {
+      mostrarMensaje('Error al validar cliente.', 'danger');
+    });
+  }
+
+  btnBuscar.addEventListener('click', buscarCliente);
+  if (btnValidar) {
+    btnValidar.addEventListener('click', validarCliente);
+  }
+})();
+</script>
+{% endblock %}

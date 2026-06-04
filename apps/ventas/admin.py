@@ -1,5 +1,31 @@
 from django.contrib import admin
-from .models import Venta, ItemVenta, SeguimientoBO
+from .models import Cliente, Venta, ItemVenta, SeguimientoBO
+
+
+@admin.register(Cliente)
+class ClienteAdmin(admin.ModelAdmin):
+    list_display = ['documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'activo', 'creado']
+    list_filter = ['activo']
+    search_fields = ['documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'telefono_2']
+    readonly_fields = ['creado', 'actualizado']
+    fieldsets = (
+        ('Documento', {
+            'fields': ('documento',)
+        }),
+        ('Datos Personales', {
+            'fields': ('nombres', 'paterno', 'materno')
+        }),
+        ('Contacto', {
+            'fields': ('numero', 'telefono_1', 'telefono_2')
+        }),
+        ('Estado', {
+            'fields': ('activo',)
+        }),
+        ('Auditoría', {
+            'fields': ('creado', 'actualizado'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 class ItemVentaInline(admin.TabularInline):
@@ -17,11 +43,10 @@ class SeguimientoBOInline(admin.StackedInline):
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'agente_nombre', 'cliente_nombres', 'cliente_paterno',
-        'tipo_linea', 'fecha_venta', 'precio_venta'
+        'id', 'agente_nombre', 'cliente', 'tipo_linea', 'fecha_venta', 'precio_venta'
     ]
     list_filter = ['tipo_linea', 'fecha_venta', 'facturacion_requerida']
-    search_fields = ['agente_nombre', 'cliente_nombres', 'cliente_documento']
+    search_fields = ['agente_nombre', 'cliente__nombres', 'cliente__documento']
     readonly_fields = ['creado', 'actualizado']
     inlines = [ItemVentaInline, SeguimientoBOInline]
 
@@ -30,7 +55,7 @@ class VentaAdmin(admin.ModelAdmin):
             'fields': ('agente_nombre',)
         }),
         ('Cliente', {
-            'fields': ('cliente_nombres', 'cliente_paterno', 'cliente_materno',
+            'fields': ('cliente', 'cliente_nombres', 'cliente_paterno', 'cliente_materno',
                       'cliente_documento', 'cliente_numero', 'cliente_telefono_1', 'cliente_telefono_2')
         }),
         ('Recibo Electrónico', {

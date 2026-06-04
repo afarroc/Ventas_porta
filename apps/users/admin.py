@@ -14,11 +14,19 @@ class UserProfileInlineForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['supervisor'].queryset = UserProfile.objects.filter(rol=UserProfile.ROL_SUPERVISOR)
-        if self.instance and self.instance.rol == UserProfile.ROL_ADMIN:
-            self.fields['supervisor'].required = False
-        else:
-            self.fields['supervisor'].required = True
         self.fields['rol'].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        rol = cleaned_data.get('rol')
+        supervisor = cleaned_data.get('supervisor')
+
+        if rol != UserProfile.ROL_ADMIN and not supervisor:
+            raise forms.ValidationError({
+                'supervisor': 'El supervisor es obligatorio para Agentes y Supervisores.'
+            })
+
+        return cleaned_data
 
 
 class UserProfileInline(admin.StackedInline):
@@ -60,7 +68,11 @@ class UserAdmin(BaseUserAdmin):
     get_supervisor.short_description = 'Supervisor'
 
 
-admin.site.unregister(User)
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
 admin.site.register(User, UserAdmin)
 
 

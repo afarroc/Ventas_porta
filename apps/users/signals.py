@@ -1,0 +1,1 @@
+# signals.py - User profile signals removed to avoid conflict with admin inline

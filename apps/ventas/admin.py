@@ -4,19 +4,19 @@ from .models import Cliente, Venta, ItemVenta, SeguimientoBO
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'activo', 'creado']
-    list_filter = ['activo']
+    list_display = ['documento', 'tipo_documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'activo', 'creado']
+    list_filter = ['activo', 'tipo_documento']
     search_fields = ['documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'telefono_2']
     readonly_fields = ['creado', 'actualizado']
     fieldsets = (
         ('Documento', {
-            'fields': ('documento',)
+            'fields': ('tipo_documento', 'documento')
         }),
         ('Datos Personales', {
             'fields': ('nombres', 'paterno', 'materno')
         }),
         ('Contacto', {
-            'fields': ('numero', 'telefono_1', 'telefono_2')
+            'fields': ('telefono_1', 'telefono_2')
         }),
         ('Estado', {
             'fields': ('activo',)
@@ -56,7 +56,7 @@ class VentaAdmin(admin.ModelAdmin):
         }),
         ('Cliente', {
             'fields': ('cliente', 'cliente_nombres', 'cliente_paterno', 'cliente_materno',
-                      'cliente_documento', 'cliente_numero', 'cliente_telefono_1', 'cliente_telefono_2')
+                      'cliente_tipo_documento', 'cliente_documento', 'cliente_telefono_1', 'cliente_telefono_2')
         }),
         ('Recibo Electrónico', {
             'fields': ('recibo_electronico', 'correo_electronico_recibo', 'horario_visita', 'clausulas', 'abdcp')

@@ -134,7 +134,7 @@
                     </form>
                     <button type="button" id="btnLiberarLead" class="btn btn-secondary"><i class="bi bi-trash"></i> Liberar Lead</button>
                     {% endif %}
-                    <a href="{% url 'ventas:venta_create_with_base' active_lead.id %}" class="btn btn-success" target="_blank" rel="noopener noreferrer">
+                    <a href="#" class="btn btn-success" onclick="openVentaModal('{{ active_lead.id_lead }}'); return false;">
                         <i class="bi bi-cart-plus"></i> Registrar Venta
                     </a>
                 </div>
@@ -222,12 +222,25 @@
             <p class="text-muted">Se creará un registro de auditoría y podrá obtener un nuevo lead.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeReleaseLeadModal()"><i class="bi bi-x"></i> Cancelar</button>
-            <button class="btn btn-warning" onclick="confirmReleaseLead()"><i class="bi bi-trash"></i> Liberar Lead</button>
+            <button class="btn btn-secondary" onclick="closeReleaseLeadModal()"><i class="bi-x"></i> Cancelar</button>
+            <button class="btn btn-warning" onclick="confirmReleaseLead()"><i class="bi-trash"></i> Liberar Lead</button>
         </div>
     </div>
 </div>
 
+<!-- Venta Modal -->
+<div id="ventaModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3><i class="bi bi-cart-plus"></i> Registrar Venta</h3>
+            <button onclick="closeVentaModal()" style="background: none; border: none; font-size: 1.5rem;">&times;</button>
+        </div>
+        <div class="modal-body-modal" id="ventaModalContent">
+            <div class="text-center p-4"><div class="spinner-border"></div><p>Cargando...</p></div>
+        </div>
+    </div>
+</div>
+ 
 <style>
 .modal {
     position: fixed;
@@ -268,6 +281,38 @@
 
 .modal-body {
     padding: 18px;
+}
+
+.modal-body-modal {
+    padding: 0 18px 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.modal-form-buttons {
+    padding: 12px 18px 18px;
+    border-top: 1px solid var(--vp-border);
+    background: var(--vp-gray-50);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modal-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--vp-border);
+    background: var(--vp-gray-50);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modal-body-modal {
+    padding: 0 18px 18px;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .modal-footer {
@@ -421,5 +466,71 @@ function confirmReleaseLead() {
     .catch(() => window.location.reload());
     closeReleaseLeadModal();
 }
+
+// Venta Modal
+function openVentaModal(id_lead) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const modal = document.getElementById('ventaModal');
+    const content = document.getElementById('ventaModalContent');
+    
+    content.innerHTML = '<div class="text-center p-4"><div class="spinner-border"></div><p>Cargando formulario...</p></div>';
+    modal.style.display = 'flex';
+    
+    fetch("/ventas/modal/" + id_lead + "/", {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            content.innerHTML = data.html;
+            window.currentVentaModalBaseId = id_lead;
+        } else {
+            content.innerHTML = '<div class="alert alert-danger">' + (data.mensaje || 'Error al cargar el formulario') + '</div>';
+        }
+    })
+    .catch(() => {
+        content.innerHTML = '<div class="alert alert-danger">Error de conexión</div>';
+    });
+}
+
+function closeVentaModal() {
+    document.getElementById('ventaModal').style.display = 'none';
+}
+
+// Handle modal form submission
+document.addEventListener('submit', function(e) {
+    if (e.target && e.target.id === 'ventaModalForm') {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const baseId = e.target.getAttribute('data-base-id');
+        
+        fetch("/api/ventas/crear/" + baseId + "/", {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                closeVentaModal();
+                window.location.reload();
+            } else {
+                alert(data.mensaje || 'Error al guardar la venta');
+            }
+        })
+        .catch(() => {
+            closeVentaModal();
+            window.location.reload();
+        });
+    }
+});
 </script>
 {% endblock %}

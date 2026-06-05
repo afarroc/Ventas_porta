@@ -1,0 +1,439 @@
+{% comment %}Shared form fields for venta - used by both full page and modal{% endcomment %}
+
+<!-- Lead (hidden fields for form submission) -->
+<div class="venta-form-lead-data">
+{{ form.base_telefono.as_hidden }}
+{{ form.base_nombres.as_hidden }}
+{{ form.base_paterno.as_hidden }}
+{{ form.base_materno.as_hidden }}
+{{ form.base_correo.as_hidden }}
+{{ form.base_documento.as_hidden }}
+{{ form.base_observaciones.as_hidden }}
+{{ form.registrar_nuevo_cliente.as_hidden }}
+</div>
+
+<!-- Lead (read-only display) -->
+<div class="card mb-4 vp-lead-card">
+    <div class="card-header">
+        <h5><i class="bi bi-person-badge"></i> Lead</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Teléfono</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_telefono|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Nombres</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_nombres|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Paterno</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_paterno|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Materno</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_materno|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Documento</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_documento|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Correo</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_correo|default:'' }}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Observaciones</small>
+                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_observaciones|default:'' }}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cliente Section -->
+<div class="card mb-4">
+    <div class="card-header"><h5><i class="bi bi-person"></i> Cliente</h5></div>
+    <div class="card-body">
+        <div class="row align-items-end mb-3">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    {{ form.cliente_tipo_documento.label_tag }}
+                    {{ form.cliente_tipo_documento.errors }}
+                    {{ form.cliente_tipo_documento }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    {{ form.cliente_documento.label_tag }}
+                    {{ form.cliente_documento.errors }}
+                    {{ form.cliente_documento }}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="button" id="btnBuscarCliente" class="btn btn-secondary w-100"><i class="bi bi-search"></i> Buscar</button>
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="btnValidarCliente" class="btn btn-info w-100"><i class="bi bi-check2-circle"></i> Validar</button>
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="btnRecargarLead" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Recargar Lead</button>
+            </div>
+        </div>
+        <div id="clienteMensaje" class="mb-3" style="display:none;"></div>
+        <div class="row">
+            <div class="col-md-6 mb-3 cliente-campos">
+                {{ form.cliente_nombres.label_tag }}
+                {{ form.cliente_nombres.errors }}
+                {{ form.cliente_nombres }}
+            </div>
+            <div class="col-md-6 mb-3 cliente-campos">
+                {{ form.cliente_paterno.label_tag }}
+                {{ form.cliente_paterno.errors }}
+                {{ form.cliente_paterno }}
+            </div>
+            <div class="col-md-6 mb-3 cliente-campos">
+                {{ form.cliente_materno.label_tag }}
+                {{ form.cliente_materno.errors }}
+                {{ form.cliente_materno }}
+            </div>
+            <div class="col-md-6 mb-3 cliente-campos">
+                {{ form.cliente_telefono_1.label_tag }}
+                {{ form.cliente_telefono_1.errors }}
+                {{ form.cliente_telefono_1 }}
+            </div>
+            <div class="col-md-6 mb-3 cliente-campos">
+                {{ form.cliente_telefono_2.label_tag }}
+                {{ form.cliente_telefono_2.errors }}
+                {{ form.cliente_telefono_2 }}
+            </div>
+        </div>
+        <div class="form-check mb-3">
+            {{ form.registrar_nuevo_cliente }}
+            {{ form.registrar_nuevo_cliente.errors }}
+            {{ form.registrar_nuevo_cliente.label_tag }}
+        </div>
+    </div>
+</div>
+
+<!-- Recibo Electrónico -->
+<div class="card mb-4">
+    <div class="card-header"><h5><i class="bi bi-receipt"></i> Recibo Electrónico</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.recibo_electronico.label_tag }}
+                {{ form.recibo_electronico.errors }}
+                {{ form.recibo_electronico }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.correo_electronico_recibo.label_tag }}
+                {{ form.correo_electronico_recibo.errors }}
+                {{ form.correo_electronico_recibo }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.horario_visita.label_tag }}
+                {{ form.horario_visita.errors }}
+                {{ form.horario_visita }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.abdcp.label_tag }}
+                {{ form.abdcp.errors }}
+                {{ form.abdcp }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ form.clausulas.label_tag }}
+                {{ form.clausulas.errors }}
+                {{ form.clausulas }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Producto y Venta -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-box-seam"></i> Producto y Venta</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.producto_nombre.label_tag }}
+                {{ form.producto_nombre }}
+            </div>
+            <div class="col-md-4">
+                {{ form.origen.label_tag }}
+                {{ form.origen }}
+            </div>
+            <div class="col-md-4">
+                {{ form.operador.label_tag }}
+                {{ form.operador }}
+            </div>
+            <div class="col-md-4">
+                <div class="vp-highlight-field">
+                    {{ form.telefono_portar.label_tag }}
+                    {{ form.telefono_portar }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                {{ form.modelo_producto.label_tag }}
+                {{ form.modelo_producto }}
+            </div>
+            <div class="col-md-3">
+                {{ form.tipo_linea.label_tag }}
+                {{ form.tipo_linea }}
+            </div>
+            <div class="col-md-3">
+                {{ form.precio_venta.label_tag }}
+                {{ form.precio_venta }}
+            </div>
+            <div class="col-md-3">
+                {{ form.precio_plan.label_tag }}
+                {{ form.precio_plan }}
+            </div>
+            <div class="col-md-3">
+                {{ form.tipo_pago.label_tag }}
+                {{ form.tipo_pago }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dirección de Despacho -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-geo-alt"></i> Dirección de Despacho</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-2">
+                {{ form.tipo_via.label_tag }}
+                {{ form.tipo_via }}
+            </div>
+            <div class="col-md-5">
+                {{ form.nombre_via.label_tag }}
+                {{ form.nombre_via }}
+            </div>
+            <div class="col-md-2">
+                {{ form.numero_via.label_tag }}
+                {{ form.numero_via }}
+            </div>
+            <div class="col-md-1">
+                {{ form.manzana.label_tag }}
+                {{ form.manzana }}
+            </div>
+            <div class="col-md-1">
+                {{ form.interior.label_tag }}
+                {{ form.interior }}
+            </div>
+            <div class="col-md-1">
+                {{ form.lote.label_tag }}
+                {{ form.lote }}
+            </div>
+            <div class="col-md-1">
+                {{ form.piso.label_tag }}
+                {{ form.piso }}
+            </div>
+            <div class="col-md-4">
+                {{ form.zona_tipo.label_tag }}
+                {{ form.zona_tipo }}
+            </div>
+            <div class="col-md-4">
+                {{ form.zona_nombre.label_tag }}
+                {{ form.zona_nombre }}
+            </div>
+            <div class="col-md-4">
+                {{ form.zona_referencia.label_tag }}
+                {{ form.zona_referencia }}
+            </div>
+            <div class="col-md-4">
+                {{ form.departamento.label_tag }}
+                {{ form.departamento }}
+            </div>
+            <div class="col-md-4">
+                {{ form.provincia.label_tag }}
+                {{ form.provincia }}
+            </div>
+            <div class="col-md-4">
+                {{ form.distrito.label_tag }}
+                {{ form.distrito }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Facturación -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-cash-stack"></i> Facturación</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.facturacion_requerida.label_tag }}
+                {{ form.facturacion_requerida }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gestión del Discador -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-clock-history"></i> Gestión del Discador</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.contact_callable.label_tag }}
+                {{ form.contact_callable }}
+            </div>
+            <div class="col-md-4">
+                {{ form.es_callable.label_tag }}
+                {{ form.es_callable }}
+            </div>
+            <div class="col-md-4">
+                {{ form.tipo_valido.label_tag }}
+                {{ form.tipo_valido }}
+            </div>
+            <div class="col-md-3">
+                {{ form.fecha_gestion.label_tag }}
+                {{ form.fecha_gestion }}
+            </div>
+            <div class="col-md-3">
+                {{ form.hora_gestion.label_tag }}
+                {{ form.hora_gestion }}
+            </div>
+            <div class="col-md-3">
+                {{ form.resultado_gestion.label_tag }}
+                {{ form.resultado_gestion }}
+            </div>
+            <div class="col-md-3">
+                {{ form.tipo_contacto.label_tag }}
+                {{ form.tipo_contacto }}
+            </div>
+            <div class="col-md-4">
+                {{ form.status_java.label_tag }}
+                {{ form.status_java }}
+            </div>
+            <div class="col-md-4">
+                {{ form.supervisor_nombre.label_tag }}
+                {{ form.supervisor_nombre }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backoffice / Resumen -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-clipboard-data"></i> Backoffice / Resumen</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ form.base.label_tag }}
+                {{ form.base }}
+            </div>
+            <div class="col-md-4">
+                {{ form.tipo_renta.label_tag }}
+                {{ form.tipo_renta }}
+            </div>
+            <div class="col-md-4">
+                {{ form.tipo_renta2.label_tag }}
+                {{ form.tipo_renta2 }}
+            </div>
+            <div class="col-md-4">
+                {{ form.base3.label_tag }}
+                {{ form.base3 }}
+            </div>
+            <div class="col-md-4">
+                {{ form.q_ventas.label_tag }}
+                {{ form.q_ventas }}
+            </div>
+            <div class="col-md-4">
+                {{ form.fecha_venta.label_tag }}
+                {{ form.fecha_venta }}
+            </div>
+            <div class="col-md-4">
+                {{ form.hora_venta.label_tag }}
+                {{ form.hora_venta }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ítems de la Venta -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-list-ul"></i> Ítems de la Venta</h5>
+    </div>
+    <div class="card-body">
+        {{ items_formset.management_form }}
+        <div class="row g-3">
+            {% for item_form in items_formset %}
+            <div class="col-md-12 mb-3">
+                <div class="vp-item-inner">
+                    {% for field in item_form %}
+                        {% if field.name != 'id' and field.name != 'DELETE' %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Seguimiento Backoffice -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-graph-up"></i> Seguimiento Backoffice</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                {{ backoffice_form.status_bo.label_tag }}
+                {{ backoffice_form.status_bo }}
+            </div>
+            <div class="col-md-4">
+                {{ backoffice_form.fecha_bo.label_tag }}
+                {{ backoffice_form.fecha_bo }}
+            </div>
+            <div class="col-md-4">
+                {{ backoffice_form.sts_courier.label_tag }}
+                {{ backoffice_form.sts_courier }}
+            </div>
+            <div class="col-md-4">
+                {{ backoffice_form.fch_courier.label_tag }}
+                {{ backoffice_form.fch_courier }}
+            </div>
+            <div class="col-md-4">
+                {{ backoffice_form.supervisor.label_tag }}
+                {{ backoffice_form.supervisor }}
+            </div>
+            <div class="col-md-4">
+                {{ backoffice_form.intervalo.label_tag }}
+                {{ backoffice_form.intervalo }}
+            </div>
+        </div>
+    </div>
+</div>

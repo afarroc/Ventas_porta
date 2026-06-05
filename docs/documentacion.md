@@ -92,10 +92,10 @@ Cliente maestro con documento único.
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `documento` | CharField | Documento único (DNI/RUT) |
+| `tipo_documento` | CharField | DNI/RUC/CE/Pasaporte (nuevo) |
 | `nombres` | CharField | Nombres |
 | `paterno` | CharField | Apellido paterno |
 | `materno` | CharField | Apellido materno |
-| `numero` | CharField | Número adicional |
 | `telefono_1` | CharField | Teléfono principal |
 | `telefono_2` | CharField | Teléfono secundario |
 | `activo` | BooleanField | Cliente activo |
@@ -110,8 +110,8 @@ Registro maestro de operaciones de venta.
 - `agente_nombre`: Nombre del vendedor/agente (requerido)
 
 #### Cliente (Transitorio)
-- `cliente_nombres`, `cliente_paterno`, `cliente_materno`
-- `cliente_documento`, `cliente_numero`
+- `cliente_tipo_documento`, `cliente_nombres`, `cliente_paterno`, `cliente_materno`
+- `cliente_documento`
 - `cliente_telefono_1`, `cliente_telefono_2`
 
 #### Recibo Electrónico
@@ -263,10 +263,11 @@ Ventas_Porta/
     │   ├── agent_dashboard.html                # Dashboard del agente (modales para obtener/liberar lead)
     │   ├── base_llamada_list.html              # Lista de bases de llamada con búsqueda
     │   └── base_llamada_detail.html            # Detalle de base con historial de llamadas
-    └── ventas/
-        ├── venta_list.html                     # Lista de ventas (tabla VP)
-        ├── venta_detail.html                   # Detalle de venta
-        └── venta_form.html                     # Formulario alta/edición (cards VP)
+└── ventas/
+    ├── venta_list.html                       # Lista de ventas (tabla VP)
+    ├── venta_detail.html                   # Detalle de venta
+    ├── venta_form.html                     # Formulario alta/edición (cards VP)
+    └── venta_form_modal.html               # Formulario modal (API)
 ```
 
 ### Estructura de archivos estáticos
@@ -329,13 +330,16 @@ Tres modelos: Venta (50+ campos), ItemVenta (FK), SeguimientoBO (OneToOne).
 Señal `post_save` para `User`: crea automáticamente un `UserProfile` cuando se crea un usuario nuevo.
 
 ### apps/ventas/forms.py
-VentaForm con widgets select/date/time/textarea, ItemVentaForm, SeguimientoBOForm.
+VentaForm con widgets select/date/time/textarea, campos base_* readonly para visualización. ItemVentaForm, SeguimientoBOForm.
 
 ### apps/ventas/views.py
-VentaCreateView con inlineformset_factory (extra=2, max_num=2).
+VentaCreateView con inlineformset_factory. `venta_modal_partial()` y `venta_api_create()` para modal. `_check_lead_access()` para seguridad UUID.
 
 ### templates/ventas/venta_form.html
-Formulario organizado en cards VP con secciones: Agente, Cliente, Recibo, Producto/Venta, Dirección, Facturación, Gestión del Discador, Backoffice. Botones Buscar/Validar cliente con AJAX.
+Formulario organizado en cards VP con secciones: Agente, Lead, Cliente, Recibo, Producto/Venta, Dirección, Facturación, Gestión del Discador, Backoffice. Botones Buscar/Validar/Recargar Lead con AJAX.
+
+### templates/ventas/venta_form_modal.html
+Formulario simplificado para modal via API en agent_dashboard.
 
 ---
 
@@ -360,40 +364,43 @@ EN_LLAMADA → Finalizar → LISTO_NO (pendiente tipificación)
 LISTO_NO → Tipificar → DISPONIBLE
 LISTO_NO → Liberar Lead → DISPONIBLE + auditoría (liberado_sin_uso)
 PAUSA/COACH → Cambiar disponibilidad → DISPONIBLE
+Click "Registrar Venta" → Modal cargado vía API → Submit vía API → Recarga página
 ```
 
 ---
 
-## 5.1 Rutas (URLs)
+## 7. Rutas (URLs) y API Endpoints
+
+### URLs Principales
 
 ```
-/                          → HomeView (dashboard principal)
-/users/login/              → LoginView
-/users/logout/             → logout_view
-/discador/                 → AgentDashboardView (POST: cambiar_estado, obtener_lead, iniciar_llamada, finalizar_llamada, liberar_lead)
-/discador/bases/           → BaseLlamadaListView
-/discador/base/<int:pk>/   → BaseLlamadaDetailView
-/discador/check-incoming/  → AJAX: verificar llamadas entrantes (poll cada 30s)
+/                           → HomeView (dashboard principal)
+/users/login/               → LoginView
+/users/logout/              → logout_view
+/discador/                  → AgentDashboardView
+/discador/bases/            → BaseLlamadaListView
+/discador/base/<int:pk>/    → BaseLlamadaDetailView
+/discador/check-incoming/   → AJAX polling
 /ventas/                   → VentaListView
 /ventas/<int:pk>/          → VentaDetailView
 /ventas/nueva/             → VentaCreateView
-/ventas/nueva/<int:base_llamada_id>/ → VentaCreateView (con base pre-cargada)
-/ventas/buscar-cliente/    → AJAX: buscar cliente por documento
-/ventas/validar-cliente/   → AJAX: validar existencia de cliente
-/admin/                    → Panel de administración Django
+/ventas/nueva/<uuid:id_lead>/ → VentaCreateView (con lead pre-cargado)
+/admin/                    → Panel administración
 ```
 
-**Control de acceso:**
-- `LoginRequiredMixin` en todas las vistas protegidas
-- Filtrado de `BaseLlamada` por rol en views:
-  - `ADMIN`: ve todos los leads
-  - `SUPERVISOR`: ve sus leads y los de sus agentes
-  - `AGENTE`: ve solo sus propios leads
-- `disponibilidad` controla flujo de agente: solo DISPONIBLE puede obtener leads
+### API Endpoints
+
+| Endpoint | Method | Descripción |
+|----------|--------|-----------|
+| `/ventas/buscar-cliente/` | GET | Busca cliente por tipo_documento + documento |
+| `/ventas/validar-cliente/` | GET | Valida existencia de cliente |
+| `/ventas/recargar-lead/<uuid>/` | GET | Recarga datos del lead |
+| `/ventas/modal/<uuid>/` | GET | HTML formulario modal vía API |
+| `/api/ventas/crear/<uuid>/` | POST | Crea venta vía API JSON |
 
 ---
 
-## 7. Configuración de Base de Datos
+## 8. Configuración de Base de Datos
 
 La configuración se carga exclusivamente desde `.env` (no hardcodeada).
 
@@ -412,7 +419,7 @@ DATABASE_PORT=3306
 
 ---
 
-## 7. Dependencias
+## 9. Dependencias
 
 ```
 Django==4.2.13
@@ -422,7 +429,7 @@ python-decouple==3.8
 
 ---
 
-## 8. Comandos
+## 10. Comandos
 
 ```bash
 # Setup inicial
@@ -447,7 +454,7 @@ python manage.py test
 python manage.py shell
 ```
 
-## 8. Panel de Administración
+## 11. Panel de Administración
 
 Accesible en `http://localhost:8000/admin/`.
 

@@ -2,11 +2,12 @@ from django.db import models
 
 
 class Cliente(models.Model):
+    TIPO_DOCUMENTO_CHOICES = [('DNI', 'DNI'), ('RUC', 'RUC'), ('CE', 'Carnet de Extranjería'), ('PASAPORTE', 'Pasaporte')]
+    tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES, default='DNI', verbose_name="Tipo de Documento")
     documento = models.CharField(max_length=20, unique=True, verbose_name="Documento")
     nombres = models.CharField(max_length=100, verbose_name="Nombres")
     paterno = models.CharField(max_length=50, blank=True, verbose_name="Paterno")
     materno = models.CharField(max_length=50, blank=True, verbose_name="Materno")
-    numero = models.CharField(max_length=50, blank=True, verbose_name="Número")
     telefono_1 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 01")
     telefono_2 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 02")
     activo = models.BooleanField(default=True, verbose_name="Activo")
@@ -30,8 +31,8 @@ class Venta(models.Model):
     cliente_nombres = models.CharField(max_length=100, blank=True, verbose_name="Nombres")
     cliente_paterno = models.CharField(max_length=50, blank=True, verbose_name="Paterno")
     cliente_materno = models.CharField(max_length=50, blank=True, verbose_name="Materno")
+    cliente_tipo_documento = models.CharField(max_length=20, choices=Cliente.TIPO_DOCUMENTO_CHOICES, default='DNI', verbose_name="Tipo de Documento")
     cliente_documento = models.CharField(max_length=20, blank=True, verbose_name="Documento")
-    cliente_numero = models.CharField(max_length=50, blank=True, verbose_name="Número")
     cliente_telefono_1 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 01")
     cliente_telefono_2 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 02")
 

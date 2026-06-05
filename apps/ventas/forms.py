@@ -10,35 +10,14 @@ class VentaForm(forms.ModelForm):
         label="Cliente no encontrado: registrar nuevo",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
-    # Fields for displaying BaseLlamada data (read-only)
-    base_telefono = forms.CharField(
-        disabled=True, required=False, label="Teléfono Base",
-        widget=forms.TextInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_nombres = forms.CharField(
-        disabled=True, required=False, label="Nombres Base",
-        widget=forms.TextInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_paterno = forms.CharField(
-        disabled=True, required=False, label="Paterno Base",
-        widget=forms.TextInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_materno = forms.CharField(
-        disabled=True, required=False, label="Materno Base",
-        widget=forms.TextInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_correo = forms.EmailField(
-        disabled=True, required=False, label="Correo Base",
-        widget=forms.EmailInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_documento = forms.CharField(
-        disabled=True, required=False, label="Documento Base",
-        widget=forms.TextInput(attrs={'class': 'form-control-plaintext'})
-    )
-    base_observaciones = forms.CharField(
-        disabled=True, required=False, label="Observaciones Base",
-        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control-plaintext'})
-    )
+    # Lead fields shown as read-only visually via CSS; must stay enabled for JS updates
+    base_telefono = forms.CharField(required=False, label="Teléfono Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_nombres = forms.CharField(required=False, label="Nombres Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_paterno = forms.CharField(required=False, label="Paterno Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_materno = forms.CharField(required=False, label="Materno Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_correo = forms.EmailField(required=False, label="Correo Base", widget=forms.EmailInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_documento = forms.CharField(required=False, label="Documento Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
+    base_observaciones = forms.CharField(required=False, label="Observaciones Base", widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control vp-readonly', 'readonly': True}))
 
     class Meta:
         model = Venta
@@ -65,25 +44,28 @@ class VentaForm(forms.ModelForm):
             'cliente_paterno': 'Paterno',
             'cliente_materno': 'Materno',
             'cliente_documento': 'Documento',
-            'cliente_numero': 'Número',
+            'cliente_tipo_documento': 'Tipo de Documento',
             'cliente_telefono_1': 'Teléfono 01',
             'cliente_telefono_2': 'Teléfono 02',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        lead_readonly_fields = {
+            'base_telefono', 'base_nombres', 'base_paterno', 'base_materno',
+            'base_correo', 'base_documento', 'base_observaciones',
+        }
         for field_name, field in self.fields.items():
             widget = field.widget
             if isinstance(widget, forms.Select):
                 widget.attrs.setdefault('class', '')
                 widget.attrs['class'] += ' form-select'
             elif isinstance(widget, (forms.TextInput, forms.NumberInput, forms.EmailInput, forms.DateInput, forms.TimeInput)):
-                # Skip adding form-control to the read-only plaintext fields
-                if not field.disabled:
+                if field_name not in lead_readonly_fields:
                     widget.attrs.setdefault('class', '')
                     widget.attrs['class'] += ' form-control'
             elif isinstance(widget, forms.Textarea):
-                if not field.disabled:
+                if field_name not in lead_readonly_fields:
                     widget.attrs.setdefault('class', '')
                     widget.attrs['class'] += ' form-control'
             elif isinstance(widget, forms.CheckboxInput):

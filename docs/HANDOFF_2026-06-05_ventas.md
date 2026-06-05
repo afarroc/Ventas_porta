@@ -8,7 +8,7 @@
 
 | Hash | Mensaje |
 |------|---------|
-| (working tree) | security(ventas): UUID-based lead access + modal register |
+| (working tree) | security(ventas): UUID-based lead access + modal register + runtime fixes |
 
 ---
 
@@ -31,39 +31,46 @@ Integrado en `agent_dashboard.html`:
 - Botón "Registrar Venta" ahora abre modal via `openVentaModal()`
 - Modal carga formulario async vía API
 - Submit vía API `/api/ventas/crear/<uuid:id_lead>/`
+- Script JS de búsqueda/validación cliente incluido en parcial compartido
 
 ### Modelo Cliente/Venta
 - Eliminado: `Cliente.numero`, `Venta.cliente_numero`
 - Agregado: `Cliente.tipo_documento`, `Venta.cliente_tipo_documento`
-- Migración `0007` creada (pendiente aplicar)
+- Migración `0007` aplicada
 
 ### Templates
 - `venta_form_modal.html` usa parcial compartido `_venta_form_fields.html`
 - `venta_form.html` usa mismo parcial (formulario único)
-- Scroll habilitado en modal (`max-height: 65vh` + `modal-body-modal`)
-- `templates/ventas/_venta_form_fields.html` - parcial compartido con todos los campos del formulario (Lead, Cliente, Ítems, Backoffice)
+- Scroll habilitado en modal (`max-height: 70vh` + `modal-body-modal`)
+- `templates/ventas/_venta_form_fields.html` - parcial compartido con todos los campos del formulario + script JS
+
+---
+
+## Correcciones de runtime aplicadas
+
+1. **Import faltante**: Agregado `CallRecord` en `apps/ventas/views.py`
+2. **UUID inconsistencia**: `discador/views.py` ahora guarda `id_lead` (UUID) en sesión en lugar de `id` (entero)
+3. **Filtros UUID**: Actualizados queries con `base_llamada__id_lead` donde corresponde
+4. **Tests**: Agregado `UserProfile` a setUp, corregidos nombres de campos
 
 ---
 
 ## Archivos modificados
 
 ```
-apps/ventas/models.py              ← tipo_documento agregado
+apps/ventas/views.py               ← CallRecord import, UUID fix, supervisor field name
 apps/ventas/forms.py               ← base_* campos readonly
-apps/ventas/views.py               ← UUID routes + modal API + access check + formset processing
-apps/ventas/urls.py                ← rutas UUID
-apps/ventas/admin.py               ← tipo_documento en list_display
-apps/ventas/tests.py               ← tests actualizados
-templates/ventas/_venta_form_fields.html ← parcial compartido (NUEVO)
+apps/ventas/tests.py               ← UserProfile en tests, campos backoffice corregidos
+apps/discador/views.py             ← id_lead en sesión, filtros UUID
+templates/ventas/_venta_form_fields.html ← script JS agregado
+templates/ventas/venta_form.html   ← script movido a parcial
 templates/ventas/venta_form_modal.html   ← usa parcial + scroll
-templates/ventas/venta_form.html          ← reescrito para usar parcial
 templates/discador/agent_dashboard.html   ← modal + scroll CSS
 ```
 
 ---
 
-## Próximos pasos sugeridos
+## Próximos pasos
 
-1. **Base de datos**: Migración `0007` aplicada (verificado)
-2. **Tests**: Ejecutar suite `python manage.py test apps.ventas.tests`
-3. **UI**: Verificar funcionamiento del modal en navegador
+1. **Tests**: Ejecutar `python manage.py test apps.ventas.tests` (BD requerida)
+2. **UI**: Verificar funcionamiento del modal en navegador

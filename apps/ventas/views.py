@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from .models import Venta, ItemVenta, SeguimientoBO, Cliente
-from apps.discador.models import BaseLlamada
+from apps.discador.models import BaseLlamada, CallRecord
 from .forms import VentaForm, ItemVentaForm, SeguimientoBOForm
 
 ItemVentaFormSet = inlineformset_factory(
@@ -256,7 +256,7 @@ def venta_api_create(request, id_lead):
                 fecha_bo=request.POST.get('fecha_bo') or None,
                 sts_courier=request.POST.get('sts_courier', ''),
                 fch_courier=request.POST.get('fch_courier') or None,
-                supervisor=request.POST.get('supervisor_bo', ''),
+                supervisor=request.POST.get('supervisor', ''),
                 intervalo=request.POST.get('intervalo', '')
             )
         
@@ -298,7 +298,7 @@ def _check_lead_access(user, base_llamada, session=None):
                 return True
             if session:
                 current_lead_id = session.get('current_lead_id')
-                if current_lead_id and base_llamada.id == current_lead_id:
+                if current_lead_id and base_llamada.id_lead == current_lead_id:
                     return True
             # Allow access if lead hasn't been managed by any other agent
             # This allows initial sale registration before call starts

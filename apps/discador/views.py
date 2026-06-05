@@ -96,7 +96,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
         lead_id = self.request.session.get('current_lead_id')
         if lead_id:
             try:
-                context['current_lead'] = BaseLlamada.objects.get(id=lead_id)
+                context['current_lead'] = BaseLlamada.objects.get(id_lead=lead_id)
             except BaseLlamada.DoesNotExist:
                 context['current_lead'] = None
                 self.request.session.pop('current_lead_id', None)
@@ -142,7 +142,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
             else:
                 lead = BaseLlamada.objects.exclude(llamadas__agente=request.user).order_by('?').first()
                 if lead:
-                    request.session['current_lead_id'] = lead.id
+                    request.session['current_lead_id'] = str(lead.id_lead)
                     messages.success(request, f"Lead asignado: {lead.telefono}")
                 else:
                     messages.warning(request, "No hay leads disponibles que usted no haya gestionado.")
@@ -152,7 +152,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
             lead_id = request.session.get('current_lead_id')
             if lead_id:
                 try:
-                    lead = BaseLlamada.objects.get(id=lead_id)
+                    lead = BaseLlamada.objects.get(id_lead=lead_id)
                     ongoing_call_exists = CallRecord.objects.filter(
                         agente=request.user,
                         base_llamada=lead,
@@ -193,7 +193,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
             if lead_id:
                 ongoing_call = CallRecord.objects.filter(
                     agente=request.user,
-                    base_llamada_id=lead_id,
+                    base_llamada__id_lead=lead_id,
                     fin=None
                 ).order_by('-inicio').first()
             else:
@@ -209,7 +209,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
                 profile = request.user.profile
                 profile.disponibilidad = UserProfile.LISTO_NO
                 profile.save()
-                request.session['current_lead_id'] = ongoing_call.base_llamada.id
+                request.session['current_lead_id'] = str(ongoing_call.base_llamada.id_lead)
                 messages.success(request, "Llamada finalizada. Ahora puede tipificar el registro.")
             else:
                 messages.error(request, "No hay llamada en curso para finalizar.")
@@ -250,17 +250,17 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
         if 'liberar_lead' in request.POST:
             lead_id = request.session.get('current_lead_id')
             if lead_id:
-                lead = BaseLlamada.objects.get(id=lead_id)
+                lead = BaseLlamada.objects.get(id_lead=lead_id)
 
                 ongoing_call = CallRecord.objects.filter(
                     agente=request.user,
-                    base_llamada_id=lead_id,
+                    base_llamada__id_lead=lead_id,
                     fin=None
                 ).order_by('-inicio').first()
 
                 any_completed_calls = CallRecord.objects.filter(
                     agente=request.user,
-                    base_llamada_id=lead_id,
+                    base_llamada__id_lead=lead_id,
                     fin__isnull=False
                 ).exists()
 
@@ -282,7 +282,7 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
                 else:
                     pending_exists = CallRecord.objects.filter(
                         agente=request.user,
-                        base_llamada_id=lead_id,
+                        base_llamada__id_lead=lead_id,
                         fin__isnull=False,
                         acw_end__isnull=True
                     ).exists()
@@ -336,7 +336,7 @@ def check_incoming_call(request):
             'has_incoming': True,
             'call': {
                 'telefono': incoming.base_llamada.telefono,
-                'id': incoming.base_llamada.id
+                'id': str(incoming.base_llamada.id_lead)
             }
         })
 

@@ -437,3 +437,270 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+  const urlBuscar = "{% url 'ventas:buscar_cliente' %}";
+  const urlValidar = "{% url 'ventas:validar_cliente' %}";
+
+  const btnBuscar = document.getElementById('btnBuscarCliente');
+  const btnValidar = document.getElementById('btnValidarCliente');
+  const btnRecargar = document.getElementById('btnRecargarLead');
+  const campoDocumento = document.getElementById('id_cliente_documento');
+  const campoTipoDocumento = document.getElementById('id_cliente_tipo_documento');
+  const mensaje = document.getElementById('clienteMensaje');
+  const camposCliente = document.querySelectorAll('.cliente-campos input');
+  const checkboxNuevo = document.getElementById('id_registrar_nuevo_cliente');
+
+  const baseId = "{{ base_llamada_id|default:'' }}";
+  const urlRecargar = baseId ? "/ventas/recargar-lead/" + baseId + "/" : "";
+
+  function setValue(id, valor) {
+    const el = document.getElementById(id);
+    if (el) el.value = valor;
+  }
+
+  function mostrarMensaje(texto, tipo) {
+    mensaje.className = 'alert alert-' + tipo;
+    mensaje.textContent = texto;
+    mensaje.style.display = 'block';
+  }
+
+  function bloquearCamposCliente(bloquear) {
+    camposCliente.forEach(function(input) {
+      if (input.id === 'id_cliente_documento') return;
+      if (bloquear) {
+        input.classList.remove('form-control');
+        input.classList.add('form-control-plaintext');
+      } else {
+        input.classList.remove('form-control-plaintext');
+        input.classList.add('form-control');
+      }
+      input.disabled = bloquear;
+    });
+  }
+
+  function limpiarErroresCampos() {
+    camposCliente.forEach(function(input) {
+      input.classList.remove('is-invalid');
+      const fb = input.parentElement.querySelector('.invalid-feedback');
+      if (fb) fb.remove();
+    });
+  }
+
+  function mostrarErrorCampo(input, texto) {
+    input.classList.add('is-invalid');
+    let fb = input.parentElement.querySelector('.invalid-feedback');
+    if (!fb) {
+      fb = document.createElement('div');
+      fb.className = 'invalid-feedback';
+      input.parentElement.appendChild(fb);
+    }
+    fb.textContent = texto;
+  }
+
+  function buscarCliente() {
+    const tipo = campoTipoDocumento ? campoTipoDocumento.value.trim() : 'DNI';
+    const documento = campoDocumento.value.trim();
+    if (!documento) {
+      mostrarMensaje('Ingrese un documento para buscar.', 'warning');
+      return;
+    }
+    limpiarErroresCampos();
+    setValue('id_cliente_telefono_1', '');
+    setValue('id_cliente_telefono_2', '');
+    mostrarMensaje('Buscando cliente...', 'info');
+    fetch(urlBuscar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.encontrado) {
+        const c = data.cliente;
+        if (campoTipoDocumento) setValue('id_cliente_tipo_documento', c.tipo_documento);
+        setValue('id_cliente_nombres', c.nombres);
+        setValue('id_cliente_paterno', c.paterno);
+        setValue('id_cliente_materno', c.materno);
+        setValue('id_cliente_documento', c.documento);
+        setValue('id_cliente_telefono_1', c.telefono_1 || '');
+        setValue('id_cliente_telefono_2', c.telefono_2 || '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = false;
+          checkboxNuevo.disabled = true;
+        }
+        bloquearCamposCliente(true);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente encontrado: ' + c.nombres + ' ' + c.paterno + ' ' + c.materno, 'success');
+      } else {
+        setValue('id_cliente_nombres', '');
+        setValue('id_cliente_paterno', '');
+        setValue('id_cliente_materno', '');
+        setValue('id_cliente_documento', documento);
+        setValue('id_cliente_telefono_1', '');
+        setValue('id_cliente_telefono_2', '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = true;
+          checkboxNuevo.disabled = false;
+        }
+        bloquearCamposCliente(false);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente no encontrado. Complete los datos para registrar uno nuevo.', 'warning');
+      }
+    })
+    .catch(function() {
+      mostrarMensaje('Error al buscar cliente.', 'danger');
+    });
+  }
+
+  function validarCliente() {
+    const tipo = campoTipoDocumento ? campoTipoDocumento.value.trim() : 'DNI';
+    const documento = campoDocumento.value.trim();
+    if (!documento) {
+      mostrarMensaje('Ingrese un documento para validar.', 'warning');
+      return;
+    }
+    mostrarMensaje('Validando cliente...', 'info');
+    limpiarErroresCampos();
+    fetch(urlValidar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.existe) {
+        const c = data.cliente;
+        if (campoTipoDocumento) setValue('id_cliente_tipo_documento', c.tipo_documento);
+        setValue('id_cliente_nombres', c.nombres);
+        setValue('id_cliente_paterno', c.paterno);
+        setValue('id_cliente_materno', c.materno);
+        setValue('id_cliente_documento', c.documento);
+        setValue('id_cliente_telefono_1', c.telefono_1 || '');
+        setValue('id_cliente_telefono_2', c.telefono_2 || '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = false;
+          checkboxNuevo.disabled = true;
+        }
+        bloquearCamposCliente(true);
+        limpiarErroresCampos();
+        mostrarMensaje('Cliente existente validado. Datos protegidos.', 'success');
+      } else {
+        bloquearCamposCliente(false);
+        const nombres = document.getElementById('id_cliente_nombres');
+        const paterno = document.getElementById('id_cliente_paterno');
+        const materno = document.getElementById('id_cliente_materno');
+        const doc = document.getElementById('id_cliente_documento');
+        const tel1 = document.getElementById('id_cliente_telefono_1');
+        const tel2 = document.getElementById('id_cliente_telefono_2');
+
+        let hayErrores = false;
+
+        if (!doc || !doc.value.trim()) {
+          mostrarErrorCampo(doc, 'Documento es obligatorio.');
+          hayErrores = true;
+        }
+        if (!nombres || !nombres.value.trim()) {
+          mostrarErrorCampo(nombres, 'Nombres es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombres.value.trim())) {
+          mostrarErrorCampo(nombres, 'Nombres solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (!paterno || !paterno.value.trim()) {
+          mostrarErrorCampo(paterno, 'Paterno es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(paterno.value.trim())) {
+          mostrarErrorCampo(paterno, 'Paterno solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (!materno || !materno.value.trim()) {
+          mostrarErrorCampo(materno, 'Materno es obligatorio.');
+          hayErrores = true;
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(materno.value.trim())) {
+          mostrarErrorCampo(materno, 'Materno solo debe contener letras.');
+          hayErrores = true;
+        }
+        if (tel1 && tel1.value.trim() && !/^\d+$/.test(tel1.value.trim())) {
+          mostrarErrorCampo(tel1, 'Teléfono 01 solo debe contener números.');
+          hayErrores = true;
+        }
+        if (tel2 && tel2.value.trim() && !/^\d+$/.test(tel2.value.trim())) {
+          mostrarErrorCampo(tel2, 'Teléfono 02 solo debe contener números.');
+          hayErrores = true;
+        }
+
+        if (!hayErrores) {
+          if (checkboxNuevo) {
+            checkboxNuevo.checked = true;
+            checkboxNuevo.disabled = false;
+          }
+          bloquearCamposCliente(true);
+          limpiarErroresCampos();
+          mostrarMensaje('Cliente no encontrado. Datos válidos. Se guardará como cliente nuevo.', 'success');
+        } else {
+          if (checkboxNuevo) {
+            checkboxNuevo.checked = true;
+            checkboxNuevo.disabled = false;
+          }
+        }
+      }
+    })
+    .catch(function() {
+      mostrarMensaje('Error al validar cliente.', 'danger');
+    });
+  }
+
+  function recargarLead() {
+    if (!baseId) {
+      mostrarMensaje('No hay lead asignado para recargar.', 'warning');
+      return;
+    }
+    fetch(urlRecargar, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        const l = data.lead;
+        setValue('id_base_telefono', l.telefono || '');
+        setValue('id_base_nombres', l.nombres || '');
+        setValue('id_base_paterno', l.paterno || '');
+        setValue('id_base_materno', l.materno || '');
+        setValue('id_base_documento', l.documento || '');
+        setValue('id_base_correo', l.correo || '');
+        setValue('id_base_observaciones', l.observaciones || '');
+        if (campoTipoDocumento) setValue('id_cliente_tipo_documento', l.tipo_documento || 'DNI');
+        setValue('id_cliente_documento', l.documento || '');
+        setValue('id_cliente_nombres', l.nombres || '');
+        setValue('id_cliente_paterno', l.paterno || '');
+        setValue('id_cliente_materno', l.materno || '');
+        setValue('id_cliente_telefono_1', l.telefono || '');
+        setValue('id_cliente_telefono_2', '');
+        if (checkboxNuevo) {
+          checkboxNuevo.checked = true;
+          checkboxNuevo.disabled = false;
+        }
+        bloquearCamposCliente(false);
+        limpiarErroresCampos();
+        mostrarMensaje('Datos del lead recargados correctamente.', 'success');
+      } else {
+        mostrarMensaje(data.mensaje || 'Error al recargar lead.', 'danger');
+      }
+    })
+    .catch(function() {
+      mostrarMensaje('Error al recargar datos del lead.', 'danger');
+    });
+  }
+
+  if (btnBuscar && campoDocumento) {
+    btnBuscar.addEventListener('click', buscarCliente);
+    if (btnValidar) {
+      btnValidar.addEventListener('click', validarCliente);
+    }
+    if (btnRecargar) {
+      btnRecargar.addEventListener('click', recargarLead);
+    }
+  }
+})();
+</script>

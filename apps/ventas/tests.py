@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import Venta, ItemVenta, SeguimientoBO, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
+from apps.users.models import UserProfile
 
 
 class VentaModelTest(TestCase):
@@ -44,6 +45,7 @@ class VentaCreateViewTest(TestCase):
         )
         self.user.is_staff = True
         self.user.save()
+        UserProfile.objects.create(user=self.user, rol=UserProfile.ROL_AGENTE)
         
         self.base_llamada = BaseLlamada.objects.create(
             telefono='1234567890',
@@ -127,9 +129,9 @@ class VentaCreateViewTest(TestCase):
             'items-0-tipo_venta': 'Venta',
             'items-0-tipo_producto': 'Producto Test',
             'items-0-precio_plan': '29.99',
-            'backoffice_form-status_bo': 'Pendiente',
-            'backoffice_form-supervisor': 'Test Supervisor',
-            'backoffice_form-intervalo': 'Mensual',
+            'status_bo': 'Pendiente',
+            'supervisor': 'Test Supervisor',
+            'intervalo': 'Mensual',
         })
         
         if response.status_code == 302:
@@ -158,6 +160,7 @@ class RecargarLeadAjaxTest(TestCase):
             username='testagent',
             password='testpass123'
         )
+        UserProfile.objects.create(user=self.user, rol=UserProfile.ROL_AGENTE)
         self.base_llamada = BaseLlamada.objects.create(
             telefono='987654321',
             nombres='Maria',
@@ -207,6 +210,7 @@ class RecargarLeadAjaxTest(TestCase):
             username='otheragent',
             password='testpass123'
         )
+        UserProfile.objects.create(user=other_user, rol=UserProfile.ROL_AGENTE)
         self.client.login(username='otheragent', password='testpass123')
         url = reverse('ventas:recargar_lead', kwargs={'id_lead': self.base_llamada.id_lead})
         response = self.client.get(url)

@@ -66,7 +66,7 @@ Registro individual de llamada por agente con resultado, ACW y tipificación.
 
 **Modelo: `UserProfile`** (`users_profile`)
 
-Perfil extendido del usuario de Django con rol, estado operativo y supervisión.
+Perfil extendido del usuario de Django con rol, estado operativo, disponibilidad y supervisión.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -76,10 +76,10 @@ Perfil extendido del usuario de Django con rol, estado operativo y supervisión.
 | `telefono` | CharField | Teléfono del usuario |
 | `supervisor` | ForeignKey(self) | Supervisor asignado (solo supervisores) |
 | `zona` | CharField | Zona de trabajo |
-| `turno` | CharField | Turno asignado |
-| `activo` | BooleanField | Usuario activo |
-| `estado` | CharField | Estado: Activo/Inactivo |
 | `turno` | CharField | Turno: Diurno/Nocturno/Híbrido |
+| `activo` | BooleanField | Usuario activo |
+| `estado` | CharField | Estado operativo: Activo/Inactivo/Baja/Vacaciones |
+| `disponibilidad` | CharField | Disponibilidad del agente: Disponible/Pausa/No Listo/En Llamada/Coach |
 
 ---
 
@@ -254,19 +254,28 @@ Ventas_Porta/
 │           ├── 0002_alter_venta_options_venta_*.py  # Agregó campos discador
 │           └── 0003_alter_venta_verbose_names.py    # Verbose names
 └── templates/
-    ├── base.html                               # Layout Bootstrap 5 base
+    ├── base.html                               # Layout VP framework
     ├── home.html                               # Dashboard principal
     ├── users/
     │   └── registration/
     │       └── login.html                      # Login de usuarios
     ├── discador/
-    │   ├── agent_dashboard.html                # Dashboard del agente (estado, leads, llamadas)
+    │   ├── agent_dashboard.html                # Dashboard del agente (modales para obtener/liberar lead)
     │   ├── base_llamada_list.html              # Lista de bases de llamada con búsqueda
     │   └── base_llamada_detail.html            # Detalle de base con historial de llamadas
     └── ventas/
-        ├── venta_list.html                     # Lista de ventas (tabla)
+        ├── venta_list.html                     # Lista de ventas (tabla VP)
         ├── venta_detail.html                   # Detalle de venta
-        └── venta_form.html                     # Formulario alta/edición (accordion, 8 secciones)
+        └── venta_form.html                     # Formulario alta/edición (cards VP)
+```
+
+### Estructura de archivos estáticos
+
+```
+Ventas_Porta/
+└── static/
+    └── css/
+        └── form-data.css                       # Estilos VP framework (variables CSS, botones, cards, tablas, modales, utilidades flex)
 ```
 
 ---
@@ -283,7 +292,7 @@ Configura BD con parámetros desde `.env`, charset utf8mb4, LANGUAGE_CODE='es-pe
 Incluye URLs de las tres apps: `ventas` (raíz), `discador` y `users`.
 
 ### apps/users/models.py
-Modelo `UserProfile` extendiendo `User` con roles (Agente/Supervisor/Administrador), estados operativos y supervisión jerárquica.
+Modelo `UserProfile` extendiendo `User` con roles (Agente/Supervisor/Administrador), estados operativos (estado), disponibilidad del agente (disponibilidad) y supervisión jerárquica.
 
 ### apps/users/admin.py
 UserAdmin custom con inline de UserProfile, fieldsets y list_display extendido. Filtra supervisores a solo usuarios con rol SUPERVISOR.
@@ -302,10 +311,16 @@ Modelo `CallRecord` en tabla implícita con campos de llamada, ACW y tipificaci�
 BaseLlamadaAdmin con fieldsets, filters, readonly y búsqueda. CallRecordAdmin con fieldsets de información y ACW.
 
 ### apps/discador/views.py
-BaseLlamadaListView (paginado 50, filtrado por rol), BaseLlamadaDetailView, AgentDashboardView (dashboard de agente con gestión de leads y llamadas en tiempo real).
+BaseLlamadaListView (paginado 50, filtrado por rol), BaseLlamadaDetailView.
+AgentDashboardView: Dashboard de agente con:
+- Gestión de leads vía AJAX (obtener_lead)
+- Control de disponibilidad (DISPONIBLE/PAUSA/LISTO_NO/EN_LLAMADA/COACH)
+- Iniciar/finalizar llamada con actualización de disponibilidad
+- Liberar lead con auditoría (liberado_sin_uso)
+- check_incoming_call endpoint para polling de llamadas entrantes (30s)
 
 ### apps/discador/urls.py
-URLs: dashboard del agente, listado de bases y detalle de base.
+URLs: dashboard del agente (/), listado de bases (/bases/), detalle de base (/base/<id>/), check-incoming (AJAX).
 
 ### apps/ventas/models.py
 Tres modelos: Venta (50+ campos), ItemVenta (FK), SeguimientoBO (OneToOne).
@@ -320,7 +335,32 @@ VentaForm con widgets select/date/time/textarea, ItemVentaForm, SeguimientoBOFor
 VentaCreateView con inlineformset_factory (extra=2, max_num=2).
 
 ### templates/ventas/venta_form.html
-Formulario organizado en 8 secciones accordion Bootstrap.
+Formulario organizado en cards VP con secciones: Agente, Cliente, Recibo, Producto/Venta, Dirección, Facturación, Gestión del Discador, Backoffice. Botones Buscar/Validar cliente con AJAX.
+
+---
+
+## 6. Flujo de Trabajo del Agente
+
+### 6.1 Estados de Disponibilidad
+
+| Estado | Color | Condición |
+|--------|-------|-----------|
+| `DISPONIBLE` | Verde | Puede obtener leads y contestar llamadas |
+| `PAUSA` | Amarillo | No disponible para llamadas |
+| `LISTO_NO` | Rojo | Llamada finalizada, pendiente tipificación |
+| `EN_LLAMADA` | Gris | Llamada en curso |
+| `COACH` | Azul | En coaching/entrenamiento |
+
+### 6.2 Transiciones de Estado
+
+```
+DISPONIBLE → Obtener Lead → DISPONIBLE (lead asignado)
+DISPONIBLE → Llamada entrante → EN_LLAMADA
+EN_LLAMADA → Finalizar → LISTO_NO (pendiente tipificación)
+LISTO_NO → Tipificar → DISPONIBLE
+LISTO_NO → Liberar Lead → DISPONIBLE + auditoría (liberado_sin_uso)
+PAUSA/COACH → Cambiar disponibilidad → DISPONIBLE
+```
 
 ---
 
@@ -330,9 +370,10 @@ Formulario organizado en 8 secciones accordion Bootstrap.
 /                          → HomeView (dashboard principal)
 /users/login/              → LoginView
 /users/logout/             → logout_view
-/discador/                 → AgentDashboardView
+/discador/                 → AgentDashboardView (POST: cambiar_estado, obtener_lead, iniciar_llamada, finalizar_llamada, liberar_lead)
 /discador/bases/           → BaseLlamadaListView
 /discador/base/<int:pk>/   → BaseLlamadaDetailView
+/discador/check-incoming/  → AJAX: verificar llamadas entrantes (poll cada 30s)
 /ventas/                   → VentaListView
 /ventas/<int:pk>/          → VentaDetailView
 /ventas/nueva/             → VentaCreateView
@@ -348,10 +389,11 @@ Formulario organizado en 8 secciones accordion Bootstrap.
   - `ADMIN`: ve todos los leads
   - `SUPERVISOR`: ve sus leads y los de sus agentes
   - `AGENTE`: ve solo sus propios leads
+- `disponibilidad` controla flujo de agente: solo DISPONIBLE puede obtener leads
 
 ---
 
-## 6. Configuración de Base de Datos
+## 7. Configuración de Base de Datos
 
 La configuración se carga exclusivamente desde `.env` (no hardcodeada).
 
@@ -405,7 +447,7 @@ python manage.py test
 python manage.py shell
 ```
 
-## 9. Panel de Administración
+## 8. Panel de Administración
 
 Accesible en `http://localhost:8000/admin/`.
 

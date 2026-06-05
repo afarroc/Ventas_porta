@@ -23,9 +23,9 @@ class VentaForm(forms.ModelForm):
         model = Venta
         exclude = ['creado', 'actualizado', 'agente_nombre', 'cliente', 'base_llamada']
         widgets = {
-            'recibo_electronico': forms.Select(choices=Venta.RECIBO_CHOICES),
+            'recibo_electronico': forms.Select(choices=Venta.RECIBO_ELECTRONICO_CHOICES),
             'abdcp': forms.Select(choices=Venta.ABDCP_CHOICES),
-            'clausulas': forms.Select(choices=Venta.RECIBO_CHOICES),
+            'clausulas': forms.Select(choices=Venta.RECIBO_ELECTRONICO_CHOICES),
             'tipo_linea': forms.Select(choices=Venta.TIPO_LINEA),
             'facturacion_requerida': forms.Select(choices=Venta.FACTURACION_CHOICES),
             'contact_callable': forms.Select(choices=Venta.CONTACT_CALLABLE),
@@ -38,6 +38,7 @@ class VentaForm(forms.ModelForm):
             'hora_venta': forms.TimeInput(attrs={'type': 'time'}),
             'hora_gestion': forms.TimeInput(attrs={'type': 'time'}),
             'cliente_documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar', 'autocomplete': 'username'}),
+            'horario_visita': forms.Select(choices=Venta.HORARIO_VISITA_CHOICES),
         }
         labels = {
             'cliente_nombres': 'Nombres',

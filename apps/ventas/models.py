@@ -36,14 +36,20 @@ class Venta(models.Model):
     cliente_telefono_1 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 01")
     cliente_telefono_2 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 02")
 
-    RECIBO_CHOICES = [('SI', 'Sí'), ('NO', 'No'), ('SI_DESEA', 'Si desea'), ('NO_DESEA', 'No desea')]
-    recibo_electronico = models.CharField(max_length=10, choices=RECIBO_CHOICES, blank=True, verbose_name="Recibo Electrónico")
+    RECIBO_ELECTRONICO_CHOICES = [('SI_DESEA', 'Si desea'), ('NO_DESEA', 'No desea')]
+    recibo_electronico = models.CharField(max_length=10, choices=RECIBO_ELECTRONICO_CHOICES, blank=True, verbose_name="Recibo Electrónico")
     correo_electronico_recibo = models.EmailField(max_length=150, blank=True, verbose_name="Correo Electrónico (Recibo)")
-    horario_visita = models.CharField(max_length=100, blank=True, verbose_name="Horario de Visita")
+    HORARIO_VISITA_CHOICES = [
+        ('LUNES_8_12', 'Lunes a Viernes 8am – 12pm'),
+        ('LUNES_13_17', 'Lunes a Viernes 1pm – 5pm'),
+        ('LUNES_17_20', 'Lunes a Viernes 5pm – 8pm (express)'),
+        ('SABADO_8_13', 'Sábado 8am – 1pm'),
+    ]
+    horario_visita = models.CharField(max_length=20, choices=HORARIO_VISITA_CHOICES, blank=True, verbose_name="Horario de Visita")
 
     ABDCP_CHOICES = [('SI', 'Sí'), ('NO', 'No')]
     abdcp = models.CharField(max_length=2, choices=ABDCP_CHOICES, blank=True, verbose_name="ABDCP")
-    clausulas = models.CharField(max_length=10, choices=RECIBO_CHOICES, blank=True, verbose_name="Cláusulas")
+    clausulas = models.CharField(max_length=10, choices=RECIBO_ELECTRONICO_CHOICES, blank=True, verbose_name="Cláusulas")
 
     producto_nombre = models.CharField(max_length=150, blank=True, verbose_name="Producto")
     origen = models.CharField(max_length=100, blank=True, verbose_name="Origen")

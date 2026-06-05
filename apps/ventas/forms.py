@@ -93,6 +93,9 @@ class VentaForm(forms.ModelForm):
         nombres = cleaned_data.get('cliente_nombres')
         paterno = cleaned_data.get('cliente_paterno')
         registrar_nuevo = cleaned_data.get('registrar_nuevo_cliente', False)
+        recibo = cleaned_data.get('recibo_electronico')
+        correo_recibo = cleaned_data.get('correo_electronico_recibo')
+        horario = cleaned_data.get('horario_visita')
 
         if not documento:
             raise forms.ValidationError("Debe ingresar el documento del cliente.")
@@ -106,6 +109,13 @@ class VentaForm(forms.ModelForm):
         else:
             if not Cliente.objects.filter(documento=documento, activo=True).exists():
                 raise forms.ValidationError("El cliente no está registrado. Complete los datos para registrar uno nuevo o vuelva a buscar.")
+
+        # If recibo_electronico is SI_DESEA, correo and horario are required
+        if recibo == 'SI_DESEA':
+            if not correo_recibo:
+                raise forms.ValidationError("Debe ingresar el correo electrónico si selecciona 'Si desea'.")
+            if not horario:
+                raise forms.ValidationError("Debe seleccionar un horario de visita si selecciona 'Si desea'.")
 
         # Try to find BaseLlamada by documento
         if documento:

@@ -8,7 +8,8 @@
 
 | Hash | Mensaje |
 |------|---------|
-| (working tree) | security(ventas): UUID-based lead access + modal register + runtime fixes |
+| 0407ee4 | fix(ventas): UUID lead access consistency and runtime fixes |
+| b0c3fa7 | feat(ventas): Update recibo electronico and horario visita choices |
 
 ---
 
@@ -38,6 +39,14 @@ Integrado en `agent_dashboard.html`:
 - Agregado: `Cliente.tipo_documento`, `Venta.cliente_tipo_documento`
 - Migración `0007` aplicada
 
+### Recibo Electrónico y Horario
+- `recibo_electronico` y `clausulas`: opciones `SI_DESEA`, `NO_DESEA`
+- `horario_visita`: opciones de franjas horarias
+  - Lunes a Viernes: 8am–12pm, 1pm–5pm, 5pm–8pm (express)
+  - Sábado: 8am–1pm
+- `correo_electronico_recibo`: campo Email con validación automática
+- `abdcp`: opción SI/NO
+
 ### Templates
 - `venta_form_modal.html` usa parcial compartido `_venta_form_fields.html`
 - `venta_form.html` usa mismo parcial (formulario único)
@@ -46,31 +55,23 @@ Integrado en `agent_dashboard.html`:
 
 ---
 
-## Correcciones de runtime aplicadas
-
-1. **Import faltante**: Agregado `CallRecord` en `apps/ventas/views.py`
-2. **UUID inconsistencia**: `discador/views.py` ahora guarda `id_lead` (UUID) en sesión en lugar de `id` (entero)
-3. **Filtros UUID**: Actualizados queries con `base_llamada__id_lead` donde corresponde
-4. **Tests**: Agregado `UserProfile` a setUp, corregidos nombres de campos
-
----
-
 ## Archivos modificados
 
 ```
+apps/ventas/models.py              ← RECIBO_ELECTRONICO_CHOICES, HORARIO_VISITA_CHOICES
+apps/ventas/forms.py               ← widgets actualizados
 apps/ventas/views.py               ← CallRecord import, UUID fix, supervisor field name
-apps/ventas/forms.py               ← base_* campos readonly
 apps/ventas/tests.py               ← UserProfile en tests, campos backoffice corregidos
 apps/discador/views.py             ← id_lead en sesión, filtros UUID
 templates/ventas/_venta_form_fields.html ← script JS agregado
 templates/ventas/venta_form.html   ← script movido a parcial
-templates/ventas/venta_form_modal.html   ← usa parcial + scroll
-templates/discador/agent_dashboard.html   ← modal + scroll CSS
+apps/ventas/migrations/0008_*.py  ← migración de choices
 ```
 
 ---
 
 ## Próximos pasos
 
-1. **Tests**: Ejecutar `python manage.py test apps.ventas.tests` (BD requerida)
-2. **UI**: Verificar funcionamiento del modal en navegador
+1. **Base de datos**: Aplicar migración `0008`
+2. **Tests**: Ejecutar `python manage.py test apps.ventas.tests`
+3. **UI**: Verificar funcionamiento del modal en navegador

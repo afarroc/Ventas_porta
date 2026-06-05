@@ -15,9 +15,26 @@ class UserProfile(models.Model):
 
     ESTADO_ACTIVO = 'ACTIVO'
     ESTADO_INACTIVO = 'INACTIVO'
+    ESTADO_BAJA = 'BAJA'
+    ESTADO_VACACIONES = 'VACACIONES'
     ESTADO_CHOICES = [
         (ESTADO_ACTIVO, 'Activo'),
         (ESTADO_INACTIVO, 'Inactivo'),
+        (ESTADO_BAJA, 'Baja'),
+        (ESTADO_VACACIONES, 'Vacaciones'),
+    ]
+
+    DISPONIBLE = 'DISPONIBLE'
+    PAUSA = 'PAUSA'
+    LISTO_NO = 'LISTO_NO'
+    EN_LLAMADA = 'EN_LLAMADA'
+    COACH = 'COACH'
+    DISPONIBILIDAD_CHOICES = [
+        (DISPONIBLE, 'Disponible'),
+        (PAUSA, 'Pausa'),
+        (LISTO_NO, 'No Listo'),
+        (EN_LLAMADA, 'En Llamada'),
+        (COACH, 'Coach'),
     ]
 
     TURNO_DIURNO = 'DIURNO'
@@ -46,6 +63,7 @@ class UserProfile(models.Model):
     turno = models.CharField(max_length=20, choices=TURNO_CHOICES, blank=True, verbose_name="Turno")
     activo = models.BooleanField(default=True, verbose_name="Activo")
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_ACTIVO, verbose_name="Estado")
+    disponibilidad = models.CharField(max_length=20, choices=DISPONIBILIDAD_CHOICES, default=DISPONIBLE, verbose_name="Disponibilidad")
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 

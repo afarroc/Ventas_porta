@@ -1,44 +1,54 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="mb-4">Sistema de Gestión de Ventas</h1>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Panel del Agente</h5>
-                    <p class="card-text">Obtener leads, realizar llamadas y gestionar actividades.</p>
-                    <a href="{% url 'discador:agent_dashboard' %}" class="btn btn-primary">Acceder al Panel</a>
+<div class="vp-page">
+    <div class="vp-wrapper">
+        <div class="vp-pagetitle">
+            <h1>
+                <div class="vp-page-icon">📊</div>
+                Sistema de Gestión de Ventas
+            </h1>
+        </div>
+
+        <div class="vp-grid">
+            <div class="vp-item-card" onclick="window.location.href='{% url 'discador:agent_dashboard' %}'">
+                <div class="vp-item-title">
+                    📞
+                    Panel del Agente
+                </div>
+                <div class="vp-item-meta">
+                    Obtener leads, realizar llamadas y gestionar actividades
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Gestión de Ventas</h5>
-                    <p class="card-text">Consultar y administrar las ventas registradas.</p>
-                    <a href="{% url 'ventas:venta_list' %}" class="btn btn-primary">Ver Ventas</a>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'ventas:venta_list' %}'">
+                <div class="vp-item-title">
+                    🛒
+                    Gestión de Ventas
+                </div>
+                <div class="vp-item-meta">
+                    Consultar y administrar las ventas registradas
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Registro de Ventas</h5>
-                    <p class="card-text">Registrar nuevas ventas asociadas a leads.</p>
-                    <a href="{% url 'ventas:venta_create' %}" class="btn btn-primary">Nueva Venta</a>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'ventas:venta_create' %}'">
+                <div class="vp-item-title">
+                    ➕
+                    Registro de Ventas
+                </div>
+                <div class="vp-item-meta">
+                    Registrar nuevas ventas asociadas a leads
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Gestión de Bases</h5>
-                    <p class="card-text">Administrar las bases de llamadas y contactos.</p>
-                    <a href="{% url 'discador:base_list' %}" class="btn btn-outline-primary">Ver Bases</a>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'discador:base_list' %}'">
+                <div class="vp-item-title">
+                    🗄️
+                    Gestión de Bases
+                </div>
+                <div class="vp-item-meta">
+                    Administrar las bases de llamadas y contactos
                 </div>
             </div>
         </div>

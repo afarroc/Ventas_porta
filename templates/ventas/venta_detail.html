@@ -2,22 +2,32 @@
 
 {% block content %}
 <div class="container py-4">
-    <h1>Venta #{{ venta.id }}</h1>
-    <dl class="row">
-        <dt class="col-sm-3">Cliente</dt>
-        <dd class="col-sm-9">{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}</dd>
+    <h1 class="vp-pagetitle" style="margin-bottom:16px">Venta #{{ venta.id }}</h1>
+    <div class="row" style="flex-direction:column;gap:8px">
+        <div style="display:flex">
+            <dt style="flex:0 0 200px;font-weight:700">Cliente</dt>
+            <dd style="flex:1;margin:0">{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}</dd>
+        </div>
         
-        <dt class="col-sm-3">Documento</dt>
-        <dd class="col-sm-9">{{ venta.cliente_documento }}</dd>
+        <div style="display:flex">
+            <dt style="flex:0 0 200px;font-weight:700">Documento</dt>
+            <dd style="flex:1;margin:0">{{ venta.cliente_documento }}</dd>
+        </div>
         
-        <dt class="col-sm-3">Tipo Línea</dt>
-        <dd class="col-sm-9">{{ venta.get_tipo_linea_display }}</dd>
+        <div style="display:flex">
+            <dt style="flex:0 0 200px;font-weight:700">Tipo Línea</dt>
+            <dd style="flex:1;margin:0">{{ venta.get_tipo_linea_display }}</dd>
+        </div>
         
-        <dt class="col-sm-3">Precio Venta</dt>
-        <dd class="col-sm-9">{{ venta.precio_venta }}</dd>
+        <div style="display:flex">
+            <dt style="flex:0 0 200px;font-weight:700">Precio Venta</dt>
+            <dd style="flex:1;margin:0">{{ venta.precio_venta }}</dd>
+        </div>
         
-        <dt class="col-sm-3">Fecha</dt>
-        <dd class="col-sm-9">{{ venta.fecha_venta }}</dd>
-    </dl>
+        <div style="display:flex">
+            <dt style="flex:0 0 200px;font-weight:700">Fecha</dt>
+            <dd style="flex:1;margin:0">{{ venta.fecha_venta }}</dd>
+        </div>
+    </div>
 </div>
 {% endblock %}

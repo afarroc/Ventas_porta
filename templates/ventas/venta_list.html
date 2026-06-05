@@ -1,31 +1,40 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <h1>Ventas</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Cliente</th>
-                <th>Tipo Línea</th>
-                <th>Fecha</th>
-                <th>Precio</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for venta in ventas %}
-            <tr>
-                <td>{{ venta.id }}</td>
-                <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
-                <td>{{ venta.get_tipo_linea_display }}</td>
-                <td>{{ venta.fecha_venta }}</td>
-                <td>{{ venta.precio_venta }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5">No hay ventas registradas</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px"><i class="bi bi-cart-check"></i> Ventas</div>
+        <div class="card">
+            <div class="card-header"><h5><i class="bi bi-table"></i> Registros de Ventas</h5></div>
+            <div class="card-body" style="padding:0">
+                <div class="vp-table-wrap">
+                    <table class="vp-table">
+                        <thead>
+                            <tr>
+                                <th><i class="bi bi-hash"></i> ID</th>
+                                <th><i class="bi bi-person"></i> Cliente</th>
+                                <th><i class="bi bi-phone"></i> Tipo Línea</th>
+                                <th><i class="bi bi-calendar"></i> Fecha</th>
+                                <th><i class="bi bi-currency-dollar"></i> Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ventas %}
+                            <tr>
+                                <td>{{ venta.id }}</td>
+                                <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
+                                <td>{{ venta.get_tipo_linea_display }}</td>
+                                <td>{{ venta.fecha_venta }}</td>
+                                <td>{{ venta.precio_venta }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4"><i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i> No hay ventas registradas</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

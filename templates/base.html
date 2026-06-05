@@ -4,32 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gestión Ventas{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link href="{% static 'css/form-data.css' %}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'ventas:home' %}">Gestión Ventas</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'ventas:venta_list' %}">Ventas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'ventas:venta_create' %}">Nueva Venta</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'discador:agent_dashboard' %}">Panel Agente</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'discador:base_list' %}">Bases</a></li>
-                </ul>
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'users:logout' %}">Cerrar Sesión ({{ user.username }})</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Iniciar Sesión</a></li>
-                    {% endif %}
-                </ul>
-            </div>
+<body class="vp-root">
+    <nav class="vp-navbar">
+        <div class="vp-navbar-container">
+            <a href="{% url 'ventas:home' %}" class="vp-navbar-brand">Gestión Ventas</a>
+            <ul class="vp-navbar-nav">
+                <li class="vp-navbar-item"><a href="{% url 'ventas:venta_list' %}" class="vp-navbar-link">Ventas</a></li>
+                <li class="vp-navbar-item"><a href="{% url 'ventas:venta_create' %}" class="vp-navbar-link">Nueva Venta</a></li>
+                <li class="vp-navbar-item"><a href="{% url 'discador:agent_dashboard' %}" class="vp-navbar-link">Panel Agente</a></li>
+                <li class="vp-navbar-item"><a href="{% url 'discador:base_list' %}" class="vp-navbar-link">Bases</a></li>
+            </ul>
+            <ul class="vp-navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <li class="vp-navbar-item">
+                        <a href="{% url 'users:logout' %}" class="vp-navbar-link">Cerrar Sesión ({{ user.username }})</a>
+                    </li>
+                {% else %}
+                    <li class="vp-navbar-item"><a href="{% url 'users:login' %}" class="vp-navbar-link">Iniciar Sesión</a></li>
+                {% endif %}
+            </ul>
         </div>
     </nav>
-    <main>{% block content %}{% endblock %}</main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <main class="vp-main">{% block content %}{% endblock %}</main>
 </body>
 </html>

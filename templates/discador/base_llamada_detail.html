@@ -1,119 +1,163 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Detalle de Base de Llamada</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{% url 'discador:base_list' %}" class="btn btn-sm btn-outline-secondary">Volver a la lista</a>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-8">
-            <dl class="row">
-                <dt class="col-sm-3">ID Lead:</dt>
-                <dd class="col-sm-9">{{ base.id_lead }}</dd>
-
-                <dt class="col-sm-3">Teléfono Base:</dt>
-                <dd class="col-sm-9">{{ base.telefono }}</dd>
-
-                <dt class="col-sm-3">Nombres Base:</dt>
-                <dd class="col-sm-9">{{ base.nombres }}</dd>
-
-                <dt class="col-sm-3">Paterno Base:</dt>
-                <dd class="col-sm-9">{{ base.paterno }}</dd>
-
-                <dt class="col-sm-3">Materno Base:</dt>
-                <dd class="col-sm-9">{{ base.materno }}</dd>
-
-                <dt class="col-sm-3">Correo Base:</dt>
-                <dd class="col-sm-9">{{ base.correo }}</dd>
-
-                 <dt class="col-sm-3">Documento Base:</dt>
-                 <dd class="col-sm-9">{{ base.documento }}</dd>
-
-                 <dt class="col-sm-3">Observaciones Base:</dt>
-                <dd class="col-sm-9">{{ base.observaciones|linebreaksbr }}</dd>
-
-                <dt class="col-sm-3">Contacto Llamable:</dt>
-                <dd class="col-sm-9">{{ base.get_contact_callable_display }}</dd>
-
-                <dt class="col-sm-3">Último Intento (CRM):</dt>
-                <dd class="col-sm-9">{{ base.ultimo_intento }}</dd>
-
-                <dt class="col-sm-3">Último Resultado (CRM):</dt>
-                <dd class="col-sm-9">{{ base.ultimo_resultado_crm }}</dd>
-
-                <dt class="col-sm-3">Es Callable:</dt>
-                <dd class="col-sm-9">{{ base.get_es_callable_display }}</dd>
-
-                <dt class="col-sm-3">Fecha de Gestión:</dt>
-                <dd class="col-sm-9">{{ base.fecha_gestion }}</dd>
-
-                <dt class="col-sm-3">Hora de Gestión:</dt>
-                <dd class="col-sm-9">{{ base.hora_gestion }}</dd>
-
-                <dt class="col-sm-3">Resultado de Gestión:</dt>
-                <dd class="col-sm-9">{{ base.resultado_gestion }}</dd>
-
-                <dt class="col-sm-3">Tipo de Contacto:</dt>
-                <dd class="col-sm-9">{{ base.tipo_contacto }}</dd>
-
-                <dt class="col-sm-3">Tipo Válido:</dt>
-                <dd class="col-sm-9">{{ base.get_tipo_valido_display }}</dd>
-
-                <dt class="col-sm-3">Status JAVA:</dt>
-                <dd class="col-sm-9">{{ base.status_java }}</dd>
-
-                <dt class="col-sm-3">Supervisor:</dt>
-                <dd class="col-sm-9">{{ base.supervisor_nombre }}</dd>
-
-                <dt class="col-sm-3">Creado:</dt>
-                <dd class="col-sm-9">{{ base.creado }}</dd>
-
-                <dt class="col-sm-3">Actualizado:</dt>
-                <dd class="col-sm-9">{{ base.actualizado }}</dd>
-            </dl>
+<div class="vp-page">
+    <div class="container">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <div class="vp-pagetitle" style="margin-bottom:0"><i class="bi bi-person-badge"></i> Detalle de Base de Llamada</div>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <a href="{% url 'discador:base_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver a la lista</a>
+            </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5>Historial de Llamadas (últimas 10)</h5>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row" style="flex-direction:column;gap:10px">
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-hash"></i> ID Lead:</dt>
+                        <dd style="flex:1;margin:0">{{ base.id_lead }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-telephone"></i> Teléfono Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.telefono }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-person"></i> Nombres Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.nombres }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-person"></i> Paterno Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.paterno }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-person"></i> Materno Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.materno }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-envelope"></i> Correo Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.correo }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-card-text"></i> Documento Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.documento }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-chat-left-text"></i> Observaciones Base:</dt>
+                        <dd style="flex:1;margin:0">{{ base.observaciones|linebreaksbr }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-telephone-outbound"></i> Contacto Llamable:</dt>
+                        <dd style="flex:1;margin:0">{{ base.get_contact_callable_display }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-clock"></i> Último Intento (CRM):</dt>
+                        <dd style="flex:1;margin:0">{{ base.ultimo_intento }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-telephone"></i> Último Resultado (CRM):</dt>
+                        <dd style="flex:1;margin:0">{{ base.ultimo_resultado_crm }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-check-circle"></i> Es Callable:</dt>
+                        <dd style="flex:1;margin:0">{{ base.get_es_callable_display }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-calendar"></i> Fecha de Gestión:</dt>
+                        <dd style="flex:1;margin:0">{{ base.fecha_gestion }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-clock"></i> Hora de Gestión:</dt>
+                        <dd style="flex:1;margin:0">{{ base.hora_gestion }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-telephone"></i> Resultado de Gestión:</dt>
+                        <dd style="flex:1;margin:0">{{ base.resultado_gestion }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-telephone"></i> Tipo de Contacto:</dt>
+                        <dd style="flex:1;margin:0">{{ base.tipo_contacto }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-card-checklist"></i> Tipo Válido:</dt>
+                        <dd style="flex:1;margin:0">{{ base.get_tipo_valido_display }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-person-badge"></i> Status JAVA:</dt>
+                        <dd style="flex:1;margin:0">{{ base.status_java }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-person-badge"></i> Supervisor:</dt>
+                        <dd style="flex:1;margin:0">{{ base.supervisor_nombre }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-calendar-plus"></i> Creado:</dt>
+                        <dd style="flex:1;margin:0">{{ base.creado }}</dd>
+                    </div>
+
+                    <div style="display:flex">
+                        <dt style="flex:0 0 200px;font-weight:700"><i class="bi bi-calendar-check"></i> Actualizado:</dt>
+                        <dd style="flex:1;margin:0">{{ base.actualizado }}</dd>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        {% if base.llamadas.all %}
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Inicio</th>
-                                        <th>Fin</th>
-                                        <th>Resultado</th>
-                                        <th>Disposición</th>
-                                        <th>Duración</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for call in base.llamadas.all|slice:":10" %}
-                                    <tr>
-                                        <td>{{ forloop.counter }}</td>
-                                        <td>{{ call.inicio }}</td>
-                                        <td>{{ call.fin|default:"-" }}</td>
-                                        <td>{{ call.get_resultado_display }}</td>
-                                        <td>{{ call.get_disposition_display|default:"-" }}</td>
-                                        <td>{{ call.duracion|default:"-" }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="6">No hay llamadas registradas.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        {% else %}
-                            <p class="text-muted">No hay llamadas registradas para este lead.</p>
-                        {% endif %}
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="bi bi-clock-history"></i> Historial de Llamadas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="vp-table-wrap">
+                            {% if base.llamadas.all %}
+                                <table class="vp-table">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="bi bi-hash"></i> #</th>
+                                            <th><i class="bi bi-clock"></i> Inicio</th>
+                                            <th><i class="bi bi-clock"></i> Fin</th>
+                                            <th><i class="bi bi-telephone"></i> Resultado</th>
+                                            <th><i class="bi bi-clipboard"></i> Disposición</th>
+                                            <th><i class="bi bi-stopwatch"></i> Duración</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for call in base.llamadas.all|slice:":10" %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ call.inicio }}</td>
+                                            <td>{{ call.fin|default:"-" }}</td>
+                                            <td>{{ call.get_resultado_display }}</td>
+                                            <td>{{ call.get_disposition_display|default:"-" }}</td>
+                                            <td>{{ call.duracion|default:"-" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr><td colspan="6" class="text-center">No hay llamadas registradas.</td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p class="text-muted">No hay llamadas registradas para este lead.</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

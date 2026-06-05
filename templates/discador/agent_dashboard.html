@@ -1,187 +1,425 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <h1>Panel del Agente</h1>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Estado Actual</h5>
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px">Panel del Agente</div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-person-circle"></i> Disponibilidad</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="display-6">
+                            {% if profile.disponibilidad == 'DISPONIBLE' %}
+                                <span class="badge bg-success">{{ profile.get_disponibilidad_display }}</span>
+                            {% elif profile.disponibilidad == 'PAUSA' %}
+                                <span class="badge bg-warning text-dark">{{ profile.get_disponibilidad_display }}</span>
+                            {% elif profile.disponibilidad == 'LISTO_NO' %}
+                                <span class="badge bg-danger">{{ profile.get_disponibilidad_display }}</span>
+                            {% elif profile.disponibilidad == 'EN_LLAMADA' %}
+                                <span class="badge bg-secondary">{{ profile.get_disponibilidad_display }}</span>
+                            {% elif profile.disponibilidad == 'COACH' %}
+                                <span class="badge bg-info">{{ profile.get_disponibilidad_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ profile.get_disponibilidad_display }}</span>
+                            {% endif %}
+                        </p>
+                        <form method="post" class="mt-3" id="disponibilidadForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="estado" class="form-label">Cambiar Disponibilidad:</label>
+                                <select class="form-select" id="estado" name="estado">
+                                    {% for value, label in profile.DISPONIBILIDAD_CHOICES %}
+                                        <option value="{{ value }}" {% if profile.disponibilidad == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" name="cambiar_estado" class="btn btn-primary w-100"><i class="bi bi-arrow-repeat"></i> Cambiar Disponibilidad</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="display-6">
-                        {% if profile.estado == 'DISPONIBLE' %}
-                            <span class="badge bg-success">{{ profile.get_estado_display }}</span>
-                        {% elif profile.estado == 'PAUSA' %}
-                            <span class="badge bg-warning text-dark">{{ profile.get_estado_display }}</span>
-                        {% elif profile.estado == 'LISTO_NO' %}
-                            <span class="badge bg-danger">{{ profile.get_estado_display }}</span>
-                        {% elif profile.estado == 'COACH' %}
-                            <span class="badge bg-info">{{ profile.get_estado_display }}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ profile.get_estado_display }}</span>
-                        {% endif %}
-                    </p>
-                    <form method="post" class="mt-3">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="estado" class="form-label">Cambiar Estado:</label>
-                            <select class="form-select" id="estado" name="estado">
-                                {% for value, label in profile.ESTADO_CHOICES %}
-                                    <option value="{{ value }}" {% if profile.estado == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-arrow-down-circle"></i> Obtener Lead</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="leadActionContainer">
+                            {% if profile.disponibilidad == 'DISPONIBLE' and not ongoing_call and not pending_disposition %}
+                                <button type="button" id="btnObtenerLead" class="btn btn-success w-100 mb-3"><i class="bi bi-plus-circle"></i> Obtener Registro Aleatorio</button>
+                            {% elif profile.disponibilidad != 'DISPONIBLE' %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> No disponible para recibir llamadas
+                                </div>
+                            {% elif ongoing_call %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-telephone"></i> Hay una llamada en curso
+                                </div>
+                            {% elif pending_disposition %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-clipboard"></i> Pendiente de tipificación
+                                </div>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-info-circle"></i> Debe liberar el lead actual
+                                </div>
+                            {% endif %}
                         </div>
-                        <button type="submit" name="cambiar_estado" class="btn btn-primary w-100">Cambiar Estado</button>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Obtener Lead</h5>
-                </div>
-                <div class="card-body">
-                    {% if profile.estado == 'DISPONIBLE' and not ongoing_call and not pending_disposition %}
-                        <button type="button" name="obtener_lead" class="btn btn-success w-100 mb-3" onclick="if(confirm('¿Obtener un lead aleatorio?')){ document.getElementById('leadForm').submit(); }">Obtener Registro Aleatorio</button>
-                        <form id="leadForm" method="post" style="display: none;">
-                            {% csrf_token %}
-                            <input type="hidden" name="obtener_lead" value="1">
-                        </form>
-                    {% else %}
-                        {% if profile.estado != 'DISPONIBLE' %}
-                            <p class="text-muted">Solo disponible cuando el estado es "Disponible"</p>
-                        {% elif ongoing_call %}
-                            <p class="text-muted">Hay una llamada en curso. Debe finalizarla antes de obtener uno nuevo.</p>
-                        {% elif pending_disposition %}
-                            <p class="text-muted">Hay una llamada pendiente de tipificación. Complete el proceso.</p>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-telephone"></i> Llamada en Curso</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if ongoing_call %}
+                            <p><strong>Lead:</strong> {{ ongoing_call.base_llamada.telefono }}</p>
+                            <p><strong>Inicio:</strong> {{ ongoing_call.inicio }}</p>
+                            <p><strong>Resultado:</strong> {{ ongoing_call.get_resultado_display }}</p>
+                            <form method="post" class="mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="finalizar_llamada" value="1">
+                                <button type="submit" class="btn btn-danger w-100"><i class="bi bi-telephone-x"></i> Finalizar Llamada</button>
+                            </form>
                         {% else %}
-                            <p class="text-muted">Debe liberar el lead actual para obtener uno nuevo.</p>
+                            <p class="text-muted">No hay llamada en curso</p>
                         {% endif %}
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Llamada en Curso</h5>
+
+        {% if active_lead or current_lead %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>
+                    <i class="bi bi-person-badge"></i> Lead Actual
+                    {% if ongoing_call and not current_lead %}<span class="badge bg-info">Llamada Pegada</span>{% endif %}
+                    {% if pending_disposition and not ongoing_call %}<span class="badge bg-warning">Pendiente Tipificación</span>{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Teléfono:</strong> {{ active_lead.telefono }}</p>
+                        <p><strong>Nombres:</strong> {{ active_lead.nombres }}</p>
+                        <p><strong>Paterno:</strong> {{ active_lead.paterno }}</p>
+                        <p><strong>Materno:</strong> {{ active_lead.materno }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Correo:</strong> {{ active_lead.correo }}</p>
+                        <p><strong>Documento:</strong> {{ active_lead.documento }}</p>
+                        <p><strong>Observaciones:</strong> {{ active_lead.observaciones|truncatechars:100 }}</p>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="mt-4 d-flex flex-wrap gap-2">
                     {% if ongoing_call %}
-                        <p><strong>Lead:</strong> {{ ongoing_call.base_llamada.telefono }}</p>
-                        <p><strong>Inicio:</strong> {{ ongoing_call.inicio }}</p>
-                        <p><strong>Resultado:</strong> {{ ongoing_call.get_resultado_display }}</p>
-                        <form method="post" class="mt-3">
-                            {% csrf_token %}
-                            <input type="hidden" name="finalizar_llamada" value="1">
-                            <button type="submit" class="btn btn-danger w-100">Finalizar Llamada</button>
-                        </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="finalizar_llamada" value="1">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-telephone-x"></i> Finalizar</button>
+                    </form>
+                    {% elif pending_disposition %}
+                    <p class="text-warning mb-0"><strong>Complete la tipificación antes de iniciar otra llamada.</strong></p>
                     {% else %}
-                        <p class="text-muted">No hay llamada en curso</p>
+                    <form method="post" class="me-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="iniciar_llamada" value="1">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-telephone-outbound"></i> Llamar</button>
+                    </form>
+                    <button type="button" id="btnLiberarLead" class="btn btn-secondary"><i class="bi bi-trash"></i> Liberar Lead</button>
                     {% endif %}
+                    <a href="{% url 'ventas:venta_create_with_base' active_lead.id %}" class="btn btn-success" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-cart-plus"></i> Registrar Venta
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
+        {% endif %}
 
-    {% if active_lead or current_lead %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>
-                Lead Actual
-                {% if ongoing_call and not current_lead %}(Llamada Pegada){% endif %}
-                {% if pending_disposition and not ongoing_call %}(Pendiente Tipificación){% endif %}
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Teléfono:</strong> {{ active_lead.telefono }}</p>
-                    <p><strong>Nombres:</strong> {{ active_lead.nombres }}</p>
-                    <p><strong>Paterno:</strong> {{ active_lead.paterno }}</p>
-                    <p><strong>Materno:</strong> {{ active_lead.materno }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Correo:</strong> {{ active_lead.correo }}</p>
-                    <p><strong>Documento:</strong> {{ active_lead.documento }}</p>
-                    <p><strong>Observaciones:</strong> {{ active_lead.observaciones|truncatechars:100 }}</p>
-                </div>
+        {% if pending_disposition %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-clipboard-plus"></i> Tipificar Registro (ACW)</h5>
             </div>
-            <div class="mt-4 d-flex flex-wrap gap-2">
-                {% if ongoing_call %}
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="finalizar_llamada" value="1">
-                    <button type="submit" class="btn btn-danger">Finalizar</button>
-                </form>
-                {% elif pending_disposition %}
-                <p class="text-warning mb-0"><strong>Complete la tipificación antes de iniciar otra llamada.</strong></p>
-                {% else %}
-                <form method="post" class="me-2">
-                    {% csrf_token %}
-                    <input type="hidden" name="iniciar_llamada" value="1">
-                    <button type="submit" class="btn btn-primary">Llamar</button>
-                </form>
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="liberar_lead" value="1">
-                    <button type="submit" class="btn btn-secondary" onclick="return confirm('¿Liberar este lead? Podrá obtener un nuevo lead después.');">Liberar Lead</button>
-                </form>
+            <div class="card-body">
+                <p><strong>Lead:</strong> {{ pending_disposition.base_llamada.telefono }}</p>
+                <p><strong>Inicio de la llamada:</strong> {{ pending_disposition.inicio }}</p>
+                <p><strong>Fin de la llamada:</strong> {{ pending_disposition.fin }}</p>
+                {% if pending_disposition.acw_start %}
+                    <p><strong>Inicio de ACW:</strong> {{ pending_disposition.acw_start }}</p>
                 {% endif %}
-                <a href="{% url 'ventas:venta_create_with_base' active_lead.id %}" class="btn btn-success" target="_blank" rel="noopener noreferrer">
-                    Registrar Venta
-                </a>
+                <form method="post" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="pending_disposition_id" value="{{ pending_disposition.id }}">
+                    <div class="mb-3">
+                        <label for="disposition" class="form-label">Tipificación:</label>
+                        <select class="form-select" id="disposition" name="disposition" required>
+                            <option value="">-- Seleccione una opción --</option>
+                            {% for value, label in pending_disposition.DISPOSITION_CHOICES %}
+                                <option value="{{ value }}"{% if pending_disposition.disposition == value %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones (ACW):</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ pending_disposition.observaciones }}</textarea>
+                    </div>
+                    <button type="submit" name="submit_disposition" class="btn btn-primary"><i class="bi bi-save"></i> Guardar Tipificación</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Get Lead Confirmation Modal -->
+<div id="getLeadModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-question-circle"></i> Confirmar Obtención de Lead</h3>
+        </div>
+        <div class="modal-body">
+            <p>¿Está seguro que desea obtener un lead aleatorio del sistema?</p>
+            <p class="text-muted">Se le asignará un registro pendiente de gestionar.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeGetLeadModal()"><i class="bi bi-x"></i> Cancelar</button>
+            <button class="btn btn-success" onclick="confirmGetLead()"><i class="bi bi-plus-circle"></i> Obtener Lead</button>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Call Modal -->
+<div id="incomingCallModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-telephone-inbound"></i> Llamada Entrante</h3>
+        </div>
+        <div class="modal-body">
+            <div id="incomingCallInfo" style="margin-bottom:16px;"></div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" onclick="closeIncomingCallModal()"><i class="bi bi-x"></i> Cancelar</button>
+                <button class="btn btn-primary" onclick="acceptIncomingCall()"><i class="bi bi-telephone"></i> Contestar</button>
             </div>
         </div>
     </div>
-    {% endif %}
+</div>
 
-    {% if pending_disposition %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Tipificar Registro (ACW)</h5>
+<!-- Release Lead Confirmation Modal -->
+<div id="releaseLeadModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-exclamation-triangle"></i> Confirmar Liberación de Lead</h3>
         </div>
-        <div class="card-body">
-            <p><strong>Lead:</strong> {{ pending_disposition.base_llamada.telefono }}</p>
-            <p><strong>Inicio de la llamada:</strong> {{ pending_disposition.inicio }}</p>
-            <p><strong>Fin de la llamada:</strong> {{ pending_disposition.fin }}</p>
-            {% if pending_disposition.acw_start %}
-                <p><strong>Inicio de ACW:</strong> {{ pending_disposition.acw_start }}</p>
-            {% endif %}
-            <form method="post" class="mt-3">
-                {% csrf_token %}
-                <input type="hidden" name="pending_disposition_id" value="{{ pending_disposition.id }}">
-                <div class="mb-3">
-                    <label for="disposition" class="form-label">Tipificación:</label>
-                    <select class="form-select" id="disposition" name="disposition" required>
-                        <option value="">-- Seleccione una opción --</option>
-                        {% for value, label in pending_disposition.DISPOSITION_CHOICES %}
-                            <option value="{{ value }}"{% if pending_disposition.disposition == value %} selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="observaciones" class="form-label">Observaciones (ACW):</label>
-                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ pending_disposition.observaciones }}</textarea>
-                </div>
-                <button type="submit" name="submit_disposition" class="btn btn-primary">Guardar Tipificación</button>
-            </form>
+        <div class="modal-body">
+            <p>¿Está seguro que desea liberar el lead actual?</p>
+            <p class="text-muted">Se creará un registro de auditoría y podrá obtener un nuevo lead.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeReleaseLeadModal()"><i class="bi bi-x"></i> Cancelar</button>
+            <button class="btn btn-warning" onclick="confirmReleaseLead()"><i class="bi bi-trash"></i> Liberar Lead</button>
         </div>
     </div>
-    {% endif %}
-
-    {% if messages %}
-        <div class="mt-4">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
 </div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--vp-surface);
+    border: 1px solid var(--vp-border);
+    border-radius: var(--vp-radius-lg);
+    box-shadow: 0 20px 40px rgba(0,0,0,.14);
+    width: 100%;
+    max-width: 420px;
+    margin: 20px;
+}
+
+.modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--vp-border);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--vp-text);
+    background: var(--vp-gray-50);
+}
+
+.modal-header i {
+    color: var(--vp-primary);
+    margin-right: 8px;
+}
+
+.modal-body {
+    padding: 18px;
+}
+
+.modal-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--vp-border);
+    background: var(--vp-gray-50);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+</style>
+
+<script>
+// Auto-check for incoming calls
+(function() {
+    checkIncomingCall();
+    setInterval(checkIncomingCall, 30000);
+})();
+
+function checkIncomingCall() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    fetch("/discador/check-incoming/", {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.has_incoming) {
+            showIncomingCallModal(data.call);
+        }
+    })
+    .catch(() => {});
+}
+
+function showIncomingCallModal(call) {
+    const modal = document.getElementById('incomingCallModal');
+    const info = document.getElementById('incomingCallInfo');
+    
+    info.innerHTML = `
+        <p style="font-size:16px;margin-bottom:10px;"><strong>Llamada entrante de:</strong></p>
+        <p style="font-size:24px;font-weight:700;color:var(--vp-primary);margin-bottom:16px;">${call.telefono}</p>
+        <p class="text-muted">Por favor, conteste la llamada inmediatamente.</p>
+    `;
+    
+    modal.style.display = 'flex';
+    window.incomingCallData = call;
+}
+
+function closeIncomingCallModal() {
+    document.getElementById('incomingCallModal').style.display = 'none';
+}
+
+function acceptIncomingCall() {
+    if (window.incomingCallData) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "/discador/";
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        form.appendChild(csrfInput);
+        
+        const leadInput = document.createElement('input');
+        leadInput.type = 'hidden';
+        leadInput.name = 'current_lead_id';
+        leadInput.value = window.incomingCallData.id;
+        form.appendChild(leadInput);
+        
+        const submitInput = document.createElement('input');
+        submitInput.type = 'hidden';
+        submitInput.name = 'iniciar_llamada';
+        submitInput.value = '1';
+        form.appendChild(submitInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+    closeIncomingCallModal();
+}
+
+// Handle "Liberar Lead" button with modal
+document.addEventListener('DOMContentLoaded', function() {
+    const btnObtenerLead = document.getElementById('btnObtenerLead');
+    if (btnObtenerLead) {
+        btnObtenerLead.addEventListener('click', function() {
+            document.getElementById('getLeadModal').style.display = 'flex';
+        });
+    }
+    
+    const btnLiberarLead = document.getElementById('btnLiberarLead');
+    if (btnLiberarLead) {
+        btnLiberarLead.addEventListener('click', function() {
+            document.getElementById('releaseLeadModal').style.display = 'flex';
+        });
+    }
+});
+
+function closeGetLeadModal() {
+    document.getElementById('getLeadModal').style.display = 'none';
+}
+
+function confirmGetLead() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch("/discador/", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'obtener_lead=1'
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(() => window.location.reload());
+    closeGetLeadModal();
+}
+
+function closeReleaseLeadModal() {
+    document.getElementById('releaseLeadModal').style.display = 'none';
+}
+
+function confirmReleaseLead() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch("/discador/", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'liberar_lead=1'
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(() => window.location.reload());
+    closeReleaseLeadModal();
+}
+</script>
 {% endblock %}

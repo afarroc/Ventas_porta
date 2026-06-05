@@ -68,7 +68,7 @@ class CallRecord(models.Model):
     inicio = models.DateTimeField()
     fin = models.DateTimeField(null=True, blank=True)
     duracion = models.DurationField(null=True, blank=True)
-    resultado = models.CharField(max_length=20, choices=RESULTADO_CHOICES)
+    resultado = models.CharField(max_length=20, choices=RESULTADO_CHOICES, blank=True, default='')
     observaciones = models.TextField(blank=True)
     acw_start = models.DateTimeField(null=True, blank=True, verbose_name="Inicio de ACW")
     acw_end = models.DateTimeField(null=True, blank=True, verbose_name="Fin de ACW")

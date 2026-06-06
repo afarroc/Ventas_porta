@@ -122,11 +122,12 @@ Registro maestro de operaciones de venta.
 
 #### Producto y Venta
 - `producto_nombre`, `origen`, `operador`, `telefono_portar`
-- `modelo_producto`, `plan_producto`
-- `tipo_linea`: Prepago/Postpago/Línea nueva/Portabilidad
-- `precio_venta`, `precio_plan`, `tipo_pago`
-
-#### Dirección de Despacho
+ - `modelo_producto`, `plan_producto`
+ - `tipo_linea`: Prepago/Postpago/Línea nueva/Portabilidad
+ - `precio_venta`, `precio_plan`, `tipo_pago`
+ - **Nota**: Los selectores visuales usan IDs con sufijo `_display` para evitar conflicto con campos ocultos Django
+ 
+ #### Dirección de Despacho
 - `tipo_via`: Avenida/Calle/Jirón/Pasaje/Prolongación/Carretera/Malecón/Alameda/Urbanización/Asociación/Pueblo Joven (choices - 11 opciones)
 - `nombre_via`, `numero_via`
 - `manzana`, `interior`, `lote`, `piso`

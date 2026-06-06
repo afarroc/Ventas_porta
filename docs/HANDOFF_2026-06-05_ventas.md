@@ -109,3 +109,47 @@ templates/ventas/_venta_form_fields.html ← Sección dirección reorganizada, J
 1. **Tests**: Ejecutar `python manage.py test apps.ventas.tests` (configurar BD de pruebas)
 2. **UI**: Verificar dropdowns en navegador y funcionamiento de validaciones
 3. **Documentación**: Sincronizar docs/documentacion.md con cambios actuales
+
+---
+
+## Handoff adicional — 2026-06-06 · Template de Producto y Modelo
+
+### Problemas identificados y corregidos
+
+| Problema | Solución |
+|----------|----------|
+| **19 modelos faltantes** en selector `modelo_producto` | Agregados todos los modelos del `MODELO_PRODUCTO_CHOICES` |
+| **3 planes faltantes** en selector `plan_producto` | Agregados `ENTEL_75_CONTROL`, `ENTEL_LIBRE_149_LIBRE`, `ENTEL_LIBRE_99_LIBRE` |
+| **Conflicto de IDs** (select visible vs campo oculto) | Renombrados: `_display` suffix para visuales, original para ocultos |
+| **Values incorrectos** (labels en lugar de códigos) | Corregidos a códigos (`ZTE_BLADE_L5_GRIS` vs `ZTE BLADE L5-GRIS-3G`) |
+| **JavaScript `modeloPreciosMap`** desactualizado | Actualizado con nuevos códigos de modelo |
+| **JavaScript `planPrecioMap`** desactualizado | Actualizado con nuevos códigos de plan |
+| **Visibilidad del selector de modelo** | Agregada llamada a `updatePorProducto()` al cargar DOM |
+
+### Selectores actualizados
+
+| Campo | ID visual | ID oculto (Django) |
+|-------|-----------|-------------------|
+| Producto | `id_producto_nombre_display` | `id_producto_nombre` |
+| Origen | `id_origen_display` | `id_origen` |
+| Operador | `id_operador_display` | `id_operador` |
+| Modelo | `id_modelo_producto` | `id_modelo_producto` |
+| Plan | `id_plan_producto_display` | `id_plan_producto` |
+| Precio Plan | `id_precio_plan_display` | `id_precio_plan` |
+| Precio Venta | `id_precio_venta_display` | `id_precio_venta` |
+| Tipo Línea | `id_tipo_linea_display` | `id_tipo_linea` |
+| Tipo Pago | `id_tipo_pago_display` | `id_tipo_pago` |
+| Teléfono Portar | `id_telefono_portar_display` | `id_telefono_portar` |
+
+### Archivos modificados
+
+```
+templates/ventas/_venta_form_fields.html ← Corrección IDs y agregado modelos/planes
+```
+
+### Funcionalidad verificada
+
+- ✅ Selector de modelo aparece solo cuando `producto = 'PACK'`
+- ✅ Precio de plan se puebla automáticamente al seleccionar un plan
+- ✅ Precio de venta se filtra según modelo seleccionado
+- ✅ Teléfono portar visible solo cuando `origen = 'PORTABILIDAD'`

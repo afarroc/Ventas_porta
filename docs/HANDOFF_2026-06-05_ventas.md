@@ -10,6 +10,7 @@
 |------|---------|
 | 0407ee4 | fix(ventas): UUID lead access consistency and runtime fixes |
 | b0c3fa7 | feat(ventas): Update recibo electronico and horario visita choices |
+| 1213d58 | feat(ventas): add choices for producto/origen/operador/modelo/plan/precio/tipo_pago fields |
 
 ---
 
@@ -47,6 +48,27 @@ Integrado en `agent_dashboard.html`:
 - `correo_electronico_recibo`: campo Email con validación automática
 - `abdcp`: opción SI/NO
 
+### Campos de Producto con Choices (9 campos)
+| Campo | Choices |
+|-------|---------|
+| `producto_nombre` | CHIP, PACK |
+| `origen` | Línea Nueva, Portabilidad |
+| `operador` | CLARO, Linea NUEVA, MOVISTAR, VIETTEL, VIRGIN |
+| `modelo_producto` | 28 opciones (iPhone, Huawei, LG, Motorola, Samsung, ZTE) |
+| `plan_producto` | 16 opciones ENTEL (CONTROL/LIBRE) |
+| `tipo_linea` | Prepago, Postpago |
+| `precio_venta` | 1, 9, 29-699 (valores enteros) |
+| `precio_plan` | 29-149 (valores enteros) |
+| `tipo_pago` | Efectivo, Tarjeta |
+
+Note: `precio_venta` y `precio_plan` cambiaron de `DecimalField` a `IntegerField` para soportar choices.
+
+### Template - Botón Teléfono Portar
+Agregado botón `btnTelefonoPortar` que rellena el campo desde:
+1. Teléfono del lead (base_telefono)
+2. Teléfono cliente 1
+3. Teléfono cliente 2
+
 ### Templates
 - `venta_form_modal.html` usa parcial compartido `_venta_form_fields.html`
 - `venta_form.html` usa mismo parcial (formulario único)
@@ -58,20 +80,21 @@ Integrado en `agent_dashboard.html`:
 ## Archivos modificados
 
 ```
-apps/ventas/models.py              ← RECIBO_ELECTRONICO_CHOICES, HORARIO_VISITA_CHOICES
-apps/ventas/forms.py               ← widgets actualizados
+apps/ventas/models.py              ← PRODUCTO_CHOICES, ORIGEN_CHOICES, OPERADOR_CHOICES, MODELO_PRODUCTO_CHOICES, PLAN_PRODUCTO_CHOICES, TIPO_LINEA_CHOICES, PRECIO_VENTA_CHOICES, PRECIO_PLAN_CHOICES, TIPO_PAGO_CHOICES
+apps/ventas/forms.py               ← widgets para nuevos campos con choices
 apps/ventas/views.py               ← CallRecord import, UUID fix, supervisor field name
 apps/ventas/tests.py               ← UserProfile en tests, campos backoffice corregidos
 apps/discador/views.py             ← id_lead en sesión, filtros UUID
-templates/ventas/_venta_form_fields.html ← script JS agregado
+templates/ventas/_venta_form_fields.html ← botón btnTelefonoPortar + JS
 templates/ventas/venta_form.html   ← script movido a parcial
-apps/ventas/migrations/0008_*.py  ← migración de choices
+apps/ventas/migrations/0009_*.py  ← migración para choices de producto/precio
+apps/ventas/migrations/0008_*.py  ← migración de recibo/horario
 ```
 
 ---
 
 ## Próximos pasos
 
-1. **Base de datos**: Aplicar migración `0008`
+1. **Base de datos**: Crear y aplicar migración `0009` para los cambios de choices
 2. **Tests**: Ejecutar `python manage.py test apps.ventas.tests`
-3. **UI**: Verificar funcionamiento del modal en navegador
+3. **UI**: Verificar dropdowns en navegador y funcionamiento del botón telefono_portar

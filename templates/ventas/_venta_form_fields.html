@@ -524,24 +524,17 @@ function updatePorProducto() {
         const valor = (productoSelect.value || '').trim();
         const isPack = valor === 'PACK';
         const modeloGroup = document.getElementById('modelo_producto_group');
-        console.log('updatePorProducto - valor:', JSON.stringify(valor), 'isPack:', isPack);
 
         if (isPack) {
             if (modeloSelect) modeloSelect.disabled = false;
-            if (modeloGroup) {
-                modeloGroup.style.display = 'block';
-                console.log('Setting modeloGroup to block');
-            }
+            if (modeloGroup) modeloGroup.style.display = 'block';
             if (precioVentaSelect) precioVentaSelect.disabled = false;
         } else {
             if (modeloSelect) {
                 modeloSelect.value = '';
                 modeloSelect.disabled = true;
             }
-            if (modeloGroup) {
-                modeloGroup.style.display = 'none';
-                console.log('Setting modeloGroup to none');
-            }
+            if (modeloGroup) modeloGroup.style.display = 'none';
             if (precioVentaSelect) {
                 precioVentaSelect.value = '1';
                 precioVentaSelect.disabled = true;
@@ -568,7 +561,6 @@ function updatePorProducto() {
 
     function updatePrecioPlan() {
         const plan = planSelect.value;
-        console.log('updatePrecioPlan - plan:', plan, 'precio:', planPrecioMap[plan]);
         if (planPrecioMap[plan]) {
             precioPlanInput.value = planPrecioMap[plan];
             precioPlanInput.readOnly = true;
@@ -627,7 +619,6 @@ function updatePorProducto() {
 
     if (productoSelect) productoSelect.addEventListener('change', function() {
         const valor = (productoSelect.value || '').trim();
-        console.log('Cambio de producto - value:', JSON.stringify(valor), 'length:', valor.length);
         syncHiddenField('id_producto_nombre', valor);
         updatePorProducto();
     });

@@ -140,12 +140,12 @@
                 {{ form.recibo_electronico.errors }}
                 {{ form.recibo_electronico }}
             </div>
-            <div class="col-md-6 mb-3 recibo-campos">
+            <div class="col-md-6 mb-3">
                 {{ form.correo_electronico_recibo.label_tag }}
                 {{ form.correo_electronico_recibo.errors }}
                 {{ form.correo_electronico_recibo }}
             </div>
-            <div class="col-md-6 mb-3 recibo-campos">
+            <div class="col-md-6 mb-3 recibo-horario">
                 {{ form.horario_visita.label_tag }}
                 {{ form.horario_visita.errors }}
                 {{ form.horario_visita }}
@@ -703,25 +703,5 @@
     }
   }
 
-  // Recibo electrónico: toggle required fields
-  const reciboSelect = document.querySelector('[name="recibo_electronico"]');
-  const reciboCampos = document.querySelectorAll('.recibo-campos');
-  function toggleReciboCampos() {
-    const selected = reciboSelect ? reciboSelect.value : '';
-    reciboCampos.forEach(function(campo) {
-      const input = campo.querySelector('input, select');
-      if (selected === 'SI_DESEA') {
-        if (input) input.required = true;
-        campo.style.display = '';
-      } else {
-        if (input) input.required = false;
-        campo.style.display = 'none';
-      }
-    });
-  }
-  if (reciboSelect) {
-    reciboSelect.addEventListener('change', toggleReciboCampos);
-    toggleReciboCampos();
-  }
 })();
 </script>

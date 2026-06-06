@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from .models import Venta, ItemVenta, SeguimientoBO, Cliente
 from apps.discador.models import BaseLlamada
+from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
 
 class VentaForm(forms.ModelForm):
@@ -47,7 +48,11 @@ class VentaForm(forms.ModelForm):
             'precio_venta': forms.Select(choices=Venta.PRECIO_VENTA_CHOICES),
             'precio_plan': forms.Select(choices=Venta.PRECIO_PLAN_CHOICES),
             'tipo_pago': forms.Select(choices=Venta.TIPO_PAGO_CHOICES),
-        }
+            'tipo_via': forms.Select(choices=Venta.TIPO_VIA_CHOICES),
+            'departamento': forms.Select(choices=DEPTO_CHOICES),
+            'provincia': forms.Select(choices=[('', 'Seleccione departamento')]),
+            'distrito': forms.Select(choices=[('', 'Seleccione provincia')]),
+            }
         labels = {
             'cliente_nombres': 'Nombres',
             'cliente_paterno': 'Paterno',

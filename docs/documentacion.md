@@ -127,10 +127,11 @@ Registro maestro de operaciones de venta.
 - `precio_venta`, `precio_plan`, `tipo_pago`
 
 #### Dirección de Despacho
-- `tipo_via`, `nombre_via`, `numero_via`
+- `tipo_via`: Avenida/Calle/Jirón/Pasaje/Prolongación/Carretera/Malecón/Alameda/Urbanización/Asociación (choices)
+- `nombre_via`, `numero_via`
 - `manzana`, `interior`, `lote`, `piso`
 - `zona_tipo`, `zona_nombre`, `zona_referencia`
-- `departamento`, `provincia`, `distrito`
+- `departamento`, `provincia`, `distrito` (combos dependientes jerárquicos vía AJAX)
 
 #### Facturación
 - `facturacion_requerida`: ¿Requiere Factura? (Sí/No)
@@ -247,12 +248,15 @@ Ventas_Porta/
 │       ├── admin.py                            # Admin: VentaAdmin + Inlines
 │       ├── views.py                            # Views: Home, VentaListView, VentaDetailView, VentaCreateView
 │       ├── urls.py                             # URLs: /ventas/, /ventas/nueva/, /ventas/<id>/
+│       ├── ubigeo_peru.py                      # Datos ubigeo Peru (departamentos, provincias, distritos)
 │       ├── tests.py                            # Tests unitarios
 │       └── migrations/
 │           ├── __init__.py
 │           ├── 0001_initial.py                 # Migración inicial
 │           ├── 0002_alter_venta_options_venta_*.py  # Agregó campos discador
-│           └── 0003_alter_venta_verbose_names.py    # Verbose names
+│           ├── 0003_alter_venta_verbose_names.py    # Verbose names
+│           ├── 0009_alter_venta_tipo_via.py        # TIPO_VIA_CHOICES
+│           └── 0010_alter_venta_ubigeo_fields.py   # Ubigeo departamentos
 └── templates/
     ├── base.html                               # Layout VP framework
     ├── home.html                               # Dashboard principal
@@ -333,7 +337,10 @@ Señal `post_save` para `User`: crea automáticamente un `UserProfile` cuando se
 VentaForm con widgets select/date/time/textarea, campos base_* readonly para visualización. ItemVentaForm, SeguimientoBOForm.
 
 ### apps/ventas/views.py
-VentaCreateView con inlineformset_factory. `venta_modal_partial()` y `venta_api_create()` para modal. `_check_lead_access()` para seguridad UUID.
+VentaCreateView con inlineformset_factory. `venta_modal_partial()` y `venta_api_create()` para modal. `_check_lead_access()` para seguridad UUID. `get_provincias()` y `get_distritos()` para combos jerárquicos de ubigeo.
+
+### apps/ventas/ubigeo_peru.py
+Datos de ubigeo Peruano: DEPTO_CHOICES (25 departamentos), PROV_CHOICES (provincias por departamento), DISTRITOS_CHOICES (distritos por provincia).
 
 ### templates/ventas/venta_form.html
 Formulario organizado en cards VP con secciones: Agente, Lead, Cliente, Recibo, Producto/Venta, Dirección, Facturación, Gestión del Discador, Backoffice. Botones Buscar/Validar/Recargar Lead con AJAX.
@@ -397,6 +404,8 @@ Click "Registrar Venta" → Modal cargado vía API → Submit vía API → Recar
 | `/ventas/recargar-lead/<uuid>/` | GET | Recarga datos del lead |
 | `/ventas/modal/<uuid>/` | GET | HTML formulario modal vía API |
 | `/api/ventas/crear/<uuid>/` | POST | Crea venta vía API JSON |
+| `/api/ubigeo/provincias/` | GET | Obtiene provincias por departamento (AJAX) |
+| `/api/ubigeo/distritos/` | GET | Obtiene distritos por departamento+provincia (AJAX) |
 
 ---
 

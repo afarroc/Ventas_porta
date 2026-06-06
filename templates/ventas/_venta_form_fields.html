@@ -283,6 +283,65 @@
     </div>
 </div>
 
+<script>
+(function() {
+    const urlProvincias = "{% url 'ventas:get_provincias' %}";
+    const urlDistritos = "{% url 'ventas:get_distritos' %}";
+
+    const deptSelect = document.getElementById('id_departamento');
+    const provSelect = document.getElementById('id_provincia');
+    const distSelect = document.getElementById('id_distrito');
+
+    if (deptSelect && provSelect) {
+        deptSelect.addEventListener('change', function() {
+            const depto = this.value;
+            provSelect.innerHTML = '<option value="">Cargando...</option>';
+            if (distSelect) distSelect.innerHTML = '<option value="">Seleccione provincia</option>';
+
+            fetch(urlProvincias + '?departamento=' + encodeURIComponent(depto) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+                method: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                let options = '<option value="">Seleccione provincia</option>';
+                data.provincias.forEach(function(prov) {
+                    options += '<option value="' + prov[0] + '">' + prov[1] + '</option>';
+                });
+                provSelect.innerHTML = options;
+            })
+            .catch(function() {
+                provSelect.innerHTML = '<option value="">Error al cargar</option>';
+            });
+        });
+    }
+
+    if (provSelect && distSelect) {
+        provSelect.addEventListener('change', function() {
+            const depto = deptSelect ? deptSelect.value : '';
+            const prov = this.value;
+            distSelect.innerHTML = '<option value="">Cargando...</option>';
+
+            fetch(urlDistritos + '?departamento=' + encodeURIComponent(depto) + '&provincia=' + encodeURIComponent(prov) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+                method: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                let options = '<option value="">Seleccione distrito</option>';
+                data.distritos.forEach(function(dist) {
+                    options += '<option value="' + dist[0] + '">' + dist[1] + '</option>';
+                });
+                distSelect.innerHTML = options;
+            })
+            .catch(function() {
+                distSelect.innerHTML = '<option value="">Error al cargar</option>';
+            });
+        });
+    }
+})();
+</script>
+
 <!-- Facturación -->
 <div class="card mb-4">
     <div class="card-header">

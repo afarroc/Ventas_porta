@@ -11,10 +11,31 @@ from django.urls import reverse_lazy
 from .models import Venta, ItemVenta, SeguimientoBO, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
 from .forms import VentaForm, ItemVentaForm, SeguimientoBOForm
+from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
 ItemVentaFormSet = inlineformset_factory(
     Venta, ItemVenta, form=ItemVentaForm, extra=2, max_num=2, can_delete=False
 )
+
+
+@login_required
+@require_GET
+def get_provincias(request):
+    """AJAX endpoint to get provincias by departamento."""
+    depto = request.GET.get('departamento', '').strip()
+    provincias = PROV_CHOICES.get(depto, [('', 'Seleccione provincia')])
+    return JsonResponse({'provincias': provincias})
+
+
+@login_required
+@require_GET
+def get_distritos(request):
+    """AJAX endpoint to get distritos by departamento and provincia."""
+    depto = request.GET.get('departamento', '').strip()
+    provincia = request.GET.get('provincia', '').strip()
+    key = f"{depto}_{provincia}"
+    distritos = DISTRITOS_CHOICES.get(key, [('', 'Seleccione distrito')])
+    return JsonResponse({'distritos': distritos})
 
 
 class HomeView(TemplateView):

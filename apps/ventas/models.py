@@ -134,7 +134,19 @@ class Venta(models.Model):
     TIPO_PAGO_CHOICES = [('EFECTIVO', 'Efectivo'), ('TARJETA', 'Tarjeta')]
     tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, blank=True, verbose_name="Tipo de Pago")
 
-    tipo_via = models.CharField(max_length=20, blank=True, verbose_name="Tipo de Vía")
+    TIPO_VIA_CHOICES = [
+        ('AVENIDA', 'Avenida (Av.)'),
+        ('CALLE', 'Calle (Cl.)'),
+        ('JIRON', 'Jirón (Jr.)'),
+        ('PASAJE', 'Pasaje (Psj.)'),
+        ('PROLONGACION', 'Prolongación (Prol.)'),
+        ('CARRETERA', 'Carretera (Carr.)'),
+        ('MALECON', 'Malecón (Mal.)'),
+        ('ALAMEDA', 'Alameda (Al.)'),
+        ('URBANIZACION', 'Urbanización (Urb.)'),
+        ('ASOCIACION', 'Asociación (AA.HH.)'),
+    ]
+    tipo_via = models.CharField(max_length=20, choices=TIPO_VIA_CHOICES, blank=True, verbose_name="Tipo de Vía")
     nombre_via = models.CharField(max_length=150, blank=True, verbose_name="Nombre de Vía")
     numero_via = models.CharField(max_length=20, blank=True, verbose_name="Número de Vía")
     manzana = models.CharField(max_length=10, blank=True, verbose_name="Manzana")

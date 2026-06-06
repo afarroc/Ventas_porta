@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, buscar_cliente_ajax, validar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create
+from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, buscar_cliente_ajax, validar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create, get_provincias, get_distritos
 
 app_name = 'ventas'
 
@@ -14,4 +14,6 @@ urlpatterns = [
     path('ventas/recargar-lead/<uuid:id_lead>/', recargar_lead_ajax, name='recargar_lead'),
     path('ventas/modal/<uuid:id_lead>/', venta_modal_partial, name='venta_modal'),
     path('api/ventas/crear/<uuid:id_lead>/', venta_api_create, name='venta_api_create'),
+    path('api/ubigeo/provincias/', get_provincias, name='get_provincias'),
+    path('api/ubigeo/distritos/', get_distritos, name='get_distritos'),
 ]

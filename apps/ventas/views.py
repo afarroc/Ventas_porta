@@ -199,6 +199,7 @@ def venta_modal_partial(request, id_lead):
         'base_llamada_observaciones': base.observaciones or '',
         'agente_nombre_auto': full_name,
         'supervisor_nombre_auto': supervisor_name,
+        'departamentos': DEPTO_CHOICES,
     }, request=request)
     
     return JsonResponse({'ok': True, 'mensaje': '', 'html': html})
@@ -395,6 +396,7 @@ class VentaCreateView(LoginRequiredMixin, CreateView):
         if not full_name:
             full_name = user.get_username() or str(user.pk)
         context['agente_nombre_auto'] = full_name
+        context['departamentos'] = DEPTO_CHOICES
 
         profile = getattr(user, 'profile', None)
         supervisor_name = '-'

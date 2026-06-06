@@ -127,9 +127,10 @@ Registro maestro de operaciones de venta.
 - `precio_venta`, `precio_plan`, `tipo_pago`
 
 #### Dirección de Despacho
-- `tipo_via`: Avenida/Calle/Jirón/Pasaje/Prolongación/Carretera/Malecón/Alameda/Urbanización/Asociación (choices)
+- `tipo_via`: Avenida/Calle/Jirón/Pasaje/Prolongación/Carretera/Malecón/Alameda/Urbanización/Asociación/Pueblo Joven (choices - 11 opciones)
 - `nombre_via`, `numero_via`
 - `manzana`, `interior`, `lote`, `piso`
+- `centro_poblado`: Centro poblado o asentamiento humano (opcional)
 - `zona_tipo`, `zona_nombre`, `zona_referencia`
 - `departamento`, `provincia`, `distrito` (combos dependientes jerárquicos vía AJAX)
 

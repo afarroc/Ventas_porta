@@ -145,8 +145,10 @@ class Venta(models.Model):
         ('ALAMEDA', 'Alameda (Al.)'),
         ('URBANIZACION', 'Urbanización (Urb.)'),
         ('ASOCIACION', 'Asociación (AA.HH.)'),
+        ('PUEBLO_JOVEN', 'Pueblo Joven (P.J.)'),
     ]
     tipo_via = models.CharField(max_length=20, choices=TIPO_VIA_CHOICES, blank=True, verbose_name="Tipo de Vía")
+    centro_poblado = models.CharField(max_length=200, blank=True, null=True, verbose_name='Centro Poblado')
     nombre_via = models.CharField(max_length=150, blank=True, verbose_name="Nombre de Vía")
     numero_via = models.CharField(max_length=20, blank=True, verbose_name="Número de Vía")
     manzana = models.CharField(max_length=10, blank=True, verbose_name="Manzana")

@@ -222,124 +222,220 @@
 
 <!-- Dirección de Despacho -->
 <div class="card mb-4">
-    <div class="card-header">
-        <h5><i class="bi bi-geo-alt"></i> Dirección de Despacho</h5>
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i> Dirección de despacho</h5>
     </div>
     <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-2">
-                {{ form.tipo_via.label_tag }}
+        <div class="row">
+            <!-- Centro Poblado (opcional) -->
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.centro_poblado.id_for_label }}" class="form-label">
+                    Centro Poblado <small class="text-muted">(opcional)</small>
+                </label>
+                {{ form.centro_poblado }}
+                <div class="form-text">Ej: AA.HH. Las Casuarinas, P.J. José Carlos, Urb. Santa Isabel</div>
+            </div>
+            
+            <!-- Ubigeo (3 selects jerárquicos) -->
+            <div class="col-md-4 mb-3">
+                <label for="id_departamento" class="form-label">Departamento *</label>
+                <select name="departamento" id="id_departamento" class="form-control departamento-select" required>
+                    <option value="">-- Seleccione --</option>
+                    {% for depto in departamentos %}
+                        <option value="{{ depto.0 }}" {% if form.departamento.value == depto.0 %}selected{% endif %}>
+                            {{ depto.1 }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label for="id_provincia" class="form-label">Provincia *</label>
+                <select name="provincia" id="id_provincia" class="form-control provincia-select" required {% if not form.departamento.value %}disabled{% endif %}>
+                    <option value="">-- Primero seleccione departamento --</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label for="id_distrito" class="form-label">Distrito *</label>
+                <select name="distrito" id="id_distrito" class="form-control distrito-select" required {% if not form.provincia.value %}disabled{% endif %}>
+                    <option value="">-- Primero seleccione provincia --</option>
+                </select>
+            </div>
+            
+            <!-- Tipo y nombre de vía -->
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.tipo_via.id_for_label }}" class="form-label">Tipo de vía *</label>
                 {{ form.tipo_via }}
             </div>
-            <div class="col-md-5">
-                {{ form.nombre_via.label_tag }}
+            
+            <div class="col-md-6 mb-3">
+                <label for="{{ form.nombre_via.id_for_label }}" class="form-label">Nombre de vía *</label>
                 {{ form.nombre_via }}
+                <div class="form-text">Ej: Bolognesi, Los Alamos, Primavera</div>
             </div>
-            <div class="col-md-2">
-                {{ form.numero_via.label_tag }}
+            
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.numero_via.id_for_label }}" class="form-label">Número</label>
                 {{ form.numero_via }}
+                <div class="form-text">Opcional si tiene manzana/lote</div>
             </div>
-            <div class="col-md-1">
-                {{ form.manzana.label_tag }}
+            
+            <!-- Detalles adicionales (fila 1) -->
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.manzana.id_for_label }}" class="form-label">Manzana</label>
                 {{ form.manzana }}
             </div>
-            <div class="col-md-1">
-                {{ form.interior.label_tag }}
-                {{ form.interior }}
-            </div>
-            <div class="col-md-1">
-                {{ form.lote.label_tag }}
+            
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.lote.id_for_label }}" class="form-label">Lote</label>
                 {{ form.lote }}
             </div>
-            <div class="col-md-1">
-                {{ form.piso.label_tag }}
+            
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.interior.id_for_label }}" class="form-label">Interior</label>
+                {{ form.interior }}
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="{{ form.piso.id_for_label }}" class="form-label">Piso</label>
                 {{ form.piso }}
             </div>
-            <div class="col-md-4">
-                {{ form.zona_tipo.label_tag }}
-                {{ form.zona_tipo }}
-            </div>
-            <div class="col-md-4">
-                {{ form.zona_nombre.label_tag }}
-                {{ form.zona_nombre }}
-            </div>
-            <div class="col-md-4">
-                {{ form.zona_referencia.label_tag }}
+            
+            <!-- Referencia -->
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.zona_referencia.id_for_label }}" class="form-label">
+                    Punto de referencia <small class="text-muted">(recomendado)</small>
+                </label>
                 {{ form.zona_referencia }}
-            </div>
-            <div class="col-md-4">
-                {{ form.departamento.label_tag }}
-                {{ form.departamento }}
-            </div>
-            <div class="col-md-4">
-                {{ form.provincia.label_tag }}
-                {{ form.provincia }}
-            </div>
-            <div class="col-md-4">
-                {{ form.distrito.label_tag }}
-                {{ form.distrito }}
+                <div class="form-text">Ej: Frente al parque, al lado de la farmacia, cerca del grifo</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
     const urlProvincias = "{% url 'ventas:get_provincias' %}";
     const urlDistritos = "{% url 'ventas:get_distritos' %}";
 
-    const deptSelect = document.getElementById('id_departamento');
-    const provSelect = document.getElementById('id_provincia');
-    const distSelect = document.getElementById('id_distrito');
+    const deptoSelect = document.getElementById('id_departamento');
+    const provinciaSelect = document.getElementById('id_provincia');
+    const distritoSelect = document.getElementById('id_distrito');
 
-    if (deptSelect && provSelect) {
-        deptSelect.addEventListener('change', function() {
-            const depto = this.value;
-            provSelect.innerHTML = '<option value="">Cargando...</option>';
-            if (distSelect) distSelect.innerHTML = '<option value="">Seleccione provincia</option>';
-
-            fetch(urlProvincias + '?departamento=' + encodeURIComponent(depto) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
-                method: 'GET',
-                headers: {'X-Requested-With': 'XMLHttpRequest'}
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                let options = '<option value="">Seleccione provincia</option>';
-                data.provincias.forEach(function(prov) {
-                    options += '<option value="' + prov[0] + '">' + prov[1] + '</option>';
+    function loadProvincias(deptoCode, selectedProvincia) {
+        if (!deptoCode) {
+            provinciaSelect.innerHTML = '<option value="">-- Primero seleccione departamento --</option>';
+            provinciaSelect.disabled = true;
+            distritoSelect.innerHTML = '<option value="">-- Primero seleccione provincia --</option>';
+            distritoSelect.disabled = true;
+            return;
+        }
+        
+        fetch(urlProvincias + '?departamento=' + encodeURIComponent(deptoCode))
+            .then(response => response.json())
+            .then(data => {
+                provinciaSelect.innerHTML = '<option value="">-- Seleccione provincia --</option>';
+                data.provincias.forEach(prov => {
+                    const option = document.createElement('option');
+                    option.value = prov[0];
+                    option.textContent = prov[1];
+                    if (selectedProvincia && prov[0] === selectedProvincia) {
+                        option.selected = true;
+                    }
+                    provinciaSelect.appendChild(option);
                 });
-                provSelect.innerHTML = options;
-            })
-            .catch(function() {
-                provSelect.innerHTML = '<option value="">Error al cargar</option>';
+                provinciaSelect.disabled = false;
+                
+                if (selectedProvincia) {
+                    loadDistritos(deptoCode, selectedProvincia, null);
+                } else {
+                    distritoSelect.innerHTML = '<option value="">-- Primero seleccione provincia --</option>';
+                    distritoSelect.disabled = true;
+                }
             });
-        });
     }
 
-    if (provSelect && distSelect) {
-        provSelect.addEventListener('change', function() {
-            const depto = deptSelect ? deptSelect.value : '';
+    function loadDistritos(deptoCode, provinciaCode, selectedDistrito) {
+        if (!deptoCode || !provinciaCode) {
+            distritoSelect.innerHTML = '<option value="">-- Primero seleccione provincia --</option>';
+            distritoSelect.disabled = true;
+            return;
+        }
+        
+        fetch(urlDistritos + '?departamento=' + encodeURIComponent(deptoCode) + '&provincia=' + encodeURIComponent(provinciaCode))
+            .then(response => response.json())
+            .then(data => {
+                distritoSelect.innerHTML = '<option value="">-- Seleccione distrito --</option>';
+                data.distritos.forEach(dist => {
+                    const option = document.createElement('option');
+                    option.value = dist[0];
+                    option.textContent = dist[1];
+                    if (selectedDistrito && dist[0] === selectedDistrito) {
+                        option.selected = true;
+                    }
+                    distritoSelect.appendChild(option);
+                });
+                distritoSelect.disabled = false;
+            });
+    }
+
+    if (deptoSelect) {
+        deptoSelect.addEventListener('change', function() {
+            loadProvincias(this.value, null);
+        });
+
+        const initialDepto = deptoSelect.value;
+        const initialProvincia = provinciaSelect ? provinciaSelect.value : '';
+        const initialDistrito = distritoSelect ? distritoSelect.value : '';
+
+        if (initialDepto) {
+            loadProvincias(initialDepto, initialProvincia);
+        }
+
+        if (initialProvincia && initialDepto) {
+            loadDistritos(initialDepto, initialProvincia, initialDistrito);
+        }
+    }
+
+    if (provinciaSelect) {
+        provinciaSelect.addEventListener('change', function() {
+            const depto = deptoSelect ? deptoSelect.value : '';
             const prov = this.value;
-            distSelect.innerHTML = '<option value="">Cargando...</option>';
-
-            fetch(urlDistritos + '?departamento=' + encodeURIComponent(depto) + '&provincia=' + encodeURIComponent(prov) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
-                method: 'GET',
-                headers: {'X-Requested-With': 'XMLHttpRequest'}
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                let options = '<option value="">Seleccione distrito</option>';
-                data.distritos.forEach(function(dist) {
-                    options += '<option value="' + dist[0] + '">' + dist[1] + '</option>';
-                });
-                distSelect.innerHTML = options;
-            })
-            .catch(function() {
-                distSelect.innerHTML = '<option value="">Error al cargar</option>';
-            });
+            loadDistritos(depto, prov, null);
         });
     }
-})();
+
+    // Validación: Si no hay número_via, obligar manzana o lote
+    const numeroVia = document.querySelector('[name="numero_via"]');
+    const manzana = document.querySelector('[name="manzana"]');
+    const lote = document.querySelector('[name="lote"]');
+
+    function validateNumeroVia() {
+        if (numeroVia) {
+            if (numeroVia.value === '' || numeroVia.value === null) {
+                if (manzana && (manzana.value === '' || manzana.value === null) &&
+                    lote && (lote.value === '' || lote.value === null)) {
+                    numeroVia.setCustomValidity('Si no ingresa número, debe indicar manzana o lote');
+                    numeroVia.style.borderColor = 'red';
+                } else {
+                    numeroVia.setCustomValidity('');
+                    numeroVia.style.borderColor = '';
+                }
+            } else {
+                numeroVia.setCustomValidity('');
+                numeroVia.style.borderColor = '';
+            }
+        }
+    }
+
+    if (numeroVia) {
+        numeroVia.addEventListener('input', validateNumeroVia);
+        if (manzana) manzana.addEventListener('input', validateNumeroVia);
+        if (lote) lote.addEventListener('input', validateNumeroVia);
+        validateNumeroVia();
+    }
+});
 </script>
 
 <!-- Facturación -->

@@ -1,6 +1,6 @@
 # HANDOFF — 2026-06-05 · App `ventas`
 
-> Sesión: Seguridad de leads, modal de registro de venta, validación de acceso
+> Sesión: Seguridad de leads, modal de registro de venta, validación de acceso, optimización de formulario de dirección
 
 ---
 
@@ -75,26 +75,29 @@ Agregado botón `btnTelefonoPortar` que rellena el campo desde:
 - Scroll habilitado en modal (`max-height: 70vh` + `modal-body-modal`)
 - `templates/ventas/_venta_form_fields.html` - parcial compartido con todos los campos del formulario + script JS
 
+### Dirección de Despacho - Optimización (2026-06-05)
+- Nuevo campo `centro_poblado` agregado al modelo `Venta`
+- `TIPO_VIA_CHOICES` actualizado con 11 opciones peruanas (incluye PUEBLO_JOVEN)
+- Combos jerárquicos mejorados: Departamento → Provincia → Distrito con AJAX
+- Validación de campo: si `numero_via` está vacío, se requiere `manzana` o `lote`
+- Template actualizado con card independiente para dirección
+
 ---
 
 ## Archivos modificados
 
 ```
-apps/ventas/models.py              ← PRODUCTO_CHOICES, ORIGEN_CHOICES, OPERADOR_CHOICES, MODELO_PRODUCTO_CHOICES, PLAN_PRODUCTO_CHOICES, TIPO_LINEA_CHOICES, PRECIO_VENTA_CHOICES, PRECIO_PLAN_CHOICES, TIPO_PAGO_CHOICES
-apps/ventas/forms.py               ← widgets para nuevos campos con choices
-apps/ventas/views.py               ← CallRecord import, UUID fix, supervisor field name
-apps/ventas/tests.py               ← UserProfile en tests, campos backoffice corregidos
-apps/discador/views.py             ← id_lead en sesión, filtros UUID
-templates/ventas/_venta_form_fields.html ← botón btnTelefonoPortar + JS
-templates/ventas/venta_form.html   ← script movido a parcial
-apps/ventas/migrations/0009_*.py  ← migración para choices de producto/precio
-apps/ventas/migrations/0008_*.py  ← migración de recibo/horario
+apps/ventas/models.py              ← Agregado PUEBLO_JOVEN, centro_poblado
+apps/ventas/forms.py               ← Widgets mejorados con form-control/form-select
+apps/ventas/views.py               ← departamentos agregado al contexto
+apps/ventas/migrations/0011_add_centro_poblado.py ← Migración nueva
+templates/ventas/_venta_form_fields.html ← Sección dirección reorganizada, JS actualizado
 ```
 
 ---
 
 ## Próximos pasos
 
-1. **Base de datos**: Crear y aplicar migración `0009` para los cambios de choices
-2. **Tests**: Ejecutar `python manage.py test apps.ventas.tests`
-3. **UI**: Verificar dropdowns en navegador y funcionamiento del botón telefono_portar
+1. **Tests**: Ejecutar `python manage.py test apps.ventas.tests` (configurar BD de pruebas)
+2. **UI**: Verificar dropdowns en navegador y funcionamiento de validaciones
+3. **Documentación**: Sincronizar docs/documentacion.md con cambios actuales

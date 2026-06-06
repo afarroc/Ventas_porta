@@ -51,17 +51,88 @@ class Venta(models.Model):
     abdcp = models.CharField(max_length=2, choices=ABDCP_CHOICES, blank=True, verbose_name="ABDCP")
     clausulas = models.CharField(max_length=10, choices=RECIBO_ELECTRONICO_CHOICES, blank=True, verbose_name="Cláusulas")
 
-    producto_nombre = models.CharField(max_length=150, blank=True, verbose_name="Producto")
-    origen = models.CharField(max_length=100, blank=True, verbose_name="Origen")
-    operador = models.CharField(max_length=50, blank=True, verbose_name="Operador")
+    PRODUCTO_CHOICES = [('CHIP', 'CHIP'), ('PACK', 'PACK')]
+    producto_nombre = models.CharField(max_length=10, choices=PRODUCTO_CHOICES, blank=True, verbose_name="Producto")
+    ORIGEN_CHOICES = [('LINEA_NUEVA', 'Línea Nueva'), ('PORTABILIDAD', 'Portabilidad')]
+    origen = models.CharField(max_length=15, choices=ORIGEN_CHOICES, blank=True, verbose_name="Origen")
+    OPERADOR_CHOICES = [
+        ('CLARO', 'CLARO'), ('LINEA_NUEVA', 'Linea NUEVA'), ('MOVISTAR', 'MOVISTAR'),
+        ('VIETTEL', 'VIETTEL'), ('VIRGIN', 'VIRGIN'),
+    ]
+    operador = models.CharField(max_length=20, choices=OPERADOR_CHOICES, blank=True, verbose_name="Operador")
     telefono_portar = models.CharField(max_length=20, blank=True, verbose_name="Teléfono a Portar")
-    modelo_producto = models.CharField(max_length=100, blank=True, verbose_name="Modelo Producto")
-    plan_producto = models.CharField(max_length=100, blank=True, verbose_name="Plan Producto")
-    TIPO_LINEA = [('PREPAGO', 'Prepago'), ('POSTPAGO', 'Postpago'), ('LINEA_NUEVA', 'Línea nueva'), ('PORTABILIDAD', 'Portabilidad')]
-    tipo_linea = models.CharField(max_length=20, choices=TIPO_LINEA, blank=True, verbose_name="Tipo de Línea")
-    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Precio de Venta")
-    precio_plan = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Precio del Plan")
-    tipo_pago = models.CharField(max_length=50, blank=True, verbose_name="Tipo de Pago")
+    MODELO_PRODUCTO_CHOICES = [
+        ('IPHONE_4S', 'APPLE IPHONE 4S 8GB-NEGRO-3G'),
+        ('IPHONE_6_PLUS', 'APPLE IPHONE 6 PLUS 16GB - PLATEADO-4G'),
+        ('HUAWEI_MATE_S', 'HUAWEI MATE S  - NEGRO'),
+        ('HUAWEI_MATE_S_NEGRO', 'HUAWEI MATE S - NEGRO'),
+        ('HUAWEI_P9_LITE', 'HUAWEI P9 LITE - NEGRO'),
+        ('HUAWEI_Y360_II_BLANCO', 'HUAWEI Y360 II-BLANCO-3G'),
+        ('HUAWEI_Y360_II_NEGRO', 'HUAWEI Y360 II-NEGRO'),
+        ('HUAWEI_Y360_II_NEGRO_DASH', 'HUAWEI Y360 II-NEGRO-'),
+        ('HUAWEI_Y360_II_NEGRO_3G', 'HUAWEI Y360 II-NEGRO-3G'),
+        ('HUAWEI_Y360_BLANCO', 'HUAWEI Y360-BLANCO-3G'),
+        ('HUAWEI_Y360_NEGRO', 'HUAWEI Y360-NEGRO-3G'),
+        ('LG_G4_STYLUS_BLANCO', 'LG G4 STYLUS-BLANCO-4G'),
+        ('LG_G4_STYLUS_METALICO', 'LG G4 STYLUS-METALICO-4G'),
+        ('LG_G5_TITAN', 'LG G5-TITAN-4G'),
+        ('LG_X_STYLE_BLANCO', 'LG X STYLE-BLANCO-4G'),
+        ('LG_X_STYLE_NEGRO', 'LG X STYLE-NEGRO -4G'),
+        ('MOTO_G_PLAY', 'MOTOROLA MOTO G 4TA GENERACION PLAY - NEGRO'),
+        ('MOTO_G_PLUS', 'MOTOROLA MOTO G 4TA GENERACION PLUS - NEGRO'),
+        ('MOTO_X_PLAY', 'MOTOROLA MOTO X PLAY-NEGRO-4G'),
+        ('MOTO_Z_PLAY', 'MOTOROLA MOTO Z PLAY - NEGRO'),
+        ('GALAXY_J1', 'SAMSUNG GALAXY J1 2016-NEGRO -4G'),
+        ('GALAXY_J7', 'SAMSUNG GALAXY J7-NEGRO-4G'),
+        ('SUPER_CHIP_ENTEL_PLUS', 'SUPER CHIP ENTEL PLUS'),
+        ('SUPERCHIP_ENTEL', 'SUPERCHIP-ENTEL'),
+        ('ZTE_BLADE_A315_BLANCO', 'ZTE BLADE A315-BLANCO-4G'),
+        ('ZTE_BLADE_A315_NEGRO', 'ZTE BLADE A315-NEGRO-4G'),
+        ('ZTE_BLADE_A610_GRIS', 'ZTE BLADE A610 - Gris'),
+        ('ZTE_BLADE_A610_GRIS_DASH', 'ZTE BLADE A610- GRIS-4G'),
+        ('ZTE_BLADE_A610_BLANCO', 'ZTE BLADE A610-BLANCO'),
+        ('ZTE_BLADE_A610_GRIS_CLEAN', 'ZTE BLADE A610-GRIS'),
+        ('ZTE_BLADE_A610_GRIS_4G', 'ZTE BLADE A610-GRIS-4G'),
+        ('ZTE_BLADE_A610_NEGRO', 'ZTE BLADE A610-NEGRO'),
+        ('ZTE_BLADE_A610_NEGRO_4G', 'ZTE BLADE A610-NEGRO-4G'),
+        ('ZTE_BLADE_L5_BLANCO', 'ZTE BLADE L5-BLANCO-3G'),
+        ('ZTE_BLADE_L5_GRIS', 'ZTE BLADE L5-GRIS-3G'),
+    ]
+    modelo_producto = models.CharField(max_length=50, choices=MODELO_PRODUCTO_CHOICES, blank=True, verbose_name="Modelo Producto")
+    PLAN_PRODUCTO_CHOICES = [
+        ('ENTEL_75_CONTROL', 'ENTEL  75-CONTROL'),
+        ('ENTEL_CHIP_109_CONTROL', 'ENTEL CHIP 109-CONTROL'),
+        ('ENTEL_CHIP_145_CONTROL', 'ENTEL CHIP 145-CONTROL'),
+        ('ENTEL_CHIP_29_CONTROL', 'ENTEL CHIP 29-CONTROL'),
+        ('ENTEL_CHIP_39_CONTROL', 'ENTEL CHIP 39-CONTROL'),
+        ('ENTEL_CHIP_45_CONTROL', 'ENTEL CHIP 45-CONTROL'),
+        ('ENTEL_CHIP_59_CONTROL', 'ENTEL CHIP 59-CONTROL'),
+        ('ENTEL_CHIP_74_CONTROL', 'ENTEL CHIP 74-CONTROL'),
+        ('ENTEL_CHIP_89_CONTROL', 'ENTEL CHIP 89-CONTROL'),
+        ('ENTEL_CONTROL_149_CONTROL', 'ENTEL CONTROL 149-CONTROL'),
+        ('ENTEL_CONTROL_199_CONTROL', 'ENTEL CONTROL 199-CONTROL'),
+        ('ENTEL_CONTROL_49_CONTROL', 'ENTEL CONTROL 49-CONTROL'),
+        ('ENTEL_CONTROL_75_CONTROL', 'ENTEL CONTROL 75-CONTROL'),
+        ('ENTEL_CONTROL_99_CONTROL', 'ENTEL CONTROL 99-CONTROL'),
+        ('ENTEL_LIBRE_149_LIBRE', 'ENTEL LIBRE 149-LIBRE'),
+        ('ENTEL_LIBRE_99_LIBRE', 'ENTEL LIBRE 99-LIBRE'),
+    ]
+    plan_producto = models.CharField(max_length=50, choices=PLAN_PRODUCTO_CHOICES, blank=True, verbose_name="Plan Producto")
+    TIPO_LINEA_CHOICES = [('PREPAGO', 'Prepago'), ('POSTPAGO', 'Postpago')]
+    tipo_linea = models.CharField(max_length=20, choices=TIPO_LINEA_CHOICES, blank=True, verbose_name="Tipo de Línea")
+    PRECIO_VENTA_CHOICES = [
+        (1, '1'), (9, '9'), (29, '29'), (39, '39'), (49, '49'), (59, '59'), (79, '79'), (89, '89'),
+        (99, '99'), (109, '109'), (119, '119'), (129, '129'), (149, '149'), (189, '189'), (199, '199'),
+        (229, '229'), (349, '349'), (399, '399'), (429, '429'), (499, '499'), (599, '599'), (699, '699'),
+    ]
+    precio_venta = models.IntegerField(choices=PRECIO_VENTA_CHOICES, null=True, blank=True, verbose_name="Precio de Venta")
+    PRECIO_PLAN_CHOICES = [
+        (29, '29'), (39, '39'), (45, '45'), (49, '49'), (59, '59'), (74, '74'), (75, '75'),
+        (89, '89'), (99, '99'), (109, '109'), (145, '145'), (149, '149'),
+    ]
+    precio_plan = models.IntegerField(choices=PRECIO_PLAN_CHOICES, null=True, blank=True, verbose_name="Precio del Plan")
+    TIPO_PAGO_CHOICES = [('EFECTIVO', 'Efectivo'), ('TARJETA', 'Tarjeta')]
+    tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, blank=True, verbose_name="Tipo de Pago")
 
     tipo_via = models.CharField(max_length=20, blank=True, verbose_name="Tipo de Vía")
     nombre_via = models.CharField(max_length=150, blank=True, verbose_name="Nombre de Vía")

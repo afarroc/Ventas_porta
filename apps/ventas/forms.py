@@ -26,7 +26,7 @@ class VentaForm(forms.ModelForm):
             'recibo_electronico': forms.Select(choices=Venta.RECIBO_ELECTRONICO_CHOICES),
             'abdcp': forms.Select(choices=Venta.ABDCP_CHOICES),
             'clausulas': forms.Select(choices=Venta.RECIBO_ELECTRONICO_CHOICES),
-            'tipo_linea': forms.Select(choices=Venta.TIPO_LINEA),
+            'tipo_linea': forms.Select(choices=Venta.TIPO_LINEA_CHOICES),
             'facturacion_requerida': forms.Select(choices=Venta.FACTURACION_CHOICES),
             'contact_callable': forms.Select(choices=Venta.CONTACT_CALLABLE),
             'es_callable': forms.Select(choices=Venta.CONTACT_CALLABLE),
@@ -39,6 +39,14 @@ class VentaForm(forms.ModelForm):
             'hora_gestion': forms.TimeInput(attrs={'type': 'time'}),
             'cliente_documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar', 'autocomplete': 'username'}),
             'horario_visita': forms.Select(choices=Venta.HORARIO_VISITA_CHOICES),
+            'producto_nombre': forms.Select(choices=Venta.PRODUCTO_CHOICES),
+            'origen': forms.Select(choices=Venta.ORIGEN_CHOICES),
+            'operador': forms.Select(choices=Venta.OPERADOR_CHOICES),
+            'modelo_producto': forms.Select(choices=Venta.MODELO_PRODUCTO_CHOICES),
+            'plan_producto': forms.Select(choices=Venta.PLAN_PRODUCTO_CHOICES),
+            'precio_venta': forms.Select(choices=Venta.PRECIO_VENTA_CHOICES),
+            'precio_plan': forms.Select(choices=Venta.PRECIO_PLAN_CHOICES),
+            'tipo_pago': forms.Select(choices=Venta.TIPO_PAGO_CHOICES),
         }
         labels = {
             'cliente_nombres': 'Nombres',

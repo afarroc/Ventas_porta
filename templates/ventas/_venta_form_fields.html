@@ -186,7 +186,10 @@
             <div class="col-md-4">
                 <div class="vp-highlight-field">
                     {{ form.telefono_portar.label_tag }}
-                    {{ form.telefono_portar }}
+                    <div class="input-group">
+                        {{ form.telefono_portar }}
+                        <button type="button" id="btnTelefonoPortar" class="btn btn-outline-primary" title="Usar teléfono del lead o cliente"><i class="bi bi-arrow-down"></i></button>
+                    </div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -196,6 +199,10 @@
             <div class="col-md-3">
                 {{ form.tipo_linea.label_tag }}
                 {{ form.tipo_linea }}
+            </div>
+            <div class="col-md-3">
+                {{ form.plan_producto.label_tag }}
+                {{ form.plan_producto }}
             </div>
             <div class="col-md-3">
                 {{ form.precio_venta.label_tag }}
@@ -693,15 +700,35 @@
     });
   }
 
-  if (btnBuscar && campoDocumento) {
-    btnBuscar.addEventListener('click', buscarCliente);
-    if (btnValidar) {
-      btnValidar.addEventListener('click', validarCliente);
-    }
-    if (btnRecargar) {
-      btnRecargar.addEventListener('click', recargarLead);
-    }
-  }
+if (btnBuscar && campoDocumento) {
+     btnBuscar.addEventListener('click', buscarCliente);
+     if (btnValidar) {
+       btnValidar.addEventListener('click', validarCliente);
+     }
+     if (btnRecargar) {
+       btnRecargar.addEventListener('click', recargarLead);
+     }
+   }
+
+   const btnTelefonoPortar = document.getElementById('btnTelefonoPortar');
+   if (btnTelefonoPortar) {
+     btnTelefonoPortar.addEventListener('click', function() {
+       const campoPortar = document.getElementById('id_telefono_portar');
+       const tel1 = document.getElementById('id_cliente_telefono_1');
+       const tel2 = document.getElementById('id_cliente_telefono_2');
+       const leadTel = document.getElementById('id_base_telefono');
+       let valor = '';
+       if (leadTel && leadTel.value) {
+         valor = leadTel.value;
+       } else if (tel1 && tel1.value) {
+         valor = tel1.value;
+       } else if (tel2 && tel2.value) {
+         valor = tel2.value;
+       }
+       campoPortar.value = valor;
+       campoPortar.dispatchEvent(new Event('change'));
+     });
+   }
 
 })();
 </script>

@@ -134,6 +134,18 @@ Registro maestro de operaciones de venta.
 - `zona_tipo`, `zona_nombre`, `zona_referencia`
 - `departamento`, `provincia`, `distrito` (combos dependientes jerárquicos vía AJAX)
 
+#### Producto y Venta (con dependencias)
+- `producto_nombre`: CHIP (sin modelo, precio fijo S/. 1) o PACK (con modelo y precio variable)
+- `origen`: PORTABILIDAD (requiere operador y telefono_portar) o LINEA_NUEVA
+- `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD)
+- `telefono_portar`: Número a portar (obligatorio si origen=PORTABILIDAD)
+- `modelo_producto`: Modelo de equipo (solo para PACK)
+- `plan_producto`: Plan ENTEL → determina `precio_plan`
+- `precio_plan`: Precio del plan (readonly, determinado por plan_producto)
+- `precio_venta`: Precio de venta (filtrado por modelo_producto)
+- `tipo_linea`: Postpago (default) o Prepago
+- `tipo_renta`: R.BAJA/R.MEDIA/R.ALTA (calculado automáticamente)
+
 #### Facturación
 - `facturacion_requerida`: ¿Requiere Factura? (Sí/No)
 

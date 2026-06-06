@@ -90,6 +90,10 @@ class VentaForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.fields['registrar_nuevo_cliente'].disabled = True
 
+        # Set default value for tipo_linea if not set
+        if not self.initial.get('tipo_linea') and not (self.instance and self.instance.tipo_linea):
+            self.fields['tipo_linea'].initial = 'POSTPAGO'
+
         # If there is a base_llamada, populate the read-only fields (for both new and existing instances)
         if self.instance.base_llamada:
             base = self.instance.base_llamada
@@ -109,9 +113,30 @@ class VentaForm(forms.ModelForm):
         registrar_nuevo = cleaned_data.get('registrar_nuevo_cliente', False)
         recibo = cleaned_data.get('recibo_electronico')
         correo_recibo = cleaned_data.get('correo_electronico_recibo')
+        
+        # Producto y Venta validations
+        producto = cleaned_data.get('producto_nombre')
+        origen = cleaned_data.get('origen')
+        operador = cleaned_data.get('operador')
+        telefono_portar = cleaned_data.get('telefono_portar')
+        modelo = cleaned_data.get('modelo_producto')
 
         if not documento:
             raise forms.ValidationError("Debe ingresar el documento del cliente.")
+
+        # Regla 1: Producto CHIP no tiene modelo ni precio variable
+        if producto == 'CHIP':
+            if modelo:
+                raise forms.ValidationError("Los productos tipo CHIP no tienen modelo de equipo.")
+            cleaned_data['precio_venta'] = 1
+        
+        # Regla 2: Origen PORTABILIDAD requiere operador y telefono_portar
+        if origen == 'PORTABILIDAD':
+            valid_operadores = ['CLARO', 'MOVISTAR', 'VIETTEL', 'VIRGIN']
+            if not operador or operador not in valid_operadores:
+                raise forms.ValidationError("Seleccione un operador válido (Claro, Movistar, Viettel, Virgin) para portabilidad.")
+            if not telefono_portar:
+                raise forms.ValidationError("El número a portar es obligatorio para portabilidad.")
 
         if registrar_nuevo:
             if not nombres or not paterno:

@@ -82,6 +82,14 @@ Agregado botón `btnTelefonoPortar` que rellena el campo desde:
 - Validación de campo: si `numero_via` está vacío, se requiere `manzana` o `lote`
 - Template actualizado con card independiente para dirección
 
+### Producto y Venta - Dependencias por negocio (2026-06-05)
+- **Regla 1**: `PRODUCTO = CHIP` → modela deshabilitado, `precio_venta = 1` fijo
+- **Regla 2**: `ORIGEN = PORTABILIDAD` → `operador` obligatorio (Claro/Movistar/Viettel/Virgin), `telefono_portar` obligatorio
+- **Regla 3**: `plan_producto` → `precio_plan` autocompletado (readonly)
+- **Regla 4**: `modelo_producto` → filtra opciones de `precio_venta`
+- **Regla 5**: `tipo_linea` → default POSTPAGO
+- **Regla 6**: `tipo_renta` → calculado automáticamente según precios
+
 ---
 
 ## Archivos modificados

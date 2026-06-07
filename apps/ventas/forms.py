@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Venta, ItemVenta, SeguimientoBO, Cliente
+from .models import Venta, ItemVenta, Cliente
 from apps.discador.models import BaseLlamada
 from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
@@ -29,15 +29,8 @@ class VentaForm(forms.ModelForm):
             'clausulas': forms.Select(attrs={'class': 'form-select'}),
             'tipo_linea': forms.Select(attrs={'class': 'form-select'}),
             'facturacion_requerida': forms.Select(attrs={'class': 'form-select'}),
-            'contact_callable': forms.Select(attrs={'class': 'form-select'}),
-            'es_callable': forms.Select(attrs={'class': 'form-select'}),
-            'tipo_valido': forms.Select(attrs={'class': 'form-select'}),
             'zona_referencia': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Ej: Frente al parque, al lado de la bodega Don José'}),
             'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'fecha_venta': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_gestion': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'hora_venta': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'hora_gestion': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'cliente_documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar', 'autocomplete': 'username'}),
             'horario_visita': forms.Select(attrs={'class': 'form-select'}),
             'producto_nombre': forms.Select(attrs={'class': 'form-select'}),
@@ -182,30 +175,6 @@ class ItemVentaForm(forms.ModelForm):
     class Meta:
         model = ItemVenta
         fields = ['tipo_venta', 'tipo_producto', 'precio_plan']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            widget = field.widget
-            if isinstance(widget, forms.Select):
-                widget.attrs.setdefault('class', '')
-                widget.attrs['class'] += ' form-select'
-            elif isinstance(widget, (forms.TextInput, forms.NumberInput, forms.EmailInput, forms.DateInput, forms.TimeInput)):
-                widget.attrs.setdefault('class', '')
-                widget.attrs['class'] += ' form-control'
-            elif isinstance(widget, forms.Textarea):
-                widget.attrs.setdefault('class', '')
-                widget.attrs['class'] += ' form-control'
-
-
-class SeguimientoBOForm(forms.ModelForm):
-    class Meta:
-        model = SeguimientoBO
-        fields = ['status_bo', 'fecha_bo', 'sts_courier', 'fch_courier', 'supervisor', 'intervalo']
-        widgets = {
-            'fecha_bo': forms.DateInput(attrs={'type': 'date'}),
-            'fch_courier': forms.DateInput(attrs={'type': 'date'}),
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

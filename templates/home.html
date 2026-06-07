@@ -51,6 +51,36 @@
                     Administrar las bases de llamadas y contactos
                 </div>
             </div>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'discador:resultado_list' %}'">
+                <div class="vp-item-title">
+                    📊
+                    Resultados del Discado
+                </div>
+                <div class="vp-item-meta">
+                    Ver resultados de gestión y ventas asociadas
+                </div>
+            </div>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'postventa:dashboard_bo' %}'">
+                <div class="vp-item-title">
+                    📋
+                    Dashboard BO
+                </div>
+                <div class="vp-item-meta">
+                    Panel de seguimiento postventa
+                </div>
+            </div>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'ventas:backoffice_list' %}'">
+                <div class="vp-item-title">
+                    📊
+                    Seguimiento Postventa
+                </div>
+                <div class="vp-item-meta">
+                    BO / Despacho / Courier
+                </div>
+            </div>
         </div>
     </div>
 </div>

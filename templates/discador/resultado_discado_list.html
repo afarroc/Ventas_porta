@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle">
+            <h1><i class="bi bi-telephone"></i> Resultados del Discado</h1>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-funnel"></i> Filtros</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                        <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{ request.GET.fecha_desde }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                        <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{ request.GET.fecha_hasta }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo_valido" class="form-label">Tipo Válido</label>
+                        <select class="form-select" id="tipo_valido" name="tipo_valido">
+                            <option value="">-- Todos --</option>
+                            {% for value, label in TIPO_VALIDO_CHOICES %}
+                                {% if value %}
+                                <option value="{{ value }}" {% if request.GET.tipo_valido == value %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="vp-table-container">
+            <table class="table table-striped vp-table">
+                <thead>
+                    <tr>
+                        <th>Teléfono</th>
+                        <th>Nombre</th>
+                        <th>Documento</th>
+                        <th>Fecha Gestión</th>
+                        <th>Resultado</th>
+                        <th>Tipo Válido</th>
+                        <th>Venta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+                        <td>{{ lead.telefono }}</td>
+                        <td>{{ lead.nombres }} {{ lead.paterno }} {{ lead.materno }}</td>
+                        <td>{{ lead.documento }}</td>
+                        <td>{{ lead.fecha_gestion|date:"d/m/Y" }} {{ lead.hora_gestion|time:"H:i" }}</td>
+                        <td>{{ lead.resultado_gestion|default:"-" }}</td>
+                        <td>{{ lead.get_tipo_valido_display|default:"No definido" }}</td>
+                        <td>
+                            {% if lead.venta_set.first %}
+                                <span class="badge bg-success">Venta #{{ lead.venta_set.first.id }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'discador:resultado_detail' lead.id_lead %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">No hay registros que coincidan con los filtros.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle">
+            <h1><i class="bi bi-telephone"></i> Resultado: {{ base.telefono }}</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-person-badge"></i> Información del Lead</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Teléfono:</strong> {{ base.telefono }}</p>
+                        <p><strong>Nombres:</strong> {{ base.nombres }}</p>
+                        <p><strong>Paterno:</strong> {{ base.paterno }}</p>
+                        <p><strong>Materno:</strong> {{ base.materno }}</p>
+                        <p><strong>Correo:</strong> {{ base.correo|default:"-" }}</p>
+                        <p><strong>Documento:</strong> {{ base.documento }}</p>
+                        <p><strong>Observaciones:</strong> {{ base.observaciones|default:"-" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-clock-history"></i> Gestión del Discado</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Fecha Gestión:</strong> {{ base.fecha_gestion|date:"d/m/Y"|default:"-" }}</p>
+                        <p><strong>Hora Gestión:</strong> {{ base.hora_gestion|time:"H:i"|default:"-" }}</p>
+                        <p><strong>Resultado:</strong> {{ base.resultado_gestion|default:"-" }}</p>
+                        <p><strong>Tipo Contacto:</strong> {{ base.tipo_contacto|default:"-" }}</p>
+                        <p><strong>Tipo Válido:</strong> {{ base.get_tipo_valido_display|default:"No definido" }}</p>
+                        <p><strong>Contacto Llamable:</strong> {{ base.get_contact_callable_display|default:"-" }}</p>
+                        <p><strong>Status JAVA:</strong> {{ base.status_java|default:"-" }}</p>
+                        <p><strong>Último Intento:</strong> {{ base.ultimo_intento|default:"-" }}</p>
+                        <p><strong>Último Resultado CRM:</strong> {{ base.ultimo_resultado_crm|default:"-" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-telephone-outbound"></i> Historial de Llamadas</h5>
+            </div>
+            <div class="card-body">
+                {% if base.llamadas.all %}
+                <table class="table table-sm vp-table">
+                    <thead>
+                        <tr>
+                            <th>Agente</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Duración</th>
+                            <th>Resultado</th>
+                            <th>Tipificación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for llamada in base.llamadas.all %}
+                        <tr>
+                            <td>{{ llamada.agente.username }}</td>
+                            <td>{{ llamada.inicio|date:"d/m/Y H:i" }}</td>
+                            <td>{{ llamada.fin|date:"d/m/Y H:i"|default:"-" }}</td>
+                            <td>{{ llamada.duracion|default:"-" }}</td>
+                            <td>{{ llamada.get_resultado_display|default:"-" }}</td>
+                            <td>{{ llamada.get_disposition_display|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No hay llamadas registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if base.venta_set.first %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-cart-check"></i> Venta Asociada</h5>
+            </div>
+            <div class="card-body">
+                {% with venta=base.venta_set.first %}
+                <p><strong>ID Venta:</strong> {{ venta.id }}</p>
+                <p><strong>Agente:</strong> {{ venta.agente_nombre }}</p>
+                <p><strong>Cliente:</strong> {{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</p>
+                <p><strong>Producto:</strong> {{ venta.producto_nombre }} - {{ venta.origen }}</p>
+                <p><strong>Precio Venta:</strong> S/. {{ venta.precio_venta|default:"-" }}</p>
+                <p><strong>Fecha:</strong> {{ venta.creado|date:"d/m/Y H:i" }}</p>
+                <a href="{% url 'ventas:venta_detail' venta.id %}" class="btn btn-sm btn-primary">
+                    Ver Detalle de Venta
+                </a>
+                {% endwith %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'discador:resultado_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Resultados
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

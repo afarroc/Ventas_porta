@@ -329,3 +329,51 @@ class AgentDashboardViewTest(TestCase):
         # Verify the new call is ongoing
         new_ongoing = calls.filter(fin=None)
         self.assertEqual(new_ongoing.count(), 1)
+
+
+class ResultadoDiscadoListViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testagent',
+            password='testpass123'
+        )
+        self.user.is_staff = True
+        self.user.save()
+        UserProfile.objects.create(user=self.user, rol=UserProfile.ROL_AGENTE)
+        
+        self.base = BaseLlamada.objects.create(
+            telefono='123456789',
+            nombres='Test',
+            paterno='Lead',
+            documento='12345678',
+            tipo_valido='Válido'
+        )
+        
+        CallRecord.objects.create(
+            agente=self.user,
+            base_llamada=self.base,
+            inicio=timezone.now()
+        )
+
+    def test_resultado_list_view_requires_login(self):
+        """Test that resultado list requires authentication"""
+        url = reverse('discador:resultado_list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, f'/users/login/?next={url}')
+
+    def test_resultado_list_view_loads_for_authenticated(self):
+        """Test that resultado list loads for authenticated users"""
+        self.client.login(username='testagent', password='testpass123')
+        url = reverse('discador:resultado_list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Resultados del Discado')
+
+    def test_resultado_detail_view(self):
+        """Test that resultado detail view works"""
+        self.client.login(username='testagent', password='testpass123')
+        url = reverse('discador:resultado_detail', kwargs={'id_lead': self.base.id_lead})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '123456789')

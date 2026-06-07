@@ -28,6 +28,23 @@ class BaseLlamada(models.Model):
     tipo_valido = models.CharField(max_length=10, choices=TIPO_VALIDO, blank=True, verbose_name="Tipo Válido")
     status_java = models.CharField(max_length=50, blank=True, verbose_name="Status JAVA")
     supervisor_nombre = models.CharField(max_length=150, blank=True, verbose_name="Supervisor")
+    BASE_PROCEDENCIA_CHOICES = [
+        ('POT', 'POT'),
+        ('RSG_01', 'RSG_01'),
+    ]
+    base_procedencia = models.CharField(
+        max_length=20,
+        choices=BASE_PROCEDENCIA_CHOICES,
+        blank=True,
+        default='',
+        verbose_name="Base de Procedencia",
+        db_index=True,
+    )
+    base_manual = models.BooleanField(
+        default=False,
+        verbose_name="Lead Manual",
+        help_text="Marcar si el número NO existe en una base y es lead cargado manualmente",
+    )
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 

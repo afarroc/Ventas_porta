@@ -4,8 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q, OuterRef, Subquery
-from django.http import JsonResponse
-from .models import BaseLlamada, CallRecord
+from django.http import JsonResponse, Http404
+from .models import BaseLlamada, CallRecord, TIPO_VALIDO
 from apps.users.models import UserProfile
 
 
@@ -341,3 +341,79 @@ def check_incoming_call(request):
         })
 
     return JsonResponse({'has_incoming': False})
+
+
+class ResultadoDiscadoListView(LoginRequiredMixin, ListView):
+    """Vista de resultados del discado - accesible por agente/supervisor."""
+    model = BaseLlamada
+    template_name = 'discador/resultado_discado_list.html'
+    context_object_name = 'leads'
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = BaseLlamada.objects.all().prefetch_related(
+            'llamadas',
+            'venta_set'
+        )
+        
+        profile = getattr(self.request.user, 'profile', None)
+        if profile:
+            if profile.rol == UserProfile.ROL_ADMIN:
+                pass
+            elif profile.rol == UserProfile.ROL_SUPERVISOR:
+                supervised_ids = list(
+                    UserProfile.objects.filter(supervisor__user=self.request.user)
+                    .values_list('user_id', flat=True)
+                ) + [self.request.user.id]
+                queryset = queryset.filter(
+                    llamadas__agente__in=supervised_ids
+                ).distinct()
+            else:
+                queryset = queryset.filter(
+                    llamadas__agente=self.request.user
+                ).distinct()
+
+        fecha_desde = self.request.GET.get('fecha_desde')
+        fecha_hasta = self.request.GET.get('fecha_hasta')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_gestion__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_gestion__lte=fecha_hasta)
+
+        tipo_valido = self.request.GET.get('tipo_valido')
+        if tipo_valido:
+            queryset = queryset.filter(tipo_valido=tipo_valido)
+
+        resultado = self.request.GET.get('resultado')
+        if resultado:
+            queryset = queryset.filter(resultado_gestion=resultado)
+
+        return queryset.order_by('-fecha_gestion', '-hora_gestion')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Resultados del Discado'
+        context['TIPO_VALIDO_CHOICES'] = TIPO_VALIDO
+        return context
+
+
+class ResultadoDiscadoDetailView(LoginRequiredMixin, DetailView):
+    """Detalle de resultados de un lead específico."""
+    model = BaseLlamada
+    template_name = 'discador/resultado_discado_detail.html'
+    context_object_name = 'base'
+
+    def get_object(self, queryset=None):
+        from uuid import UUID
+        try:
+            uuid_val = UUID(str(self.kwargs['id_lead']))
+        except (ValueError, TypeError):
+            raise Http404("Lead no encontrado")
+
+        try:
+            return BaseLlamada.objects.prefetch_related(
+                'llamadas',
+                'venta_set'
+            ).get(id_lead=uuid_val)
+        except BaseLlamada.DoesNotExist:
+            raise Http404("Lead no encontrado")

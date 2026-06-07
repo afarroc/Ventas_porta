@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px">
+            <i class="bi bi-clipboard-data"></i> Dashboard Postventa
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Ventas</h5>
+                        <p class="card-text fs-3">{{ total_ventas }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Total BO</h5>
+                        <p class="card-text fs-3">{{ total_bo }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Pendientes BO</h5>
+                        <p class="card-text fs-3">{{ pendientes_bo }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">En BO</h5>
+                        <p class="card-text fs-3">{{ en_bo }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-secondary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Validados</h5>
+                        <p class="card-text fs-3">{{ validados }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-dark mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">En Despacho</h5>
+                        <p class="card-text fs-3">{{ en_despacho }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Despachados</h5>
+                        <p class="card-text fs-3">{{ despachados }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-clock-history"></i> Últimas Ventas</h5>
+                <a href="{% url 'ventas:backoffice_list' %}" class="btn btn-sm btn-primary">Ver listado completo</a>
+            </div>
+            <div class="card-body" style="padding:0">
+                <div class="vp-table-wrap">
+                    <table class="vp-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Agente</th>
+                                <th>Base</th>
+                                <th>Tipo Renta</th>
+                                <th>Status BO</th>
+                                <th>Fecha BO</th>
+                                <th>Sts Courier</th>
+                                <th>Fch. Courier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ultimas_ventas %}
+                                {% with bo=venta.seguimiento_bo cour=venta.estado_courier %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
+                                    <td>{{ venta.agente_nombre }}</td>
+                                    <td>{{ venta.base_llamada.base_procedencia|default:"-" }}</td>
+                                    <td>{{ venta.tipo_renta|default:"-" }}</td>
+                                    <td>
+                                        {% if bo %}
+                                            {{ bo.get_status_bo_display }}
+                                        {% else %}
+                                            Pdte. BO
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if bo and bo.fecha_bo %}
+                                            {{ bo.fecha_bo }}
+                                        {% else %}
+                                            Pdte. BO
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cour %}
+                                            {{ cour.get_sts_courier_display }}
+                                        {% else %}
+                                            Pdte. BO
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cour and cour.fch_courier %}
+                                            {{ cour.fch_courier }}
+                                        {% else %}
+                                            Pdte. BO
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                                    No hay registros de venta
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

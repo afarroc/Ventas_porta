@@ -1,32 +1,191 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <h1 class="vp-pagetitle" style="margin-bottom:16px">Venta #{{ venta.id }}</h1>
-    <div class="row" style="flex-direction:column;gap:8px">
-        <div style="display:flex">
-            <dt style="flex:0 0 200px;font-weight:700">Cliente</dt>
-            <dd style="flex:1;margin:0">{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}</dd>
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle">
+            <h1><i class="bi bi-receipt"></i> Venta #{{ venta.id }}</h1>
         </div>
-        
-        <div style="display:flex">
-            <dt style="flex:0 0 200px;font-weight:700">Documento</dt>
-            <dd style="flex:1;margin:0">{{ venta.cliente_documento }}</dd>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Información de la Venta</h5>
+            </div>
+            <div class="card-body">
+                <dl class="vp-dl">
+                    <div class="vp-dl-row">
+                        <dt>Cliente</dt>
+                        <dd>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Documento</dt>
+                        <dd>{{ venta.cliente_documento }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Tipo Línea</dt>
+                        <dd>{{ venta.get_tipo_linea_display }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Precio Venta</dt>
+                        <dd>S/. {{ venta.precio_venta|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Fecha</dt>
+                        <dd>{{ venta.creado|date:"d/m/Y H:i" }}</dd>
+                    </div>
+                    {% if venta.tipo_renta %}
+                    <div class="vp-dl-row">
+                        <dt>Tipo Renta</dt>
+                        <dd><span class="badge bg-info">{{ venta.tipo_renta }}</span></dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
         </div>
-        
-        <div style="display:flex">
-            <dt style="flex:0 0 200px;font-weight:700">Tipo Línea</dt>
-            <dd style="flex:1;margin:0">{{ venta.get_tipo_linea_display }}</dd>
+
+        <!-- Items de Venta -->
+        {% if venta.items.all %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Ítems de la Venta</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm vp-table">
+                    <thead>
+                        <tr>
+                            <th>Tipo Venta</th>
+                            <th>Tipo Producto</th>
+                            <th>Precio Plan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in venta.items.all %}
+                        <tr>
+                            <td>{{ item.tipo_venta }}</td>
+                            <td>{{ item.tipo_producto }}</td>
+                            <td>S/. {{ item.precio_plan }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
-        <div style="display:flex">
-            <dt style="flex:0 0 200px;font-weight:700">Precio Venta</dt>
-            <dd style="flex:1;margin:0">{{ venta.precio_venta }}</dd>
+        {% endif %}
+
+        <!-- Seguimiento Backoffice -->
+        {% if venta.seguimiento_bo %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-graph-up"></i> Seguimiento Backoffice</h5>
+            </div>
+            <div class="card-body">
+                <dl class="vp-dl">
+                    <div class="vp-dl-row">
+                        <dt>Status</dt>
+                        <dd>{{ venta.seguimiento_bo.get_status_bo_display }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Fecha BO</dt>
+                        <dd>{{ venta.seguimiento_bo.fecha_bo|date:"d/m/Y"|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Supervisor</dt>
+                        <dd>{{ venta.seguimiento_bo.supervisor|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Observaciones</dt>
+                        <dd>{{ venta.seguimiento_bo.observaciones|default:"-"|linebreaksbr }}</dd>
+                    </div>
+                </dl>
+            </div>
         </div>
-        
-        <div style="display:flex">
-            <dt style="flex:0 0 200px;font-weight:700">Fecha</dt>
-            <dd style="flex:1;margin:0">{{ venta.fecha_venta }}</dd>
+        {% endif %}
+
+        <!-- Estado Despacho -->
+        {% if venta.estado_despacho %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-truck"></i> Estado Despacho</h5>
+            </div>
+            <div class="card-body">
+                <dl class="vp-dl">
+                    <div class="vp-dl-row">
+                        <dt>Etapa</dt>
+                        <dd>{{ venta.estado_despacho.get_etapa_display }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Fecha Etapa</dt>
+                        <dd>{{ venta.estado_despacho.fecha_etapa|date:"d/m/Y"|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Proveedor</dt>
+                        <dd>{{ venta.estado_despacho.proveedor.nombre|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Tracking</dt>
+                        <dd>{{ venta.estado_despacho.tracking|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Observaciones</dt>
+                        <dd>{{ venta.estado_despacho.observaciones|default:"-"|linebreaksbr }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Estado Courier -->
+        {% if venta.estado_courier %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-bicycle"></i> Estado Courier</h5>
+            </div>
+            <div class="card-body">
+                <dl class="vp-dl">
+                    <div class="vp-dl-row">
+                        <dt>Estado Courier</dt>
+                        <dd>{{ venta.estado_courier.get_sts_courier_display }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Fecha Courier</dt>
+                        <dd>{{ venta.estado_courier.fch_courier|date:"d/m/Y"|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Proveedor</dt>
+                        <dd>{{ venta.estado_courier.proveedor.nombre|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Tracking</dt>
+                        <dd>{{ venta.estado_courier.tracking|default:"-" }}</dd>
+                    </div>
+                    <div class="vp-dl-row">
+                        <dt>Observaciones</dt>
+                        <dd>{{ venta.estado_courier.observaciones|default:"-"|linebreaksbr }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+
+<div class="d-flex gap-2">
+            <a href="{% url 'ventas:item_create' venta.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus"></i> Agregar Ítem
+            </a>
+            {% if not venta.seguimiento_bo %}
+            <a href="{% url 'postventa:backoffice_edit' venta.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-graph-up"></i> Agregar Seguimiento BO
+            {% endif %}
+            {% if not venta.estado_despacho %}
+            <a href="{% url 'postventa:despacho_edit' venta.id %}" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-truck"></i> Agregar Despacho
+            {% endif %}
+            {% if not venta.estado_courier %}
+            <a href="{% url 'postventa:courier_edit' venta.id %}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-bicycle"></i> Agregar Courier
+            {% endif %}
+            <a href="{% url 'ventas:venta_list' %}" class="btn btn-sm btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Lista
+            </a>
         </div>
     </div>
 </div>

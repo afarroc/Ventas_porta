@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Cliente, Venta, ItemVenta, SeguimientoBO
+from .models import Cliente, Venta, ItemVenta
+from apps.postventa.models import SeguimientoBO, EstadoDespacho, EstadoCourier
 
 
 @admin.register(Cliente)
@@ -34,21 +35,15 @@ class ItemVentaInline(admin.TabularInline):
     fields = ('tipo_venta', 'tipo_producto', 'precio_plan')
 
 
-class SeguimientoBOInline(admin.StackedInline):
-    model = SeguimientoBO
-    extra = 0
-    fields = ('status_bo', 'fecha_bo', 'sts_courier', 'fch_courier', 'supervisor', 'intervalo')
-
-
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'agente_nombre', 'cliente', 'tipo_linea', 'fecha_venta', 'precio_venta'
+        'id', 'agente_nombre', 'cliente', 'tipo_linea', 'creado', 'precio_venta'
     ]
-    list_filter = ['tipo_linea', 'fecha_venta', 'facturacion_requerida']
+    list_filter = ['tipo_linea', 'facturacion_requerida']
     search_fields = ['agente_nombre', 'cliente__nombres', 'cliente__documento']
     readonly_fields = ['creado', 'actualizado']
-    inlines = [ItemVentaInline, SeguimientoBOInline]
+    inlines = [ItemVentaInline]
 
     fieldsets = (
         ('Agente', {
@@ -72,13 +67,6 @@ class VentaAdmin(admin.ModelAdmin):
         ('Facturación', {
             'fields': ('facturacion_requerida',)
         }),
-        ('Gestión del Discador', {
-            'fields': ('contact_callable', 'es_callable', 'fecha_gestion', 'hora_gestion', 
-                      'resultado_gestion', 'tipo_contacto', 'tipo_valido', 'status_java', 'supervisor_nombre')
-        }),
-        ('Backoffice/Resumen', {
-            'fields': ('base', 'tipo_renta', 'tipo_renta2', 'base3', 'q_ventas', 'fecha_venta', 'hora_venta')
-        }),
         ('Auditoría', {
             'fields': ('observaciones', 'creado', 'actualizado'),
             'classes': ('collapse',)
@@ -91,10 +79,3 @@ class ItemVentaAdmin(admin.ModelAdmin):
     list_display = ['id', 'venta', 'tipo_venta', 'tipo_producto', 'precio_plan']
     list_filter = ['tipo_venta', 'tipo_producto']
     search_fields = ['venta__cliente_nombres', 'tipo_producto']
-
-
-@admin.register(SeguimientoBO)
-class SeguimientoBOAdmin(admin.ModelAdmin):
-    list_display = ['venta', 'status_bo', 'fecha_bo', 'sts_courier', 'supervisor']
-    list_filter = ['status_bo', 'fecha_bo']
-    search_fields = ['venta__cliente_nombres', 'supervisor']

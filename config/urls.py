@@ -6,5 +6,7 @@ urlpatterns = [
     path('discador/', include('apps.discador.urls')),
     path('users/', include('apps.users.urls')),
     path('postventa/', include('apps.postventa.urls')),
+    path('despacho/', include('apps.despacho.urls')),
+    path('courier/', include('apps.courier.urls')),
     path('admin/', admin.site.urls),
 ]

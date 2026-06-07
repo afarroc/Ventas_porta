@@ -281,33 +281,33 @@ class PostVentaViewsTest(TestCase):
         self.assertContains(response, 'Tipo Venta')
         self.client.logout()
 
-    def test_backoffice_create_view_get(self):
+def test_backoffice_create_view_get(self):
         """Test that backoffice create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')
         
-        url = reverse('postventa:backoffice_edit', kwargs={'venta_id': self.venta.id})
+        url = reverse('postventa:backoffice_create', kwargs={'venta_id': self.venta.id})
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Status BO')
         self.client.logout()
-
+    
     def test_despacho_create_view_get(self):
         """Test that despacho create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')
         
-        url = reverse('postventa:despacho_edit', kwargs={'venta_id': self.venta.id})
+        url = reverse('despacho:despacho_create', kwargs={'venta_id': self.venta.id})
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Etapa')
         self.client.logout()
-
+    
     def test_courier_create_view_get(self):
         """Test that courier create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')
         
-        url = reverse('postventa:courier_edit', kwargs={'venta_id': self.venta.id})
+        url = reverse('courier:courier_create', kwargs={'venta_id': self.venta.id})
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)

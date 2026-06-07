@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'apps.ventas',
     'apps.users',
     'apps.postventa',
+    'apps.despacho',
+    'apps.courier',
 ]
 
 MIDDLEWARE = [

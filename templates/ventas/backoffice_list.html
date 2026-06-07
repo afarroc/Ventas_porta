@@ -28,7 +28,7 @@
                         </thead>
                         <tbody>
                             {% for venta in ventas %}
-                                {% with bo=venta.seguimiento_bo cour=venta.estado_courier %}
+                                {% with bo=venta.bo_seguimiento cour=venta.courier_estado %}
                                 <tr>
                                     <td>
                                         {% if venta.base_llamada %}
@@ -81,15 +81,15 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'postventa:backoffice_edit' venta.id %}"
+                                        <a href="{% url 'postventa:backoffice_create' venta.id %}"
                                            class="btn btn-sm btn-primary">
                                             <i class="bi bi-pencil"></i> BO
                                         </a>
-                                        <a href="{% url 'postventa:despacho_edit' venta.id %}"
+                                        <a href="{% url 'despacho:despacho_create' venta.id %}"
                                            class="btn btn-sm btn-outline-info">
                                             <i class="bi bi-truck"></i> Despacho
                                         </a>
-                                        <a href="{% url 'postventa:courier_edit' venta.id %}"
+                                        <a href="{% url 'courier:courier_create' venta.id %}"
                                            class="btn btn-sm btn-outline-success">
                                             <i class="bi bi-bicycle"></i> Courier
                                         </a>

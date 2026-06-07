@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px">
+            <i class="bi bi-bicycle"></i> Proveedor Courier
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-pencil"></i> {% if object %}Editar{% else %}Nuevo{% endif %} Proveedor Courier</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.nombre.label_tag }}
+                            {{ form.nombre }}
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                {{ form.activo.label_tag }}
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                    <a href="{% url 'courier:proveedor_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

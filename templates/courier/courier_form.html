@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px">
+            <i class="bi bi-bicycle"></i> Estado Courier
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Datos de la Venta #{{ venta_id }}</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'ventas:venta_detail' pk=venta_id %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Volver al detalle
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5>Registrar Estado Courier</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Estado Courier</label>
+                            {{ form.sts_courier }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Courier</label>
+                            {{ form.fch_courier }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Proveedor</label>
+                            {{ form.proveedor }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">N° Seguimiento / Tracking</label>
+                            {{ form.tracking }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

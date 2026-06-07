@@ -1,6 +1,35 @@
 from django.contrib import admin
 from .models import Cliente, Venta, ItemVenta
-from apps.postventa.models import SeguimientoBO, EstadoDespacho, EstadoCourier
+from apps.postventa.models import SeguimientoBO
+from apps.despacho.models import EstadoDespacho
+from apps.courier.models import EstadoCourier
+
+
+class ItemVentaInline(admin.TabularInline):
+    model = ItemVenta
+    extra = 1
+    fields = ('tipo_venta', 'tipo_producto', 'precio_plan')
+
+
+class SeguimientoBOInline(admin.StackedInline):
+    model = SeguimientoBO
+    extra = 0
+    can_delete = False
+    fields = ('status_bo', 'fecha_bo', 'supervisor', 'observaciones')
+
+
+class EstadoDespachoInline(admin.StackedInline):
+    model = EstadoDespacho
+    extra = 0
+    can_delete = False
+    fields = ('etapa', 'fecha_etapa', 'proveedor', 'tracking', 'observaciones')
+
+
+class EstadoCourierInline(admin.StackedInline):
+    model = EstadoCourier
+    extra = 0
+    can_delete = False
+    fields = ('sts_courier', 'fch_courier', 'proveedor', 'tracking', 'observaciones')
 
 
 @admin.register(Cliente)
@@ -29,12 +58,6 @@ class ClienteAdmin(admin.ModelAdmin):
     )
 
 
-class ItemVentaInline(admin.TabularInline):
-    model = ItemVenta
-    extra = 1
-    fields = ('tipo_venta', 'tipo_producto', 'precio_plan')
-
-
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
     list_display = [
@@ -43,7 +66,7 @@ class VentaAdmin(admin.ModelAdmin):
     list_filter = ['tipo_linea', 'facturacion_requerida']
     search_fields = ['agente_nombre', 'cliente__nombres', 'cliente__documento']
     readonly_fields = ['creado', 'actualizado']
-    inlines = [ItemVentaInline]
+    inlines = [ItemVentaInline, SeguimientoBOInline, EstadoDespachoInline, EstadoCourierInline]
 
     fieldsets = (
         ('Agente', {

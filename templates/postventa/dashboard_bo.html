@@ -91,8 +91,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for venta in ultimas_ventas %}
-                                {% with bo=venta.seguimiento_bo cour=venta.estado_courier %}
+                            {% for venta in ventas %}
+                                {% with bo=venta.bo_seguimiento cour=venta.courier_estado %}
                                 <tr>
                                     <td>{{ venta.id }}</td>
                                     <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>

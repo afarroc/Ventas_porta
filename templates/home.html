@@ -81,6 +81,26 @@
                     BO / Despacho / Courier
                 </div>
             </div>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'despacho:proveedor_list' %}'">
+                <div class="vp-item-title">
+                    📦
+                    Proveedores Despacho
+                </div>
+                <div class="vp-item-meta">
+                    Gestión de proveedores de producto
+                </div>
+            </div>
+
+            <div class="vp-item-card" onclick="window.location.href='{% url 'courier:proveedor_list' %}'">
+                <div class="vp-item-title">
+                    🚚
+                    Proveedores Courier
+                </div>
+                <div class="vp-item-meta">
+                    Gestión de proveedores de entrega
+                </div>
+            </div>
         </div>
     </div>
 </div>

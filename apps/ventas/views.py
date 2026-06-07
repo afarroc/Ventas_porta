@@ -66,7 +66,7 @@ class BackofficeListView(ListView):
             Venta.objects
             .select_related('cliente', 'base_llamada')
             .prefetch_related(
-                'seguimiento_bo', 'estado_despacho', 'estado_courier'
+                'bo_seguimiento', 'despacho_estado', 'courier_estado'
             )
             .order_by('-creado')
         )

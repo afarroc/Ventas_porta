@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle">
+            <h1><i class="bi bi-list-ul"></i> Nuevo Ítem de Venta</h1>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Datos del Ítem</h5>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.tipo_venta.label_tag }}
+                            {{ form.tipo_venta }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.tipo_producto.label_tag }}
+                            {{ form.tipo_producto }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.precio_plan.label_tag }}
+                            {{ form.precio_plan }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <a href="{% url 'ventas:venta_detail' venta_id %}" class="btn btn-secondary">
+                        <i class="bi bi-x"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar Ítem
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -170,20 +170,21 @@ class Venta(models.Model):
     tipo_renta2 = models.CharField(max_length=20, blank=True, verbose_name="Tipo Renta 2")
     base3 = models.CharField(max_length=50, blank=True, verbose_name="Base3")
     q_ventas = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Cantidad de Ventas")
-    fecha_venta = models.DateField(null=True, blank=True, verbose_name="Fecha de Venta")
-    hora_venta = models.TimeField(null=True, blank=True, verbose_name="Hora de Venta")
 
-    CONTACT_CALLABLE = [('0', 'No'), ('1', 'Sí')]
-    contact_callable = models.CharField(max_length=1, choices=CONTACT_CALLABLE, blank=True, verbose_name="Contacto Llamable (disc.)")
-    es_callable = models.CharField(max_length=1, choices=CONTACT_CALLABLE, blank=True, verbose_name="Es Callable (disc.)")
-    fecha_gestion = models.DateField(null=True, blank=True, verbose_name="Fecha Gestión (disc.)")
-    hora_gestion = models.TimeField(null=True, blank=True, verbose_name="Hora Gestión (disc.)")
-    resultado_gestion = models.CharField(max_length=100, blank=True, verbose_name="Resultado Gestión (disc.)")
-    tipo_contacto = models.CharField(max_length=50, blank=True, verbose_name="Tipo Contacto (disc.)")
-    TIPO_VALIDO = [('Válido', 'Válido'), ('Inválido', 'Inválido'), ('', 'No definido')]
-    tipo_valido = models.CharField(max_length=10, choices=TIPO_VALIDO, blank=True, verbose_name="Tipo Válido (disc.)")
-    status_java = models.CharField(max_length=50, blank=True, verbose_name="Status JAVA (disc.)")
-    supervisor_nombre = models.CharField(max_length=150, blank=True, verbose_name="Supervisor (disc.)")
+    TIPO_RENTA_CHOICES = [('R.BAJA', 'R.BAJA'), ('R.MEDIA', 'R.MEDIA'), ('R.ALTA', 'R.ALTA')]
+
+    multiples_lineas = models.BooleanField(
+        default=False,
+        verbose_name="Venta multilínea",
+        help_text="Marcar cuando la venta incluye más de una línea (activa tipo_renta2)",
+    )
+    tipo_renta2 = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Tipo Renta Multilínea",
+        help_text="Calculado igual que tipo_renta, pero para la segunda línea o línea adicional",
+    )
+
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
     base_llamada = models.ForeignKey('discador.BaseLlamada', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Base Llamada")
 
@@ -195,6 +196,59 @@ class Venta(models.Model):
         verbose_name = 'Venta'
         verbose_name_plural = 'Ventas'
         ordering = ['-creado']
+
+    @staticmethod
+    def calcular_tipo_renta(origen, producto, precio_venta, precio_plan):
+        """
+        Calcula tipo_renta basado en reglas de negocio.
+        Ver: HANDOFF_2026-06-06_venta_refactor.md para tabla completa
+        """
+        reglas = {
+            ('PORTABILIDAD', 'PACK', 49): 'R.BAJA',
+            ('PORTABILIDAD', 'PACK', 75): 'R.MEDIA',
+            ('PORTABILIDAD', 'PACK', 99): 'R.ALTA',
+            ('PORTABILIDAD', 'PACK', 149): 'R.ALTA',
+            ('PORTABILIDAD', 'PACK', 199): 'R.ALTA',
+            ('PORTABILIDAD', 'PACK', 299): 'R.ALTA',
+            ('PORTABILIDAD', 'PACK', 29): 'R.BAJA',
+            ('PORTABILIDAD', 'PACK', 74): 'R.MEDIA',
+            ('PORTABILIDAD', 'CHIP', 25): 'R.BAJA',
+            ('PORTABILIDAD', 'CHIP', 39): 'R.BAJA',
+            ('PORTABILIDAD', 'CHIP', 59): 'R.MEDIA',
+            ('PORTABILIDAD', 'CHIP', 74): 'R.MEDIA',
+            ('PORTABILIDAD', 'CHIP', 89): 'R.MEDIA',
+            ('PORTABILIDAD', 'CHIP', 109): 'R.ALTA',
+            ('PORTABILIDAD', 'CHIP', 145): 'R.ALTA',
+            ('PORTABILIDAD', 'CHIP', 209): 'R.ALTA',
+            ('PORTABILIDAD', 'CHIP', 49): 'R.BAJA',
+            ('PORTABILIDAD', 'CHIP', 75): 'R.MEDIA',
+            ('PORTABILIDAD', 'CHIP', 99): 'R.ALTA',
+            ('LINEA_NUEVA', 'PACK', 49): 'R.BAJA',
+            ('LINEA_NUEVA', 'PACK', 75): 'R.MEDIA',
+            ('LINEA_NUEVA', 'PACK', 99): 'R.ALTA',
+            ('LINEA_NUEVA', 'PACK', 149): 'R.ALTA',
+            ('LINEA_NUEVA', 'PACK', 199): 'R.ALTA',
+            ('LINEA_NUEVA', 'PACK', 299): 'R.ALTA',
+            ('LINEA_NUEVA', 'CHIP', 25): 'R.BAJA',
+            ('LINEA_NUEVA', 'CHIP', 39): 'R.BAJA',
+            ('LINEA_NUEVA', 'CHIP', 45): 'R.BAJA',
+            ('LINEA_NUEVA', 'CHIP', 59): 'R.MEDIA',
+            ('LINEA_NUEVA', 'CHIP', 74): 'R.MEDIA',
+            ('LINEA_NUEVA', 'CHIP', 89): 'R.MEDIA',
+            ('LINEA_NUEVA', 'CHIP', 29): 'R.BAJA',
+            ('LINEA_NUEVA', 'PACK', 89): 'R.MEDIA',
+        }
+        return reglas.get((origen, producto, precio_venta), '')
+
+    def save(self, *args, **kwargs):
+        if self.origen and self.producto_nombre and self.precio_venta:
+            self.tipo_renta = self.calcular_tipo_renta(
+                self.origen, 
+                self.producto_nombre, 
+                self.precio_venta, 
+                self.precio_plan
+            )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Venta {self.id} - {self.cliente_nombres} {self.cliente_paterno}"
@@ -213,21 +267,3 @@ class ItemVenta(models.Model):
 
     def __str__(self):
         return f"Item {self.id} - {self.tipo_producto}"
-
-
-class SeguimientoBO(models.Model):
-    venta = models.OneToOneField(Venta, on_delete=models.CASCADE, related_name='backoffice', verbose_name="Venta")
-    status_bo = models.CharField(max_length=50, blank=True, verbose_name="Status BO")
-    fecha_bo = models.DateField(null=True, blank=True, verbose_name="Fecha BO")
-    sts_courier = models.CharField(max_length=50, blank=True, verbose_name="Sts Courier")
-    fch_courier = models.DateField(null=True, blank=True, verbose_name="Fecha Courier")
-    supervisor = models.CharField(max_length=150, blank=True, verbose_name="Supervisor")
-    intervalo = models.CharField(max_length=20, blank=True, verbose_name="Intervalo")
-
-    class Meta:
-        db_table = 'ventas_backoffice'
-        verbose_name = 'Seguimiento Backoffice'
-        verbose_name_plural = 'Seguimientos Backoffice'
-
-    def __str__(self):
-        return f"Seguimiento BO - Venta {self.venta_id}"

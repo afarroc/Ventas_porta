@@ -538,11 +538,39 @@
   cursor: default;
 }
 
+/* Description Lists */
+.vp-dl {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vp-dl-row {
+    display: flex;
+    align-items: baseline;
+}
+
+.vp-dl-row dt {
+    flex: 0 0 140px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--vp-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.vp-dl-row dd {
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+    color: var(--vp-text);
+}
+
 /* Alerts */
 .vp-alert {
-  border-radius: var(--vp-radius);
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: var(--vp-radius);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Spinner */

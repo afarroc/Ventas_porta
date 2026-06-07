@@ -1,4 +1,4 @@
-from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic import ListView, DetailView, TemplateView, CreateView
 from django.views.generic.edit import CreateView
 from django.forms import inlineformset_factory
 from django.shortcuts import redirect, get_object_or_404
@@ -8,9 +8,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
-from .models import Venta, ItemVenta, SeguimientoBO, Cliente
+from .models import Venta, ItemVenta, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
-from .forms import VentaForm, ItemVentaForm, SeguimientoBOForm
+from .forms import VentaForm, ItemVentaForm
 from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
 ItemVentaFormSet = inlineformset_factory(
@@ -53,6 +53,23 @@ class VentaDetailView(DetailView):
     model = Venta
     template_name = 'ventas/venta_detail.html'
     context_object_name = 'venta'
+
+
+class BackofficeListView(ListView):
+    model = Venta
+    template_name = 'ventas/backoffice_list.html'
+    context_object_name = 'ventas'
+    paginate_by = 50
+
+    def get_queryset(self):
+        return (
+            Venta.objects
+            .select_related('cliente', 'base_llamada')
+            .prefetch_related(
+                'seguimiento_bo', 'estado_despacho', 'estado_courier'
+            )
+            .order_by('-creado')
+        )
 
 
 @login_required
@@ -175,7 +192,6 @@ def venta_modal_partial(request, id_lead):
     })
     
     items_formset = ItemVentaFormSet()
-    backoffice_form = SeguimientoBOForm()
     
     profile = getattr(user, 'profile', None)
     supervisor_name = '-'
@@ -188,7 +204,6 @@ def venta_modal_partial(request, id_lead):
     html = render_to_string('ventas/venta_form_modal.html', {
         'form': form,
         'items_formset': items_formset,
-        'backoffice_form': backoffice_form,
         'base_llamada_id': str(base.id_lead),
         'base_llamada_telefono': base.telefono or '',
         'base_llamada_nombres': base.nombres or '',
@@ -268,19 +283,6 @@ def venta_api_create(request, id_lead):
                     tipo_producto=tipo_producto,
                     precio_plan=precio_plan if precio_plan else None
                 )
-        
-        # Process backoffice
-        status_bo = request.POST.get('status_bo', '')
-        if status_bo:
-            SeguimientoBO.objects.create(
-                venta=venta,
-                status_bo=status_bo,
-                fecha_bo=request.POST.get('fecha_bo') or None,
-                sts_courier=request.POST.get('sts_courier', ''),
-                fch_courier=request.POST.get('fch_courier') or None,
-                supervisor=request.POST.get('supervisor', ''),
-                intervalo=request.POST.get('intervalo', '')
-            )
         
         messages.success(request, "Venta registrada correctamente.")
         return JsonResponse({'ok': True, 'mensaje': 'Venta registrada correctamente.', 'venta_id': venta.id})
@@ -421,10 +423,8 @@ class VentaCreateView(LoginRequiredMixin, CreateView):
 
         if self.request.POST:
             context['items_formset'] = ItemVentaFormSet(self.request.POST)
-            context['backoffice_form'] = SeguimientoBOForm(self.request.POST)
         else:
             context['items_formset'] = ItemVentaFormSet()
-            context['backoffice_form'] = SeguimientoBOForm()
         return context
 
     def form_valid(self, form):
@@ -459,20 +459,28 @@ class VentaCreateView(LoginRequiredMixin, CreateView):
                 )
                 form.instance.cliente = cliente
 
-        context = self.get_context_data()
-        items_formset = context['items_formset']
-        backoffice_form = context['backoffice_form']
-
-        if not (items_formset.is_valid() and backoffice_form.is_valid()):
-            return self.render_to_response(self.get_context_data(form=form))
-
         self.object = form.save()
-        items_formset.instance = self.object
-        items_formset.save()
-
-        backoffice = backoffice_form.save(commit=False)
-        backoffice.venta = self.object
-        backoffice.save()
-
         messages.success(self.request, "Venta registrada correctamente.")
         return redirect(self.success_url)
+
+
+# ========================
+# Vistas separadas para Backoffice
+# ========================
+
+class ItemVentaCreateView(LoginRequiredMixin, CreateView):
+    model = ItemVenta
+    form_class = ItemVentaForm
+    template_name = 'ventas/item_form.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['venta_id'] = self.kwargs['venta_id']
+        return context
+
+    def form_valid(self, form):
+        form.instance.venta_id = self.kwargs['venta_id']
+        return super().form_valid()
+
+    def get_success_url(self):
+        return reverse_lazy('ventas:venta_detail', kwargs={'pk': self.kwargs['venta_id']})

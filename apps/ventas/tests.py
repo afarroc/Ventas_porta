@@ -1,9 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import Venta, ItemVenta, SeguimientoBO, Cliente
+from .models import Venta, ItemVenta, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
 from apps.users.models import UserProfile
+from apps.postventa.models import SeguimientoBO
 
 
 class VentaModelTest(TestCase):
@@ -117,27 +118,44 @@ class VentaCreateViewTest(TestCase):
             'cliente_telefono_1': self.existing_cliente.telefono_1,
             'cliente_telefono_2': self.existing_cliente.telefono_2,
             'registrar_nuevo_cliente': False,
-            'producto_nombre': 'Test Product',
-            'origen': 'Test',
-            'operador': 'Test',
-            'tipo_linea': 'PREPAGO',
+            'producto_nombre': 'CHIP',
+            'origen': 'LINEA_NUEVA',
+            'tipo_linea': 'POSTPAGO',
             'facturacion_requerida': 'NO',
-            'items-TOTAL_FORMS': '1',
-            'items-INITIAL_FORMS': '0',
-            'items-MIN_NUM_FORMS': '0',
-            'items-MAX_NUM_FORMS': '1000',
-            'items-0-tipo_venta': 'Venta',
-            'items-0-tipo_producto': 'Producto Test',
-            'items-0-precio_plan': '29.99',
-            'status_bo': 'Pendiente',
-            'supervisor': 'Test Supervisor',
-            'intervalo': 'Mensual',
         })
         
         if response.status_code == 302:
             self.assertRedirects(response, reverse('ventas:venta_list'))
         
         self.client.logout()
+
+    def test_tipo_renta_calculation(self):
+        """Test tipo_renta is calculated correctly based on origen, producto, precio_venta"""
+        from .models import Venta
+        
+        # Test PACK with 49 = R.BAJA
+        venta = Venta(
+            origen='PORTABILIDAD',
+            producto_nombre='PACK',
+            precio_venta=49
+        )
+        self.assertEqual(venta.calcular_tipo_renta('PORTABILIDAD', 'PACK', 49, None), 'R.BAJA')
+        
+        # Test CHIP with 75 = R.MEDIA
+        venta2 = Venta(
+            origen='LINEA_NUEVA',
+            producto_nombre='CHIP',
+            precio_venta=75
+        )
+        self.assertEqual(venta2.calcular_tipo_renta('LINEA_NUEVA', 'CHIP', 75, None), 'R.MEDIA')
+        
+        # Test PACK with 99 = R.ALTA
+        venta3 = Venta(
+            origen='PORTABILIDAD',
+            producto_nombre='PACK',
+            precio_venta=99
+        )
+        self.assertEqual(venta3.calcular_tipo_renta('PORTABILIDAD', 'PACK', 99, None), 'R.ALTA')
 
 
 class BaseLlamadaModelTest(TestCase):
@@ -218,3 +236,91 @@ class RecargarLeadAjaxTest(TestCase):
         data = response.json()
         self.assertFalse(data['ok'])
         self.assertIn('acceso', data['mensaje'].lower())
+
+
+class PostVentaViewsTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.user.is_staff = True
+        self.user.save()
+        UserProfile.objects.create(user=self.user, rol=UserProfile.ROL_AGENTE)
+        
+        self.base_llamada = BaseLlamada.objects.create(
+            telefono='1234567890',
+            nombres='Juan',
+            paterno='Pérez',
+            materno='García',
+            documento='12345678'
+        )
+        
+        self.existing_cliente = Cliente.objects.create(
+            tipo_documento='DNI',
+            documento='12345678',
+            nombres='Juan Existente',
+            paterno='Apellido',
+            materno='De Prueba',
+            activo=True
+        )
+        
+        self.venta = Venta.objects.create(
+            agente_nombre='Juan Gómez',
+            cliente=self.existing_cliente
+        )
+
+    def test_item_create_view_get(self):
+        """Test that item create view loads for authenticated users"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        url = reverse('ventas:item_create', kwargs={'venta_id': self.venta.id})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Tipo Venta')
+        self.client.logout()
+
+    def test_backoffice_create_view_get(self):
+        """Test that backoffice create view loads for authenticated users"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        url = reverse('postventa:backoffice_edit', kwargs={'venta_id': self.venta.id})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Status BO')
+        self.client.logout()
+
+    def test_despacho_create_view_get(self):
+        """Test that despacho create view loads for authenticated users"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        url = reverse('postventa:despacho_edit', kwargs={'venta_id': self.venta.id})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Etapa')
+        self.client.logout()
+
+    def test_courier_create_view_get(self):
+        """Test that courier create view loads for authenticated users"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        url = reverse('postventa:courier_edit', kwargs={'venta_id': self.venta.id})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Estado Courier')
+        self.client.logout()
+
+    def test_dashboard_bo_view_get(self):
+        """Test that dashboard BO view loads for authenticated users"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        url = reverse('postventa:dashboard_bo')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Dashboard Postventa')
+        self.client.logout()

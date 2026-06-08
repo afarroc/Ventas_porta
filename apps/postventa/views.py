@@ -9,6 +9,7 @@ from .models import SeguimientoBO, HistorialEstado
 from apps.ventas.models import Venta
 from apps.discador.models import BaseLlamada
 from .forms import SeguimientoBOForm
+from .services import registrar_cambio_estado
 
 
 class DashboardBOView(LoginRequiredMixin, ListView):
@@ -130,8 +131,17 @@ class SeguimientoBOUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
+        estado_anterior = self.object.status_bo if self.object.pk else ''
+        response = super().form_valid(form)
+        registrar_cambio_estado(
+            venta=self.object.venta,
+            area='BO',
+            estado_anterior=estado_anterior,
+            estado_nuevo=form.instance.status_bo,
+            usuario=self.request.user,
+        )
         messages.success(self.request, "Seguimiento BO actualizado correctamente.")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('ventas:venta_detail', kwargs={'pk': self.object.venta.pk})

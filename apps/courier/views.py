@@ -7,6 +7,7 @@ from django.contrib import messages
 from .models import ProveedorCourier, EstadoCourier
 from apps.ventas.models import Venta
 from .forms import ProveedorCourierForm, EstadoCourierForm
+from apps.postventa.services import registrar_cambio_estado
 
 
 class ProveedorCourierListView(LoginRequiredMixin, ListView):
@@ -50,9 +51,16 @@ class EstadoCourierCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        form.instance.venta = self.venta
+        response = super().form_valid(form)
+        registrar_cambio_estado(
+            venta=form.instance.venta,
+            area='COURIER',
+            estado_anterior='',
+            estado_nuevo=form.instance.sts_courier,
+            usuario=self.request.user,
+        )
         messages.success(self.request, "Estado de courier registrado correctamente.")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('ventas:venta_detail', kwargs={'pk': self.venta.pk})

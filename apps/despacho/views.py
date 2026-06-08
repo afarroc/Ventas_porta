@@ -7,6 +7,7 @@ from django.contrib import messages
 from .models import Proveedor, EstadoDespacho
 from apps.ventas.models import Venta
 from .forms import ProveedorForm, EstadoDespachoForm
+from apps.postventa.services import registrar_cambio_estado
 
 
 class ProveedorListView(LoginRequiredMixin, ListView):
@@ -50,9 +51,16 @@ class EstadoDespachoCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        form.instance.venta = self.venta
+        response = super().form_valid(form)
+        registrar_cambio_estado(
+            venta=form.instance.venta,
+            area='DESPACHO',
+            estado_anterior='',
+            estado_nuevo=form.instance.etapa,
+            usuario=self.request.user,
+        )
         messages.success(self.request, "Estado de despacho registrado correctamente.")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('ventas:venta_detail', kwargs={'pk': self.venta.pk})
@@ -70,8 +78,17 @@ class EstadoDespachoUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
+        estado_anterior = self.object.etapa
+        response = super().form_valid(form)
+        registrar_cambio_estado(
+            venta=form.instance.venta,
+            area='DESPACHO',
+            estado_anterior=estado_anterior,
+            estado_nuevo=form.instance.etapa,
+            usuario=self.request.user,
+        )
         messages.success(self.request, "Estado de despacho actualizado correctamente.")
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('ventas:venta_detail', kwargs={'pk': self.object.venta.pk})

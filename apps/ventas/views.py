@@ -334,6 +334,85 @@ def _check_lead_access(user, base_llamada, session=None):
     return False
 
 
+@login_required
+@require_GET
+def venta_trazabilidad_api(request, pk):
+    """API endpoint que retorna la trazabilidad completa de una venta."""
+    from apps.postventa.models import HistorialEstado, SeguimientoBO
+    from apps.despacho.models import EstadoDespacho
+    from apps.courier.models import EstadoCourier
+    
+    venta = get_object_or_404(Venta, pk=pk)
+    
+    data = {
+        'venta': {
+            'id': venta.id,
+            'cliente': f"{venta.cliente_nombres} {venta.cliente_paterno}" if venta.cliente_nombres else None,
+            'origen': venta.origen,
+            'producto': venta.producto_nombre,
+            'precio_venta': str(venta.precio_venta) if venta.precio_venta else None,
+            'tipo_renta': venta.tipo_renta,
+            'creado': venta.creado.isoformat() if venta.creado else None,
+        },
+        'lead': None,
+        'backoffice': None,
+        'despacho': None,
+        'courier': None,
+        'historial': [],
+    }
+    
+    if venta.base_llamada:
+        base = venta.base_llamada
+        data['lead'] = {
+            'id_lead': str(base.id_lead),
+            'telefono': base.telefono,
+            'nombres': base.nombres,
+            'paterno': base.paterno,
+            'documento': base.documento,
+            'base_procedencia': base.base_procedencia,
+            'resultado_gestion': base.resultado_gestion,
+            'fecha_gestion': base.fecha_gestion.isoformat() if base.fecha_gestion else None,
+        }
+    
+    bo = getattr(venta, 'bo_seguimiento', None)
+    if bo:
+        data['backoffice'] = {
+            'status': bo.status_bo,
+            'supervisor': bo.supervisor,
+            'fecha_bo': bo.fecha_bo.isoformat() if bo.fecha_bo else None,
+            'observaciones': bo.observaciones,
+        }
+    
+    despacho = getattr(venta, 'despacho_estado', None)
+    if despacho:
+        data['despacho'] = {
+            'status': despacho.etapa,
+            'fecha_despacho': despacho.fecha_etapa.isoformat() if despacho.fecha_etapa else None,
+            'observaciones': despacho.observaciones,
+        }
+    
+    courier = getattr(venta, 'courier_estado', None)
+    if courier:
+        data['courier'] = {
+            'status': courier.sts_courier,
+            'fecha_courier': courier.fch_courier.isoformat() if courier.fch_courier else None,
+            'observaciones': courier.observaciones,
+        }
+    
+    historial = HistorialEstado.objects.filter(venta=venta).order_by('-fecha_cambio')
+    for h in historial:
+        data['historial'].append({
+            'area': h.area,
+            'estado_anterior': h.estado_anterior,
+            'estado_nuevo': h.estado_nuevo,
+            'fecha': h.fecha_cambio.isoformat() if h.fecha_cambio else None,
+            'usuario': h.usuario.username if h.usuario else None,
+            'observaciones': h.observaciones,
+        })
+    
+    return JsonResponse(data)
+
+
 class VentaCreateView(LoginRequiredMixin, CreateView):
     model = Venta
     form_class = VentaForm

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, BackofficeListView, buscar_cliente_ajax, validar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create, get_provincias, get_distritos, ItemVentaCreateView
+from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, BackofficeListView, buscar_cliente_ajax, validar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create, get_provincias, get_distritos, ItemVentaCreateView, venta_trazabilidad_api
 
 app_name = 'ventas'
 
@@ -19,4 +19,5 @@ urlpatterns = [
     # Ítems
     path('ventas/<int:venta_id>/item/nuevo/', ItemVentaCreateView.as_view(), name='item_create'),
     path('ventas/backoffice/', BackofficeListView.as_view(), name='backoffice_list'),
+    path('api/venta/<int:pk>/trazabilidad/', venta_trazabilidad_api, name='venta_trazabilidad'),
 ]

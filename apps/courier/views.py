@@ -1,6 +1,6 @@
 from django.views.generic import ListView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
 
@@ -31,6 +31,17 @@ class EstadoCourierCreateView(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.venta = get_object_or_404(Venta, pk=kwargs['venta_id'])
+        # Validación: requerir SeguimientoBO existente y en estado DESPACHADO
+        if not hasattr(self.venta, 'bo_seguimiento'):
+            messages.error(request, "Debe existir SeguimientoBO para crear EstadoCourier.")
+            return redirect('ventas:venta_detail', pk=self.venta.pk)
+        bo_status = self.venta.bo_seguimiento.status_bo
+        if bo_status != 'DESPACHADO':
+            messages.error(
+                request,
+                f"SeguimientoBO debe estar en DESPACHADO para crear EstadoCourier (actual: {bo_status})"
+            )
+            return redirect('ventas:venta_detail', pk=self.venta.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

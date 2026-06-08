@@ -7,4 +7,6 @@ urlpatterns = [
     path('', views.DashboardBOView.as_view(), name='dashboard_bo'),
     path('backoffice/', views.BackofficeListView.as_view(), name='backoffice_list'),
     path('backoffice/venta/<int:venta_id>/', views.SeguimientoBOCreateView.as_view(), name='backoffice_create'),
+    path('backoffice/<int:pk>/editar/', views.SeguimientoBOUpdateView.as_view(), name='backoffice_update'),
+    path('dashboard/conversion/', views.DashboardConversionView.as_view(), name='dashboard_conversion'),
 ]

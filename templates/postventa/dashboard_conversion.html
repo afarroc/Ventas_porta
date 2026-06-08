@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="container">
+        <div class="vp-pagetitle" style="margin-bottom:20px">
+            <i class="bi bi-graph-up-arrow"></i> Dashboard de Conversión
+        </div>
+
+        <!-- Estadísticas Generales -->
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card vp-card">
+                    <div class="card-body text-center">
+                        <h3 class="vp-card-title">{{ total_leads }}</h3>
+                        <p class="vp-card-text">Total Leads</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card vp-card">
+                    <div class="card-body text-center">
+                        <h3 class="vp-card-title">{{ total_ventas }}</h3>
+                        <p class="vp-card-text">Total Ventas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card vp-card">
+                    <div class="card-body text-center">
+                        <h3 class="vp-card-title">{{ leads_con_venta }}</h3>
+                        <p class="vp-card-text">Leads Convertidos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card vp-card">
+                    <div class="card-body text-center">
+                        <h3 class="vp-card-title">{{ tasa_conversion|floatformat:1 }}%</h3>
+                        <p class="vp-card-text">Tasa de Conversión</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas por Base -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-table"></i> Conversión por Base de Procedencia</h5>
+            </div>
+            <div class="card-body" style="padding:0">
+                <div class="vp-table-wrap">
+                    <table class="vp-table">
+                        <thead>
+                            <tr>
+                                <th>Base</th>
+                                <th>Total Leads</th>
+                                <th>Leads con Venta</th>
+                                <th>Tasa %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in stats_por_base %}
+                            <tr>
+                                <td>{{ stat.base_procedencia|default:"Sin base" }}</td>
+                                <td>{{ stat.total }}</td>
+                                <td>{{ stat.con_venta }}</td>
+                                <td>
+                                    {% if stat.total > 0 %}
+                                        {{ stat.con_venta|floatformat:0|default:0 }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                                    No hay datos de bases registradas
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

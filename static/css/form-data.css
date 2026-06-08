@@ -1211,3 +1211,46 @@ body {
     font-size: 18px;
   }
 }
+/* Dropdown styles for navbar */
+.vp-navbar-item.dropdown {
+  position: relative;
+}
+
+.vp-navbar-item .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  display: none;
+  min-width: 160px;
+  padding: 4px 0;
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--vp-border);
+  border-radius: var(--vp-radius);
+  box-shadow: var(--vp-shadow);
+}
+
+.vp-navbar-item.show .dropdown-menu {
+  display: block;
+}
+
+.vp-navbar-item .dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  clear: both;
+  font-weight: 400;
+  color: var(--vp-text);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  font-size: 13px;
+}
+
+.vp-navbar-item .dropdown-item:hover {
+  background: var(--vp-primary-light);
+  color: var(--vp-primary);
+}

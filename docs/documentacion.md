@@ -636,7 +636,7 @@ Venta           ───→ (1) BaseLlamada (FK) [datos del lead]
 venta = Venta.objects.select_related(
     'base_llamada', 'cliente'
 ).prefetch_related(
-    'seguimiento_bo', 'estado_despacho', 'estado_courier', 'items'
+    'bo_seguimiento', 'despacho_estado', 'courier_estado', 'items'
 ).get(id=venta_id)
 
 # Acceso a datos
@@ -644,7 +644,229 @@ venta.base_llamada.base_procedencia
 venta.base_llamada.base_manual
 venta.tipo_renta
 venta.tipo_renta2
-venta.seguimiento_bo.status_bo
-venta.estado_despacho.etapa
-venta.estado_courier.sts_courier
+venta.bo_seguimiento.status_bo
+venta.despacho_estado.etapa
+venta.courier_estado.sts_courier
+```
+
+---
+
+## 15. Trazabilidad Lead → Venta (2026-06-07)
+
+### 15.1 Relación Bidireccional Lead-Venta
+
+Actualmente existe la relación unidireccional:
+- `Venta.base_llamada` → FK a BaseLlamada
+
+**Planificado: Agregar FK inverso en BaseLlamada:**
+- `BaseLlamada.venta` → FK opcional a Venta (related_name='lead_venta')
+- Propósito: Completar el círculo de trazabilidad - desde el lead se puede acceder a la venta generada
+
+### 15.2 Estados del Lead
+
+| Estado | Descripción | Transiciones válidas |
+|--------|-------------|-------------------|
+| `SIN_GESTIONAR` | Lead sin llamada ni venta | → GESTIONADO, → VENTA |
+| `GESTIONADO` | Llamada realizada (sin venta) | → VENTA |
+| `VENTA_CONVERTIDA` | Lead convertido en venta | ESTADO_FINAL |
+
+> **Nota Sprint 1**: Se agregó `RESULTADO_GESTION_CHOICES` con valor `VENTA_CONVERTIDA`
+
+### 15.3 Queries de Trazabilidad
+
+```python
+# Venta completa con historial (futuro)
+venta = Venta.objects.select_related(
+    'base_llamada', 'cliente'
+).prefetch_related(
+    'bo_seguimiento', 'despacho_estado', 'courier_estado'
+).get(id=venta_id)
+
+# Lead → Venta (cuando se implemente FK)
+if base_venta.venta:
+    venta = base_venta.venta
+    # Acceder a toda la trazabilidad
+
+# Estadísticas de conversión por base
+from django.db.models import Count
+stats = BaseLlamada.objects.values('base_procedencia').annotate(
+    total=Count('id'),
+    con_venta=Count('venta')
+).order_by('-total')
+```
+
+---
+
+## 17. Historial de Estados Postventa
+
+### 17.1 Modelo `HistorialEstado` (`postventa_historial`)
+
+Registra cada cambio de estado en el flujo postventa.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `venta` | ForeignKey | Venta relacionada |
+| `area` | CharField | BO/DESPACHO/COURIER |
+| `estado_anterior` | CharField | Estado previo |
+| `estado_nuevo` | CharField | Estado nuevo |
+| `usuario` | ForeignKey(User) | Usuario que realizó el cambio |
+| `fecha_cambio` | DateTimeField | Timestamp del cambio |
+| `observaciones` | TextField | Notas adicionales |
+
+### Queries de Historial
+
+```python
+# Historial de una venta
+historial = venta.historial_estados.all().order_by('-fecha_cambio')
+
+# Filtrar por área
+historial_bo = venta.historial_estados.filter(area='BO')
+```
+
+---
+
+## 17. Validaciones de Flujo Postventa
+
+### 17.1 Flujo Obligatorio
+
+```
+1. SeguimientoBO.status_bo debe ser 'VALIDADO' o 'EN_DESPACHO'
+   ↓
+2. EstadoDespacho.etapa puede crearse
+   ↓
+3. SeguimientoBO.status_bo debe ser 'DESPACHADO'
+   ↓
+4. EstadoCourier.sts_courier puede crearse
+```
+
+### 17.2 Reglas de Negocio
+
+1. Un lead con venta no puede iniciar nueva gestión (a menos que se revoca)
+2. No se puede crear EstadoDespacho sin SeguimientoBO en estado válido
+3. No se puede crear EstadoCourier sin SeguimientoBO
+4. Tracking puede ser único o independiente según configuración de negocio
+
+---
+
+## 18. Dashboard de Conversión (Próximamente)
+
+### 18. Dashboard de Conversión
+
+### 18.1 Métricas Implementadas
+
+| Métrica | Fórmula |
+|---------|---------|
+| Total Leads | COUNT(BaseLlamada) |
+| Total Ventas | COUNT(Venta) |
+| Leads Convertidos | BaseLlamada con venta FK |
+| Tasa Conversión | Leads Convertidos / Total Leads |
+
+### 18.2 URL
+
+```
+/postventa/dashboard/conversion/ → DashboardConversionView
+```
+
+### 18.3 Queries
+
+```python
+# Estadísticas por base
+BaseLlamada.objects.values('base_procedencia').annotate(
+    total=Count('id'),
+    con_venta=Count('venta')
+)
+```
+
+---
+
+## 19. Reglas de Negocio Retail - Ventas
+
+### 19.1 Tipo Renta por Combinación
+
+| Origen | Producto | Precio | Tipo Renta |
+|--------|----------|--------|------------|
+| PORTABILIDAD | PACK | 29-49 | R.BAJA |
+| PORTABILIDAD | PACK | 59-75 | R.MEDIA |
+| PORTABILIDAD | PACK | 89-99+ | R.ALTA |
+| PORTABILIDAD | CHIP | 39-59 | R.BAJA |
+| PORTABILIDAD | CHIP | 74-89 | R.MEDIA |
+| PORTABILIDAD | CHIP | 109+ | R.ALTA |
+| LINEA_NUEVA | PACK | 49-75 | R.BAJA/R.MEDIA |
+| LINEA_NUEVA | PACK | 99+ | R.ALTA |
+| LINEA_NUEVA | CHIP | 25-45 | R.BAJA |
+| LINEA_NUEVA | CHIP | 59+ | R.MEDIA |
+
+### 19.2 Validaciones Implementadas
+
+1. **Producto CHIP**: Sin modelo ni precio variable (precio = 1 fijo)
+2. **Origen PORTABILIDAD**: Operador y teléfono_portar obligatorios
+3. **Tipo documento**: DNI/RUC/CE/Pasaporte
+4. **Recibo electrónico**: Si 'SI_DESEA', correo obligatorio
+
+### 19.3 Validaciones Pendientes
+
+1. Confirmar opciones de MODELOS_PRODUCTO con catálogo ENTEL actual
+2. Verificar precios de venta y plan correspondientes al portafolio vigente
+3. Definir si el tracking es único o independiente por área
+
+### Sprint 8 - Completado (2026-06-07)
+
+| Tarea | Status |
+|-------|--------|
+| Templates despacho/courier/proveedor creados | ✅ |
+| URLs despacho/courier/proveedor agregadas | ✅ |
+| Botones acción en detalle venta | ✅ |
+| Modelo SeguimientoBO duplicado eliminado | ✅ |
+| Imports y referencias corregidas | ✅ |
+
+### Campos Eliminados del Modelo Venta
+
+| Campo | Motivo | Fuente Alternativa |
+|-------|--------|-------------------|
+| `contact_callable` | Dato del lead | BaseLlamada.contact_callable |
+| `es_callable` | Redundante | BaseLlamada.es_callable |
+| `fecha_gestion` | Dato del lead | BaseLlamada.fecha_gestion |
+| `hora_gestion` | Dato del lead | BaseLlamada.hora_gestion |
+| `resultado_gestion` | Dato del lead | BaseLlamada.resultado_gestion |
+| `tipo_contacto` | Dato del lead | BaseLlamada.tipo_contacto |
+| `tipo_valido` | Dato del lead | BaseLlamada.tipo_valido |
+| `status_java` | Información CRM | BaseLlamada.status_java |
+| `supervisor_nombre` | Dato del usuario | UserProfile |
+| `fecha_venta` | Redundante | Venta.creado (timestamp) |
+| `hora_venta` | Redundante | Venta.creado (timestamp) |
+
+### Arquitectura Data Ownership
+
+```
+Venta           ───→ (1) BaseLlamada (FK) [datos del lead]
+│                    └── contact_callable, es_callable, resultado_gestion, etc.
+│
+├─ SeguimientoBO (1:1) [postventa — área BO]
+│    └── status_bo, fecha_bo, supervisor
+│
+├─ EstadoDespacho (1:1) [postventa — área Despacho]
+│    └── etapa, fecha_etapa, proveedor, tracking
+│
+└─ EstadoCourier (1:1) [postventa — área Courier]
+     └── sts_courier, fch_courier, proveedor, tracking
+```
+
+### Queries Clave Unificadas
+
+```python
+# Venta con datos del lead y postventa
+venta = Venta.objects.select_related(
+    'base_llamada', 'cliente'
+).prefetch_related(
+    'bo_seguimiento', 'despacho_estado', 'courier_estado', 'items'
+).get(id=venta_id)
+
+# Acceso a datos
+venta.base_llamada.base_procedencia
+venta.base_llamada.base_manual
+venta.tipo_renta
+venta.tipo_renta2
+venta.bo_seguimiento.status_bo
+venta.despacho_estado.etapa
+venta.courier_estado.sts_courier
 ```

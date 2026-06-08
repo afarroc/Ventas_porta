@@ -281,7 +281,7 @@ class PostVentaViewsTest(TestCase):
         self.assertContains(response, 'Tipo Venta')
         self.client.logout()
 
-def test_backoffice_create_view_get(self):
+    def test_backoffice_create_view_get(self):
         """Test that backoffice create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')
         
@@ -291,7 +291,7 @@ def test_backoffice_create_view_get(self):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Status BO')
         self.client.logout()
-    
+
     def test_despacho_create_view_get(self):
         """Test that despacho create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')
@@ -302,7 +302,7 @@ def test_backoffice_create_view_get(self):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Etapa')
         self.client.logout()
-    
+
     def test_courier_create_view_get(self):
         """Test that courier create view loads for authenticated users"""
         self.client.login(username='testuser', password='testpass123')

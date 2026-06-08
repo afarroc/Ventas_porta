@@ -263,9 +263,20 @@ class Venta(models.Model):
         
         # Update BaseLlamada when venta is created
         if is_new and self.base_llamada:
+            from apps.discador.models import CallRecord
+            ultimo_registro = CallRecord.objects.filter(base_llamada=self.base_llamada).order_by('-inicio').first()
+            
             self.base_llamada.resultado_gestion = "VENTA_CONVERTIDA"
             self.base_llamada.fecha_gestion = timezone.now()
-            self.base_llamada.save(update_fields=['resultado_gestion', 'fecha_gestion'])
+            self.base_llamada.hora_gestion = self.base_llamada.fecha_gestion.time() if self.base_llamada.fecha_gestion else None
+            
+            if ultimo_registro:
+                self.base_llamada.tipo_contacto = ultimo_registro.get_resultado_display() or ultimo_registro.resultado
+                self.base_llamada.tipo_valido = 'Válido'
+                self.base_llamada.status_java = 'VENTA'
+            
+            update_fields = ['resultado_gestion', 'fecha_gestion', 'hora_gestion', 'tipo_contacto', 'tipo_valido', 'status_java']
+            self.base_llamada.save(update_fields=update_fields)
 
     def __str__(self):
         return f"Venta {self.id} - {self.cliente_nombres} {self.cliente_paterno}"

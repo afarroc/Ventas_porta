@@ -48,3 +48,7 @@ class EstadoCourier(models.Model):
 
     def __str__(self):
         return f"Courier - Venta {self.venta_id}: {self.get_sts_courier_display()}"
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('ventas:venta_detail', kwargs={'pk': self.venta_id})

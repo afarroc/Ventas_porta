@@ -138,3 +138,41 @@ class BackofficeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Dashboard Postventa')
+
+    def test_backoffice_create_registra_historial(self):
+        """Test that creating SeguimientoBO registers in HistorialEstado"""
+        self.client.login(username='testuser', password='testpass123')
+        url = reverse('postventa:backoffice_create', kwargs={'venta_id': self.venta.id})
+        response = self.client.post(url, {
+            'status_bo': 'EN_BO',
+            'fecha_bo': '2026-06-08',
+            'supervisor': 'Carlos Ruiz',
+            'observaciones': 'En procesamiento'
+        })
+        self.assertEqual(response.status_code, 302)
+        # Check historial was created
+        historial = HistorialEstado.objects.filter(venta=self.venta, area='BO')
+        self.assertEqual(historial.count(), 1)
+        self.assertEqual(historial.first().estado_nuevo, 'EN_BO')
+
+    def test_backoffice_update_registra_historial(self):
+        """Test that updating SeguimientoBO registers in HistorialEstado"""
+        self.seguimiento = SeguimientoBO.objects.create(
+            venta=self.venta,
+            status_bo='PDTE_BO',
+            supervisor='Carlos Ruiz',
+        )
+        self.client.login(username='testuser', password='testpass123')
+        url = reverse('postventa:backoffice_update', kwargs={'pk': self.seguimiento.id})
+        response = self.client.post(url, {
+            'status_bo': 'VALIDADO',
+            'fecha_bo': '2026-06-08',
+            'supervisor': 'Carlos Ruiz',
+            'observaciones': 'Validado'
+        })
+        self.assertEqual(response.status_code, 302)
+        # Check historial was created
+        historial = HistorialEstado.objects.filter(venta=self.venta, area='BO')
+        self.assertEqual(historial.count(), 1)
+        self.assertEqual(historial.first().estado_anterior, 'PDTE_BO')
+        self.assertEqual(historial.first().estado_nuevo, 'VALIDADO')

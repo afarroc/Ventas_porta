@@ -211,38 +211,38 @@ class Venta(models.Model):
     def calcular_tipo_renta(origen, producto, precio_venta, precio_plan):
         """
         Calcula tipo_renta basado en reglas de negocio (docs/documentacion.md Sección 19.1).
-        
+
         Reglas:
-        - PORTABILIDAD + PACK: 29-49=R.BAJA, 59-75=R.MEDIA, 89-99+=R.ALTA
+        - PORTABILIDAD + PACK: 29-49=R.BAJA, 59-75=R.MEDIA, 89+=R.ALTA
         - PORTABILIDAD + CHIP: 39-59=R.BAJA, 74-89=R.MEDIA, 109+=R.ALTA
-        - LINEA_NUEVA + PACK: 49-75=R.BAJA/R.MEDIA, 99+=R.ALTA
+        - LINEA_NUEVA + PACK: 49-75=R.BAJA/R.MEDIA (ambos), 99+=R.ALTA
         - LINEA_NUEVA + CHIP: 25-45=R.BAJA, 59+=R.MEDIA
         """
         if origen == 'PORTABILIDAD':
             if producto == 'PACK':
-                if precio_venta <= 49:
+                if 29 <= precio_venta <= 49:
                     return 'R.BAJA'
-                elif precio_venta <= 75:
+                elif 59 <= precio_venta <= 75:
                     return 'R.MEDIA'
                 else:
                     return 'R.ALTA'
             elif producto == 'CHIP':
-                if precio_venta <= 59:
+                if 39 <= precio_venta <= 59:
                     return 'R.BAJA'
-                elif precio_venta <= 89:
+                elif 74 <= precio_venta <= 89:
                     return 'R.MEDIA'
                 else:
                     return 'R.ALTA'
         elif origen == 'LINEA_NUEVA':
             if producto == 'PACK':
-                if precio_venta <= 49:
+                if 49 <= precio_venta <= 75:
                     return 'R.BAJA'
-                elif precio_venta <= 75:
+                elif precio_venta > 75 and precio_venta < 99:
                     return 'R.MEDIA'
                 else:
                     return 'R.ALTA'
             elif producto == 'CHIP':
-                if precio_venta <= 45:
+                if 25 <= precio_venta <= 45:
                     return 'R.BAJA'
                 else:
                     return 'R.MEDIA'
@@ -286,7 +286,7 @@ class ItemVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='items', verbose_name="Venta")
     tipo_venta = models.CharField(max_length=50, blank=True, verbose_name="Tipo de Venta")
     tipo_producto = models.CharField(max_length=50, blank=True, verbose_name="Tipo de Producto")
-    precio_plan = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Precio del Plan")
+    precio_plan = models.IntegerField(null=True, blank=True, verbose_name="Precio del Plan")
 
     class Meta:
         db_table = 'ventas_item'

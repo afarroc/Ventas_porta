@@ -111,3 +111,36 @@ class DespachoViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Etapa')
+
+    def test_despacho_tracking_unique_validation(self):
+        """Test that tracking is unique between despacho and courier of same venta"""
+        from apps.courier.models import EstadoCourier
+        self.client.login(username='testuser', password='testpass123')
+        SeguimientoBO.objects.create(
+            venta=self.venta,
+            status_bo='VALIDADO',
+            supervisor='Super Test',
+        )
+        # Create despacho with tracking
+        EstadoDespacho.objects.create(
+            venta=self.venta,
+            etapa='EN_TRANSITO',
+            tracking='TRACK_UNICO',
+        )
+        # Try to create courier with same tracking
+        EstadoCourier.objects.create(
+            venta=self.venta,
+            sts_courier='EN_RUTA',
+            tracking='TRACK_UNICO',
+        )
+        # Try to create despacho update - should fail with duplicate tracking error
+        url = reverse('despacho:despacho_update', kwargs={'pk': self.venta.despacho_estado.id})
+        response = self.client.post(url, {
+            'etapa': 'ENTREGADO',
+            'tracking': 'TRACK_UNICO',
+            'fecha_etapa': '2026-06-08',
+        })
+        # Should fail validation
+        self.assertEqual(response.status_code, 200)
+        # Error should be in form
+        self.assertIn('tracking', response.context.get('form').errors if hasattr(response, 'context') else {})

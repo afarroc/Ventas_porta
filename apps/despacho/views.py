@@ -51,6 +51,18 @@ class EstadoDespachoCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        # Validar tracking único (no duplicar entre despacho y courier de la misma venta)
+        tracking = form.cleaned_data.get('tracking', '')
+        if tracking:
+            from apps.courier.models import EstadoCourier
+            exists_in_courier = EstadoCourier.objects.filter(
+                venta=self.venta,
+                tracking__iexact=tracking
+            ).exists()
+            if exists_in_courier:
+                form.add_error('tracking', 'Este tracking ya está registrado en el courier de esta venta.')
+                return self.form_invalid(form)
+
         response = super().form_valid(form)
         registrar_cambio_estado(
             venta=form.instance.venta,

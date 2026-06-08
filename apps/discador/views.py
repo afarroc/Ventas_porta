@@ -140,7 +140,12 @@ class AgentDashboardView(LoginRequiredMixin, TemplateView):
             if current_lead_id or ongoing_call:
                 messages.error(request, "Debe finalizar el lead actual antes de obtener uno nuevo.")
             else:
-                lead = BaseLlamada.objects.exclude(llamadas__agente=request.user).order_by('?').first()
+                # Exclude leads that already have VENTA_CONVERTIDA
+                lead = BaseLlamada.objects.exclude(
+                    llamadas__agente=request.user
+                ).exclude(
+                    resultado_gestion='VENTA_CONVERTIDA'
+                ).order_by('?').first()
                 if lead:
                     request.session['current_lead_id'] = str(lead.id_lead)
                     messages.success(request, f"Lead asignado: {lead.telefono}")

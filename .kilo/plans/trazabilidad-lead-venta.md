@@ -41,13 +41,15 @@ Lead (BaseLlamada) ────────── apps.discador (WFM/Discador)
 
 ## Sprints Pendientes
 
-### Sprint 13: Unificación de Tipos y Limpieza Docs - 0.5 día
+### Sprint 13: Trazabilidad Avanzada y Validaciones - 0.5 día ✅
 
 | # | Tarea | Archivo | Prioridad |
 |---|-------|---------|-----------|
-| 13.1 | Unificar `precio_plan`: cambiar `ItemVenta.precio_plan` a `IntegerField` para coincidir con `Venta.precio_plan` | `apps/ventas/models.py:278` | Media |
-| 13.2 | Limpiar secciones duplicadas en `docs/documentacion.md` (Sección 14 repetida) | `docs/documentacion.md` | Baja |
-| 13.3 | Actualizar tabla de historial en plan con sprints 8-12 completados | `.kilo/plans/trazabilidad-lead-venta.md` | Baja |
+| 13.1 | Agregar `get_absolute_url()` a SeguimientoBO | `apps/postventa/models.py` | Media |
+| 13.2 | Agregar `get_absolute_url()` a EstadoDespacho | `apps/despacho/models.py` | Media |
+| 13.3 | Agregar `get_absolute_url()` a EstadoCourier | `apps/courier/models.py` | Media |
+| 13.4 | Tracking único despacho/courier por venta | `apps/despacho/views.py`, `apps/courier/views.py` | Alta |
+| 13.5 | Bloquear leads VENTA_CONVERTIDA en discador | `apps/discador/views.py` | Alta |
 
 ---
 
@@ -75,15 +77,15 @@ Lead (BaseLlamada) ────────── apps.discador (WFM/Discador)
 |-------|--------|-------|
 | Flujo BO: EN_BASE → PDTE_BO → EN_BO → VALIDADO → EN_DESPACHO → DESPACHADO | ✅ | Implementado en modelo y vistas |
 | EstadoDespacho solo si BO en VALIDADO/EN_DESPACHO | ✅ | `apps/despacho/views.py:38-44` |
-| EstadoCourier solo si BO en DESPACHADO | ✅ | `apps/courier/views.py:39-44` (Sprint 8.5) |
-| Historial de cambios persistente | ✅ | Servicio integrado (Sprint 9) |
-| Tracking único por venta | ❌ | No validado |
+| EstadoCourier solo si BO en DESPACHADO | ✅ | `apps/courier/views.py:39-44` |
+| Historial de cambios persistente | ✅ | Servicio integrado |
+| Tracking único por venta | ✅ | Validación agregada (Sprint 13) |
 
 ### Discador (Apps Discador)
 
 | Regla | Estado | Notas |
 |-------|--------|-------|
-| VENTA_CONVERTIDA bloquea re-gestión | ⚠️ | Falta validación en vistas de discador |
+| VENTA_CONVERTIDA bloquea re-gestión | ✅ | Validación agregada (Sprint 13) |
 | UUID para acceso seguro a leads | ✅ | `_check_lead_access()` implementado |
 | Un lead, una venta | ✅ | Validado en form (Sprint 10.1) |
 
@@ -106,7 +108,7 @@ Lead (BaseLlamada) ────────── apps.discador (WFM/Discador)
 | Sprint 10 | 2026-06-08 | ✅ | Validaciones adicionales de negocio |
 | Sprint 11 | 2026-06-08 | ✅ | Tests iniciales postventa/despacho/courier |
 | Sprint 12 | 2026-06-08 | ✅ | Refactor: transacciones atómicas |
-| Sprint 13 | Pendiente | ⏳ | Unificación tipos y limpieza documentación |
+| Sprint 13 | 2026-06-08 | ✅ | get_absolute_url, tracking único, bloqueo VENTA_CONVERTIDA |
 
 ---
 

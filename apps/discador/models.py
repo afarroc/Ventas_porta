@@ -5,6 +5,11 @@ from django.contrib.auth.models import User
 
 CONTACT_CALLABLE = [('0', 'No'), ('1', 'Sí')]
 TIPO_VALIDO = [('Válido', 'Válido'), ('Inválido', 'Inválido'), ('', 'No definido')]
+RESULTADO_GESTION_CHOICES = [
+    ('', 'Sin gestión'),
+    ('GESTIONADO', 'Gestionado'),
+    ('VENTA_CONVERTIDA', 'Venta Convertida'),
+]
 
 
 class BaseLlamada(models.Model):
@@ -23,7 +28,12 @@ class BaseLlamada(models.Model):
     es_callable = models.CharField(max_length=1, choices=CONTACT_CALLABLE, blank=True, verbose_name="Es Callable")
     fecha_gestion = models.DateField(null=True, blank=True, verbose_name="Fecha de Gestión")
     hora_gestion = models.TimeField(null=True, blank=True, verbose_name="Hora de Gestión")
-    resultado_gestion = models.CharField(max_length=100, blank=True, verbose_name="Resultado de Gestión")
+    resultado_gestion = models.CharField(
+        max_length=100,
+        blank=True,
+        choices=RESULTADO_GESTION_CHOICES,
+        verbose_name="Resultado de Gestión"
+    )
     tipo_contacto = models.CharField(max_length=50, blank=True, verbose_name="Tipo de Contacto")
     tipo_valido = models.CharField(max_length=10, choices=TIPO_VALIDO, blank=True, verbose_name="Tipo Válido")
     status_java = models.CharField(max_length=50, blank=True, verbose_name="Status JAVA")
@@ -44,6 +54,15 @@ class BaseLlamada(models.Model):
         default=False,
         verbose_name="Lead Manual",
         help_text="Marcar si el número NO existe en una base y es lead cargado manualmente",
+    )
+    venta = models.ForeignKey(
+        'ventas.Venta',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lead_venta',
+        verbose_name="Venta Generada",
+        help_text="Venta asociada generada desde este lead (trazabilidad)",
     )
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)

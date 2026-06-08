@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Cliente(models.Model):
@@ -56,8 +57,10 @@ class Venta(models.Model):
     ORIGEN_CHOICES = [('LINEA_NUEVA', 'Línea Nueva'), ('PORTABILIDAD', 'Portabilidad')]
     origen = models.CharField(max_length=15, choices=ORIGEN_CHOICES, blank=True, verbose_name="Origen")
     OPERADOR_CHOICES = [
-        ('CLARO', 'CLARO'), ('LINEA_NUEVA', 'Linea NUEVA'), ('MOVISTAR', 'MOVISTAR'),
-        ('VIETTEL', 'VIETTEL'), ('VIRGIN', 'VIRGIN'),
+        ('CLARO', 'CLARO'),
+        ('MOVISTAR', 'MOVISTAR'),
+        ('VIETTEL', 'VIETTEL'),
+        ('VIRGIN', 'VIRGIN'),
     ]
     operador = models.CharField(max_length=20, choices=OPERADOR_CHOICES, blank=True, verbose_name="Operador")
     telefono_portar = models.CharField(max_length=20, blank=True, verbose_name="Teléfono a Portar")
@@ -186,7 +189,14 @@ class Venta(models.Model):
     )
 
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-    base_llamada = models.ForeignKey('discador.BaseLlamada', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Base Llamada")
+    base_llamada = models.ForeignKey(
+        'discador.BaseLlamada',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Base Llamada",
+        related_name='ventas_asociadas'
+    )
 
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
@@ -200,45 +210,43 @@ class Venta(models.Model):
     @staticmethod
     def calcular_tipo_renta(origen, producto, precio_venta, precio_plan):
         """
-        Calcula tipo_renta basado en reglas de negocio.
-        Ver: HANDOFF_2026-06-06_venta_refactor.md para tabla completa
+        Calcula tipo_renta basado en reglas de negocio (docs/documentacion.md Sección 19.1).
+        
+        Reglas:
+        - PORTABILIDAD + PACK: 29-49=R.BAJA, 59-75=R.MEDIA, 89-99+=R.ALTA
+        - PORTABILIDAD + CHIP: 39-59=R.BAJA, 74-89=R.MEDIA, 109+=R.ALTA
+        - LINEA_NUEVA + PACK: 49-75=R.BAJA/R.MEDIA, 99+=R.ALTA
+        - LINEA_NUEVA + CHIP: 25-45=R.BAJA, 59+=R.MEDIA
         """
-        reglas = {
-            ('PORTABILIDAD', 'PACK', 49): 'R.BAJA',
-            ('PORTABILIDAD', 'PACK', 75): 'R.MEDIA',
-            ('PORTABILIDAD', 'PACK', 99): 'R.ALTA',
-            ('PORTABILIDAD', 'PACK', 149): 'R.ALTA',
-            ('PORTABILIDAD', 'PACK', 199): 'R.ALTA',
-            ('PORTABILIDAD', 'PACK', 299): 'R.ALTA',
-            ('PORTABILIDAD', 'PACK', 29): 'R.BAJA',
-            ('PORTABILIDAD', 'PACK', 74): 'R.MEDIA',
-            ('PORTABILIDAD', 'CHIP', 25): 'R.BAJA',
-            ('PORTABILIDAD', 'CHIP', 39): 'R.BAJA',
-            ('PORTABILIDAD', 'CHIP', 59): 'R.MEDIA',
-            ('PORTABILIDAD', 'CHIP', 74): 'R.MEDIA',
-            ('PORTABILIDAD', 'CHIP', 89): 'R.MEDIA',
-            ('PORTABILIDAD', 'CHIP', 109): 'R.ALTA',
-            ('PORTABILIDAD', 'CHIP', 145): 'R.ALTA',
-            ('PORTABILIDAD', 'CHIP', 209): 'R.ALTA',
-            ('PORTABILIDAD', 'CHIP', 49): 'R.BAJA',
-            ('PORTABILIDAD', 'CHIP', 75): 'R.MEDIA',
-            ('PORTABILIDAD', 'CHIP', 99): 'R.ALTA',
-            ('LINEA_NUEVA', 'PACK', 49): 'R.BAJA',
-            ('LINEA_NUEVA', 'PACK', 75): 'R.MEDIA',
-            ('LINEA_NUEVA', 'PACK', 99): 'R.ALTA',
-            ('LINEA_NUEVA', 'PACK', 149): 'R.ALTA',
-            ('LINEA_NUEVA', 'PACK', 199): 'R.ALTA',
-            ('LINEA_NUEVA', 'PACK', 299): 'R.ALTA',
-            ('LINEA_NUEVA', 'CHIP', 25): 'R.BAJA',
-            ('LINEA_NUEVA', 'CHIP', 39): 'R.BAJA',
-            ('LINEA_NUEVA', 'CHIP', 45): 'R.BAJA',
-            ('LINEA_NUEVA', 'CHIP', 59): 'R.MEDIA',
-            ('LINEA_NUEVA', 'CHIP', 74): 'R.MEDIA',
-            ('LINEA_NUEVA', 'CHIP', 89): 'R.MEDIA',
-            ('LINEA_NUEVA', 'CHIP', 29): 'R.BAJA',
-            ('LINEA_NUEVA', 'PACK', 89): 'R.MEDIA',
-        }
-        return reglas.get((origen, producto, precio_venta), '')
+        if origen == 'PORTABILIDAD':
+            if producto == 'PACK':
+                if precio_venta <= 49:
+                    return 'R.BAJA'
+                elif precio_venta <= 75:
+                    return 'R.MEDIA'
+                else:
+                    return 'R.ALTA'
+            elif producto == 'CHIP':
+                if precio_venta <= 59:
+                    return 'R.BAJA'
+                elif precio_venta <= 89:
+                    return 'R.MEDIA'
+                else:
+                    return 'R.ALTA'
+        elif origen == 'LINEA_NUEVA':
+            if producto == 'PACK':
+                if precio_venta <= 49:
+                    return 'R.BAJA'
+                elif precio_venta <= 75:
+                    return 'R.MEDIA'
+                else:
+                    return 'R.ALTA'
+            elif producto == 'CHIP':
+                if precio_venta <= 45:
+                    return 'R.BAJA'
+                else:
+                    return 'R.MEDIA'
+        return ''
 
     def save(self, *args, **kwargs):
         if self.origen and self.producto_nombre and self.precio_venta:
@@ -248,7 +256,16 @@ class Venta(models.Model):
                 self.precio_venta, 
                 self.precio_plan
             )
+        
+        # Track if this is a new venta being created
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Update BaseLlamada when venta is created
+        if is_new and self.base_llamada:
+            self.base_llamada.resultado_gestion = "VENTA_CONVERTIDA"
+            self.base_llamada.fecha_gestion = timezone.now()
+            self.base_llamada.save(update_fields=['resultado_gestion', 'fecha_gestion'])
 
     def __str__(self):
         return f"Venta {self.id} - {self.cliente_nombres} {self.cliente_paterno}"

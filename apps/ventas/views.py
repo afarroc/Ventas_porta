@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
+from django.db import transaction
 from .models import Venta, ItemVenta, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
 from .forms import VentaForm, ItemVentaForm
@@ -224,6 +225,7 @@ def venta_modal_partial(request, id_lead):
 def venta_api_create(request, id_lead):
     """API endpoint for creating venta - POST only, returns JSON."""
     from uuid import UUID
+    from django.db import transaction
     
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'mensaje': 'Método no permitido.'})
@@ -244,45 +246,46 @@ def venta_api_create(request, id_lead):
     form = VentaForm(request.POST)
     
     if form.is_valid():
-        venta = form.save(commit=False)
-        venta.base_llamada = base
-        venta.agente_nombre = request.user.get_full_name() or request.user.username or request.user.email or 'Usuario'
-        
-        cliente_documento = form.cleaned_data.get('cliente_documento')
-        cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
-        
-        if cliente_documento:
-            cliente = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
-            if cliente:
-                venta.cliente = cliente
-            else:
-                cliente = Cliente.objects.create(
-                    tipo_documento=cliente_tipo_documento,
-                    documento=cliente_documento,
-                    nombres=form.cleaned_data.get('cliente_nombres', ''),
-                    paterno=form.cleaned_data.get('cliente_paterno', ''),
-                    materno=form.cleaned_data.get('cliente_materno', ''),
-                    telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
-                    telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
-                    activo=True,
-                )
-                venta.cliente = cliente
-        
-        venta.save()
-        
-        # Process items formset
-        items_total = int(request.POST.get('items-TOTAL_FORMS', 0))
-        for i in range(items_total):
-            tipo_venta = request.POST.get(f'items-{i}-tipo_venta', '')
-            tipo_producto = request.POST.get(f'items-{i}-tipo_producto', '')
-            precio_plan = request.POST.get(f'items-{i}-precio_plan', '')
-            if tipo_venta or tipo_producto:
-                ItemVenta.objects.create(
-                    venta=venta,
-                    tipo_venta=tipo_venta,
-                    tipo_producto=tipo_producto,
-                    precio_plan=precio_plan if precio_plan else None
-                )
+        with transaction.atomic():
+            venta = form.save(commit=False)
+            venta.base_llamada = base
+            venta.agente_nombre = request.user.get_full_name() or request.user.username or request.user.email or 'Usuario'
+            
+            cliente_documento = form.cleaned_data.get('cliente_documento')
+            cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
+            
+            if cliente_documento:
+                cliente = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
+                if cliente:
+                    venta.cliente = cliente
+                else:
+                    cliente = Cliente.objects.create(
+                        tipo_documento=cliente_tipo_documento,
+                        documento=cliente_documento,
+                        nombres=form.cleaned_data.get('cliente_nombres', ''),
+                        paterno=form.cleaned_data.get('cliente_paterno', ''),
+                        materno=form.cleaned_data.get('cliente_materno', ''),
+                        telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
+                        telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
+                        activo=True,
+                    )
+                    venta.cliente = cliente
+            
+            venta.save()
+            
+            # Process items formset
+            items_total = int(request.POST.get('items-TOTAL_FORMS', 0))
+            for i in range(items_total):
+                tipo_venta = request.POST.get(f'items-{i}-tipo_venta', '')
+                tipo_producto = request.POST.get(f'items-{i}-tipo_producto', '')
+                precio_plan = request.POST.get(f'items-{i}-precio_plan', '')
+                if tipo_venta or tipo_producto:
+                    ItemVenta.objects.create(
+                        venta=venta,
+                        tipo_venta=tipo_venta,
+                        tipo_producto=tipo_producto,
+                        precio_plan=precio_plan if precio_plan else None
+                    )
         
         messages.success(request, "Venta registrada correctamente.")
         return JsonResponse({'ok': True, 'mensaje': 'Venta registrada correctamente.', 'venta_id': venta.id})
@@ -507,38 +510,39 @@ class VentaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        user = self.request.user
-        full_name = (user.get_full_name() or user.username or user.email or 'Usuario').strip()
-        if not full_name:
-            full_name = user.get_username() or str(user.pk)
-        profile = getattr(user, 'profile', None)
-        if profile:
-            form.instance.agente_nombre = full_name
+        with transaction.atomic():
+            user = self.request.user
+            full_name = (user.get_full_name() or user.username or user.email or 'Usuario').strip()
+            if not full_name:
+                full_name = user.get_username() or str(user.pk)
+            profile = getattr(user, 'profile', None)
+            if profile:
+                form.instance.agente_nombre = full_name
 
-        cliente_documento = form.cleaned_data.get('cliente_documento')
-        cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
-        registrar_nuevo = form.cleaned_data.get('registrar_nuevo_cliente', False)
+            cliente_documento = form.cleaned_data.get('cliente_documento')
+            cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
+            registrar_nuevo = form.cleaned_data.get('registrar_nuevo_cliente', False)
 
-        if cliente_documento:
-            existe = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
-            if existe and registrar_nuevo:
-                form.instance.cliente = existe
-            elif existe:
-                form.instance.cliente = existe
-            else:
-                cliente = Cliente.objects.create(
-                    tipo_documento=cliente_tipo_documento,
-                    documento=cliente_documento,
-                    nombres=form.cleaned_data.get('cliente_nombres', ''),
-                    paterno=form.cleaned_data.get('cliente_paterno', ''),
-                    materno=form.cleaned_data.get('cliente_materno', ''),
-                    telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
-                    telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
-                    activo=True,
-                )
-                form.instance.cliente = cliente
+            if cliente_documento:
+                existe = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
+                if existe and registrar_nuevo:
+                    form.instance.cliente = existe
+                elif existe:
+                    form.instance.cliente = existe
+                else:
+                    cliente = Cliente.objects.create(
+                        tipo_documento=cliente_tipo_documento,
+                        documento=cliente_documento,
+                        nombres=form.cleaned_data.get('cliente_nombres', ''),
+                        paterno=form.cleaned_data.get('cliente_paterno', ''),
+                        materno=form.cleaned_data.get('cliente_materno', ''),
+                        telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
+                        telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
+                        activo=True,
+                    )
+                    form.instance.cliente = cliente
 
-        self.object = form.save()
+            self.object = form.save()
         messages.success(self.request, "Venta registrada correctamente.")
         return redirect(self.success_url)
 

@@ -31,8 +31,8 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="vp-lead-field">
-                    <small class="text-muted">Teléfono</small>
-                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_telefono|default:'' }}"></div>
+<small class="text-muted">Teléfono</small>
+                     <div><input type="text" id="id_base_telefono_display" class="form-control vp-readonly" readonly value="{{ base_llamada_telefono|default:'' }}"></div>
                 </div>
             </div>
             <div class="col-md-3">
@@ -126,21 +126,33 @@
         <div class="row g-3">
             <div class="col-md-3">
                 {{ form.producto_nombre.label_tag }}
-                {{ form.producto_nombre }}
+                <select class="form-select" id="id_producto_nombre_display" autocomplete="off">
+                    {% for value, label in form.producto_nombre.field.choices %}
+                        <option value="{{ value }}"{% if form.producto_nombre.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-3">
                 {{ form.origen.label_tag }}
-                {{ form.origen }}
-            </div>
-            <div class="col-md-3" id="operador_group">
-                {{ form.operador.label_tag }}
-                {{ form.operador }}
+                <select class="form-select" id="id_origen_display" autocomplete="off">
+                    {% for value, label in form.origen.field.choices %}
+                        <option value="{{ value }}"{% if form.origen.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-3" id="telefono_portar_group" style="display: none;">
-                <label for="id_telefono_portar">Teléfono a Portar</label>
+                {{ form.operador.label_tag }}
+                <select class="form-select" id="id_operador_display" autocomplete="off">
+                    {% for value, label in form.operador.field.choices %}
+                        <option value="{{ value }}"{% if form.operador.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3" id="telefono_portar_field" style="display: none;">
+                <label for="id_telefono_portar_display">Teléfono a Portar</label>
                 <div class="input-group">
-                    <input type="text" name="telefono_portar" class="form-control" id="id_telefono_portar" placeholder="Número a portar">
-                    <button type="button" class="btn btn-outline-secondary" id="btnTelefonoPortar">
+                    <input type="text" class="form-control" id="id_telefono_portar_display" placeholder="Número a portar" value="{{ form.telefono_portar.value|default:'' }}">
+                    <button type="button" class="btn btn-outline-secondary" id="btnTelefonoPortar" title="Usar teléfono del Lead">
                         <i class="bi bi-telephone"></i>
                     </button>
                 </div>
@@ -151,15 +163,23 @@
             </div>
             <div class="col-md-3">
                 {{ form.plan_producto.label_tag }}
-                {{ form.plan_producto }}
+                <select class="form-select" id="id_plan_producto_display" autocomplete="off">
+                    {% for value, label in form.plan_producto.field.choices %}
+                        <option value="{{ value }}"{% if form.plan_producto.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-2">
                 {{ form.precio_plan.label_tag }}
-                <input type="text" class="form-control" id="id_precio_plan" readonly value="{{ form.precio_plan.value|default:'' }}">
+                <input type="text" class="form-control" id="id_precio_plan_display" readonly value="{{ form.precio_plan.value|default:'' }}">
             </div>
             <div class="col-md-2">
                 {{ form.precio_venta.label_tag }}
-                {{ form.precio_venta }}
+                <select class="form-select" id="id_precio_venta_display" autocomplete="off">
+                    {% for value, label in form.precio_venta.field.choices %}
+                        <option value="{{ value }}"{% if form.precio_venta.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-2">
                 {{ form.tipo_renta.label_tag }}
@@ -167,17 +187,25 @@
             </div>
             <div class="col-md-2">
                 {{ form.tipo_linea.label_tag }}
-                {{ form.tipo_linea }}
+                <select class="form-select" id="id_tipo_linea_display">
+                    {% for value, label in form.tipo_linea.field.choices %}
+                        <option value="{{ value }}"{% if form.tipo_linea.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-2">
                 {{ form.tipo_pago.label_tag }}
-                {{ form.tipo_pago }}
+                <select class="form-select" id="id_tipo_pago_display">
+                    {% for value, label in form.tipo_pago.field.choices %}
+                        <option value="{{ value }}"{% if form.tipo_pago.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
-        </div>
-    </div>
 </div>
-
-<!-- Dirección de Despacho -->
+     </div>
+ </div>
+ 
+ <!-- Dirección de Despacho -->
 <div class="card mb-4">
     <div class="card-header">
         <h5><i class="bi bi-geo-alt"></i> Dirección de Despacho</h5>
@@ -291,83 +319,4 @@
 
 <script id="cliente-search-config" type="application/json">
 {"urlBuscar": "{% url 'ventas:buscar_cliente' %}", "urlValidar": "{% url 'ventas:validar_cliente' %}", "baseId": "{{ base_llamada_id|default:'' }}"}
-</script>
-
-<script>
-(function() {
-    const productoSelect = document.getElementById('id_producto_nombre_display');
-    const origenSelect = document.getElementById('id_origen_display');
-    const operadorSelect = document.getElementById('id_operador_display');
-    const telefonoPortarInput = document.getElementById('id_telefono_portar');
-    const telefonoPortarGroup = document.getElementById('telefono_portar_group');
-    const modeloGroup = document.getElementById('modelo_producto_group');
-    const modeloSelect = document.getElementById('id_modelo_producto');
-    const precioVentaSelect = document.getElementById('id_precio_venta_display');
-    const planSelect = document.getElementById('id_plan_producto_display');
-    const precioPlanInput = document.getElementById('id_precio_plan_display');
-    const tipoRentaInput = document.getElementById('id_tipo_renta');
-
-    function syncHidden(fromId, toId) {
-        const src = document.getElementById(fromId);
-        const dst = document.getElementById(toId);
-        if (src && dst) dst.value = src.value;
-    }
-
-    function updateProducto() {
-        const isPack = productoSelect && productoSelect.value === 'PACK';
-        if (modeloGroup) modeloGroup.style.display = isPack ? '' : 'none';
-        if (modeloSelect) modeloSelect.disabled = !isPack;
-        if (precioVentaSelect) precioVentaSelect.disabled = !isPack;
-    }
-
-    function updateOrigen() {
-        const isPortabilidad = origenSelect && origenSelect.value === 'PORTABILIDAD';
-        if (operadorSelect) operadorSelect.required = isPortabilidad;
-        if (telefonoPortarGroup) telefonoPortarGroup.style.display = isPortabilidad ? '' : 'none';
-        if (telefonoPortarInput) telefonoPortarInput.required = isPortabilidad;
-        if (!isPortabilidad && telefonoPortarInput) telefonoPortarInput.value = '';
-    }
-
-    function updateTipoRenta() {
-        if (!precioVentaSelect || !precioPlanInput || !tipoRentaInput) return;
-        const pv = parseInt(precioVentaSelect.value, 10) || 0;
-        const pp = parseInt(precioPlanInput.value, 10) || 0;
-        let renta = '';
-        if (pv === 1 && pp <= 49) renta = 'R.BAJA';
-        else if (pv <= 99 && pp >= 50 && pp <= 89) renta = 'R.MEDIA';
-        else if (pv >= 99 && pp >= 89) renta = 'R.ALTA';
-        tipoRentaInput.value = renta;
-    }
-
-    if (productoSelect) productoSelect.addEventListener('change', function() {
-        syncHidden('id_producto_nombre', 'id_producto_nombre');
-        updateProducto();
-        updateTipoRenta();
-    });
-    if (origenSelect) origenSelect.addEventListener('change', function() {
-        syncHidden('id_origen', 'id_origen');
-        updateOrigen();
-        updateTipoRenta();
-    });
-    if (precioVentaSelect) precioVentaSelect.addEventListener('change', function() {
-        syncHidden('id_precio_venta', 'id_precio_venta');
-        updateTipoRenta();
-    });
-    if (planSelect) planSelect.addEventListener('change', function() {
-        syncHidden('id_plan_producto', 'id_plan_producto');
-        updateTipoRenta();
-    });
-
-    const productoNombreInput = document.querySelector('[name="producto_nombre"]');
-    if (productoNombreInput && productoSelect && productoNombreInput.value) {
-        productoSelect.value = productoNombreInput.value;
-    }
-    const origenInput = document.querySelector('[name="origen"]');
-    if (origenInput && origenSelect && origenInput.value) {
-        origenSelect.value = origenInput.value;
-    }
-    updateProducto();
-    updateOrigen();
-    updateTipoRenta();
-})();
 </script>

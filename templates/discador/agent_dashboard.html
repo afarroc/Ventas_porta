@@ -488,6 +488,8 @@ function openVentaModal(id_lead) {
         if (data.ok) {
             content.innerHTML = data.html;
             window.currentVentaModalBaseId = id_lead;
+            // Dispatch event to initialize form fields (for venta-form.js)
+            document.dispatchEvent(new CustomEvent('ventaFormLoaded'));
         } else {
             content.innerHTML = '<div class="alert alert-danger">' + (data.mensaje || 'Error al cargar el formulario') + '</div>';
         }

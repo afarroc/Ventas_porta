@@ -1,6 +1,6 @@
 # Queries Referenciadas - Separación Apps Despacho/Courier
 
-## Arquitectura Actual (2026-06-07)
+## Arquitectura Actual (2026-06-08)
 
 ```
 Venta (Operaciones)
@@ -65,11 +65,10 @@ proveedores_courier = ProveedorCourier.objects.filter(activo=True)
 
 ---
 
-## Queries de Trazabilidad Lead → Venta (Próximamente)
+## Queries de Trazabilidad Lead → Venta (Implementado)
 
 ### Lead con Venta Asociada
 ```python
-# Una vez implementado BaseLlamada.venta
 base = BaseLlamada.objects.select_related('venta').prefetch_related(
     'venta__bo_seguimiento',
     'venta__despacho_estado',
@@ -107,63 +106,88 @@ ventas_flujo = Venta.objects.filter(
 
 ## API Endpoints - Trazabilidad
 
-### Endpoint: `/api/venta/{id}/trazabilidad/` (IMPLEMENTADO)
-
-```python
-# Retorna JSON con toda la trazabilidad
-{
-    "venta": {
-        "id": 123,
-        "cliente": "...",
-        "origen": "...",
-        "producto": "...",
-        "precio_venta": "...",
-        "tipo_renta": "...",
-        "creado": "..."
-    },
-    "lead": {
-        "id_lead": "...",
-        "telefono": "...",
-        "nombres": "...",
-        "documento": "...",
-        "base_procedencia": "...",
-        "resultado_gestion": "..."
-    },
-    "backoffice": {
-        "status": "...",
-        "supervisor": "...",
-        "fecha_bo": "..."
-    },
-    "despacho": {...},
-    "courier": {...},
-    "historial": [...]
-}
-```
+### Endpoint: `/api/venta/<int:pk>/trazabilidad/` (IMPLEMENTADO)
 
 **Método:** GET autenticado  
 **Permisos:** `@login_required`
 
 ```python
-# Retorna JSON con toda la trazabilidad
+# Ejemplo de llamada
+import requests
+response = requests.get('/api/venta/123/trazabilidad/', cookies=request.session)
+data = response.json()
+
+# Respuesta JSON:
 {
     "venta": {
         "id": 123,
-        "agente_nombre": "...",
-        "cliente": {...}
+        "cliente": "Juan Perez",
+        "origen": "PORTABILIDAD",
+        "producto": "PACK",
+        "precio_venta": "49",
+        "tipo_renta": "R.BAJA",
+        "creado": "2026-06-01T10:00:00"
     },
     "lead": {
-        "id_lead": "...",
-        "telefono": "...",
-        "base_procedencia": "..."
+        "id_lead": "uuid-here",
+        "telefono": "999888777",
+        "nombres": "Juan",
+        "paterno": "Perez",
+        "documento": "12345678",
+        "base_procedencia": "POT",
+        "resultado_gestion": "VENTA_CONVERTIDA",
+        "fecha_gestion": "2026-06-01"
     },
-    "postventa": {
-        "bo": {"status_bo": "...", "fecha_bo": "..."},
-        "despacho": {"etapa": "...", "tracking": "..."},
-        "courier": {"sts_courier": "...", "tracking": "..."}
+    "backoffice": {
+        "status": "DESPACHADO",
+        "supervisor": "Carlos Ruiz",
+        "fecha_bo": "2026-06-02",
+        "observaciones": "Validado"
+    },
+    "despacho": {
+        "status": "EN_TRANSITO",
+        "fecha_despacho": "2026-06-03",
+        "observaciones": "En camino"
+    },
+    "courier": {
+        "status": "EN_RUTA",
+        "fecha_courier": "2026-06-04",
+        "observaciones": "Entrega programada"
     },
     "historial": [
-        {"area": "BO", "estado_anterior": "EN_BO", "estado_nuevo": "VALIDADO", "fecha": "..."},
-        ...
+        {
+            "area": "BO",
+            "estado_anterior": "",
+            "estado_nuevo": "PDTE_BO",
+            "fecha": "2026-06-01T10:00:00",
+            "usuario": "agente1",
+            "observaciones": ""
+        },
+        {
+            "area": "BO",
+            "estado_anterior": "PDTE_BO",
+            "estado_nuevo": "VALIDADO",
+            "fecha": "2026-06-02T08:00:00",
+            "usuario": "supervisor1",
+            "observaciones": "Validado"
+        }
     ]
 }
+```
+
+#### Validación de tracking único por venta
+```python
+from apps.despacho.models import EstadoDespacho
+from apps.courier.models import EstadoCourier
+
+def validar_tracking_unico(venta_id, tracking):
+    exists_despacho = EstadoDespacho.objects.filter(
+        venta_id=venta_id,
+        tracking__iexact=tracking
+    ).exists()
+    exists_courier = EstadoCourier.objects.filter(
+        venta_id=venta_id,
+        tracking__iexact=tracking
+    ).exists()
+    return not (exists_despacho or exists_courier)
 ```

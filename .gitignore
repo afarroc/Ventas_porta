@@ -63,6 +63,11 @@ htmlcov/
 # Session / testing artifacts
 cookies.txt
 
+# Kilo files
+.kilo/node_modules/
+.kilo/package.json
+.kilo/package-lock.json
+
 # Uploaded media
 /static/media
 /media/

@@ -21,6 +21,7 @@ Contactos de la base de discado con sus resultados de gestión.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
+| `id` | AutoField | Identificador único autoincremental |
 | `id_lead` | UUIDField | Identificador único del lead |
 | `telefono` | CharField | Teléfono del contacto (único) |
 | `nombres` | CharField | Nombres del contacto |
@@ -29,19 +30,20 @@ Contactos de la base de discado con sus resultados de gestión.
 | `correo` | EmailField | Email del contacto |
 | `documento` | CharField | Número de documento (DNI, RUT) |
 | `observaciones` | TextField | Notas adicionales |
-| `contact_callable` | CharField | ¿Es contactable? (Sí/No) |
+| `contact_callable` | CharField | ¿Es contactable? (0=No, 1=Sí) |
 | `ultimo_intento` | CharField | Último intento registrado en CRM |
 | `ultimo_resultado_crm` | CharField | Último resultado en CRM |
-| `es_callable` | CharField | ¿Es contactable? (Sí/No) |
+| `es_callable` | CharField | ¿Es contactable? (0=No, 1=Sí) |
 | `fecha_gestion` | DateField | Fecha de gestión |
 | `hora_gestion` | TimeField | Hora de gestión |
-| `resultado_gestion` | CharField | Resultado del contacto |
+| `resultado_gestion` | CharField | Resultado del contacto (Sin gestión/Gestionado/Venta Convertida) |
 | `tipo_contacto` | CharField | Tipo de contacto |
 | `tipo_valido` | CharField | Válido/Inválido/No definido |
 | `status_java` | CharField | Status JAVA |
 | `supervisor_nombre` | CharField | Nombre del supervisor |
 | `base_procedencia` | CharField | Base de procedencia del lead (POT, RSG_01, etc.) |
 | `base_manual` | BooleanField | Indica si el lead fue cargado manualmente (no existe en base) |
+| `venta` | ForeignKey(Venta) | Venta asociada generada desde este lead (trazabilidad bidireccional) |
 | `creado` | DateTimeField | Timestamp de creación |
 | `actualizado` | DateTimeField | Timestamp de actualización |
 
@@ -126,7 +128,7 @@ Registro maestro de operaciones de venta.
 #### Producto y Venta
 - `producto_nombre`: CHIP (sin modelo, precio fijo S/. 1) o PACK (con modelo y precio variable)
 - `origen`: PORTABILIDAD (requiere operador y telefono_portar) o LINEA_NUEVA
-- `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD)
+- `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD) — **Nota**: `LINEA_NUEVA` no es un operador válido, fue removido en Sprint 13
 - `telefono_portar`: Número a portar (obligatorio si origen=PORTABILIDAD)
 - `modelo_producto`: Modelo de equipo (solo para PACK)
 - `plan_producto`: Plan ENTEL → determina `precio_plan`
@@ -491,9 +493,16 @@ Cada área opera de forma independiente sobre la misma venta. Los datos de prove
 /ventas/nueva/              → VentaCreateView
 /ventas/nueva/<uuid:id_lead>/ → VentaCreateView (con lead pre-cargado)
 /ventas/backoffice/         → BackofficeListView (listado consolidado postventa)
+/ventas/<int:venta_id>/item/nuevo/ → ItemVentaCreateView
 /postventa/                 → Dashboard BO (métricas y últimas ventas)
-/postventa/backoffice/      → Listado consolidado postventa (alias)
+/postventa/backoffice/         → BackofficeListView (listado consolidado postventa)
 /postventa/backoffice/venta/<id>/ → Formulario SeguimientoBO por venta
+/postventa/backoffice/<int:pk>/editar/ → Editar SeguimientoBO
+/postventa/dashboard/conversion/ → DashboardConversiónView
+/postventa/despacho/venta/<int:venta_id>/ → EstadoDespachoCreateView
+/postventa/despacho/venta/<int:pk>/editar/ → EstadoDespachoUpdateView
+/postventa/courier/venta/<int:venta_id>/ → EstadoCourierCreateView
+/postventa/courier/venta/<int:pk>/editar/ → EstadoCourierUpdateView
 /admin/                     → Panel administración
 ```
 
@@ -585,18 +594,17 @@ Accesible en `http://localhost:8000/admin/`.
 
 ---
 
-## 15. Trazabilidad Lead → Venta (2026-06-07)
+## 15. Trazabilidad Lead → Venta (2026-06-08)
 
 ### 15.1 Relación Bidireccional Lead-Venta
 
-Actualmente existe la relación unidireccional:
-- `Venta.base_llamada` → FK a BaseLlamada
-
-**Planificado: Agregar FK inverso en BaseLlamada:**
+Relaciones implementadas (Sprint 1):
+- `Venta.base_llamada` → FK a BaseLlamada (related_name='ventas_asociadas')
 - `BaseLlamada.venta` → FK opcional a Venta (related_name='lead_venta')
-- Propósito: Completar el círculo de trazabilidad - desde el lead se puede acceder a la venta generada
 
-### 15.2 Estados del Lead
+Propósito: Círculo completo de trazabilidad - desde el lead se accede a la venta generada y viceversa.
+
+### 15.2 Estados del Lead y Bloqueo
 
 | Estado | Descripción | Transiciones válidas |
 |--------|-------------|-------------------|
@@ -604,7 +612,7 @@ Actualmente existe la relación unidireccional:
 | `GESTIONADO` | Llamada realizada (sin venta) | → VENTA |
 | `VENTA_CONVERTIDA` | Lead convertido en venta | ESTADO_FINAL |
 
-> **Nota Sprint 1**: Se agregó `RESULTADO_GESTION_CHOICES` con valor `VENTA_CONVERTIDA`
+**Regla implementada**: Los leads con `resultado_gestion == 'VENTA_CONVERTIDA'` no pueden asignarse a agentes en el discador (`apps/discador/views.py`).
 
 ### 15.3 Queries de Trazabilidad
 
@@ -631,9 +639,39 @@ stats = BaseLlamada.objects.values('base_procedencia').annotate(
 
 ---
 
+## 16. Servicio de Registro y Signals de Historial
+
+### 16.1 Servicio `registrar_cambio_estado()` (`apps/postventa/services.py`)
+
+Helper para registrar cambios de estado en `HistorialEstado`.
+
+```python
+from apps.postventa.services import registrar_cambio_estado
+
+registrar_cambio_estado(
+    venta=venta,
+    area='BO',               # BO, DESPACHO, COURIER
+    estado_anterior='',
+    estado_nuevo='EN_BO',
+    usuario=request.user,
+    observaciones='Notas'
+)
+```
+
+### 16.2 Signals de Persistencia Automática (`apps/postventa/signals.py`)
+
+Se registran automáticamente cambios en `HistorialEstado` vía Django signals:
+- `post_save` en `SeguimientoBO` → crea registro en área BO
+- `post_save` en `EstadoDespacho` → crea registro en área DESPACHO
+- `post_save` en `EstadoCourier` → crea registro en área COURIER
+
+Los views de cada área llaman a `registrar_cambio_estado()` en `form_valid()` para registrar tanto el estado inicial (creación) como cambios posteriores (actualización).
+
+---
+
 ## 17. Historial de Estados Postventa
 
-### 17.1 Modelo `HistorialEstado` (`postventa_historial`)
+### 18.1 Modelo `HistorialEstado` (`postventa_historial`)
 
 Registra cada cambio de estado en el flujo postventa.
 
@@ -659,7 +697,7 @@ historial_bo = venta.historial_estados.filter(area='BO')
 
 ---
 
-## 17. Validaciones de Flujo Postventa
+## 17. Historial de Estados Postventa
 
 ### 17.1 Flujo Obligatorio
 
@@ -675,18 +713,16 @@ historial_bo = venta.historial_estados.filter(area='BO')
 
 ### 17.2 Reglas de Negocio
 
-1. Un lead con venta no puede iniciar nueva gestión (a menos que se revoca)
-2. No se puede crear EstadoDespacho sin SeguimientoBO en estado válido
-3. No se puede crear EstadoCourier sin SeguimientoBO
-4. Tracking puede ser único o independiente según configuración de negocio
+1. **Tracking único**: No se permite duplicar `tracking` entre `EstadoDespacho` y `EstadoCourier` de la misma venta (validación en views).
+2. **StateDespacho**: Requiere `SeguimientoBO` con `status_bo` en `VALIDADO` o `EN_DESPACHO`.
+3. **EstadoCourier**: Requiere `SeguimientoBO` con `status_bo == 'DESPACHADO'`.
+4. **VENTA_CONVERTIDA**: Los leads con `resultado_gestion == 'VENTA_CONVERTIDA'` no pueden asignarse a agentes.
 
 ---
 
-## 18. Dashboard de Conversión (Próximamente)
+## 19. Dashboard de Conversión (Implementado)
 
-### 18. Dashboard de Conversión
-
-### 18.1 Métricas Implementadas
+### 19.1 Métricas Implementadas
 
 | Métrica | Fórmula |
 |---------|---------|
@@ -695,13 +731,13 @@ historial_bo = venta.historial_estados.filter(area='BO')
 | Leads Convertidos | BaseLlamada con venta FK |
 | Tasa Conversión | Leads Convertidos / Total Leads |
 
-### 18.2 URL
+### 19.2 URL
 
 ```
 /postventa/dashboard/conversion/ → DashboardConversionView
 ```
 
-### 18.3 Queries
+### 19.3 Queries
 
 ```python
 # Estadísticas por base
@@ -713,7 +749,7 @@ BaseLlamada.objects.values('base_procedencia').annotate(
 
 ---
 
-## 19. Reglas de Negocio Retail - Ventas
+## 20. Reglas de Negocio Retail - Ventas
 
 ### 19.1 Tipo Renta por Combinación
 
@@ -725,22 +761,26 @@ BaseLlamada.objects.values('base_procedencia').annotate(
 | PORTABILIDAD | CHIP | 39-59 | R.BAJA |
 | PORTABILIDAD | CHIP | 74-89 | R.MEDIA |
 | PORTABILIDAD | CHIP | 109+ | R.ALTA |
-| LINEA_NUEVA | PACK | 49-75 | R.BAJA/R.MEDIA |
+| LINEA_NUEVA | PACK | 49-75 | R.BAJA |
+| LINEA_NUEVA | PACK | 76-98 | R.MEDIA |
 | LINEA_NUEVA | PACK | 99+ | R.ALTA |
 | LINEA_NUEVA | CHIP | 25-45 | R.BAJA |
 | LINEA_NUEVA | CHIP | 59+ | R.MEDIA |
 
 ### 19.2 Validaciones Implementadas
 
-1. **Producto CHIP**: Sin modelo ni precio variable (precio = 1 fijo)
+1. **Producto CHIP**: Sin modelo ni precio variable (precio fijo S/. 1)
 2. **Origen PORTABILIDAD**: Operador y teléfono_portar obligatorios
 3. **Tipo documento**: DNI/RUC/CE/Pasaporte
 4. **Recibo electrónico**: Si 'SI_DESEA', correo obligatorio
+5. **Tipo renta multilínea**: Si `multiples_lineas=True`, se requiere `tipo_renta2`
+6. **Tracking único**: No se permite duplicar tracking entre despacho y courier de la misma venta
+7. **Lead VENTA_CONVERTIDA**: No se puede asignar a agentes en discador
+8. **Calcular tipo_renta actualizado**: Rangos definidos según §19.1
 
 ### 19.3 Validaciones Pendientes
 
 1. Confirmar opciones de MODELOS_PRODUCTO con catálogo ENTEL actual
 2. Verificar precios de venta y plan correspondientes al portafolio vigente
-3. Definir si el tracking es único o independiente por área
 
 

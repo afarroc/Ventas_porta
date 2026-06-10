@@ -51,6 +51,9 @@ class EstadoCourierCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        # Asignar la venta antes de guardar
+        form.instance.venta = self.venta
+        
         # Validar tracking único (no duplicar entre despacho y courier de la misma venta)
         tracking = form.cleaned_data.get('tracking', '')
         if tracking:

@@ -179,7 +179,19 @@ Entidad independiente para proveedores de despacho/courier.
 | `activo` | BooleanField | Estado activo |
 | `creado` | DateTimeField | Timestamp de creación |
 
-**Modelo: `EstadoDespacho`** (`postventa_estadodespacho`)
+### 2.5 Módulo Despacho
+
+**Modelo: `Proveedor`** (`despacho_proveedor`)
+
+Proveedores de servicios de despacho. Ver `postventa_proveedor` como alternativa.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `nombre` | CharField | Nombre único del proveedor |
+| `activo` | BooleanField | Estado activo |
+| `creado` | DateTimeField | Timestamp de creación |
+
+**Modelo: `EstadoDespacho`** (`despacho_estado`)
 
 Trazabilidad de la etapa de despacho/entrega del producto.
 
@@ -194,7 +206,19 @@ Trazabilidad de la etapa de despacho/entrega del producto.
 | `creado` | DateTimeField | Timestamp de creación |
 | `actualizado` | DateTimeField | Timestamp de actualización |
 
-**Modelo: `EstadoCourier`** (`postventa_estadocourier`)
+### 2.6 Módulo Courier
+
+**Modelo: `ProveedorCourier`** (`courier_proveedor`)
+
+Proveedores de servicios de courier/entrega.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `nombre` | CharField | Nombre único del proveedor |
+| `activo` | BooleanField | Estado activo |
+| `creado` | DateTimeField | Timestamp de creación |
+
+**Modelo: `EstadoCourier`** (`courier_estado`)
 
 Trazabilidad del proveedor de courier (flujo paralelo al despacho).
 
@@ -203,7 +227,7 @@ Trazabilidad del proveedor de courier (flujo paralelo al despacho).
 | `venta` | OneToOneField | FK a Venta (1:1) |
 | `sts_courier` | CharField | Estado courier: PDTE_BO/EN_RUTA/ENTREGADO/RECHAZADO |
 | `fch_courier` | DateField | Fecha del estado courier |
-| `proveedor` | ForeignKey | FK a Proveedor (opcional) |
+| `proveedor` | ForeignKey | FK a ProveedorCourier (opcional) |
 | `tracking` | CharField | N° Seguimiento/Tracking |
 | `observaciones` | TextField | Notas |
 | `creado` | DateTimeField | Timestamp de creación |
@@ -320,13 +344,33 @@ Ventas_Porta/
 │   │   ├── ubigeo_peru.py
 │   │   ├── tests.py
 │   │   └── migrations/
-│   └── postventa/
+│   ├── postventa/
+│   │   ├── __init__.py
+│   │   ├── apps.py
+│   │   ├── models.py                           # SeguimientoBO, Proveedor
+│   │   ├── admin.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   └── migrations/
+│   ├── despacho/
+│   │   ├── __init__.py
+│   │   ├── apps.py
+│   │   ├── models.py                           # Proveedor, EstadoDespacho
+│   │   ├── forms.py
+│   │   ├── admin.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── tests.py
+│   │   └── migrations/
+│   └── courier/
 │       ├── __init__.py
 │       ├── apps.py
-│       ├── models.py                           # SeguimientoBO, EstadoDespacho, EstadoCourier, Proveedor
+│       ├── models.py                           # ProveedorCourier, EstadoCourier
+│       ├── forms.py
 │       ├── admin.py
 │       ├── views.py
 │       ├── urls.py
+│       ├── tests.py
 │       └── migrations/
 └── templates/
     ├── base.html
@@ -344,11 +388,15 @@ Ventas_Porta/
     │   ├── venta_form.html
     │   ├── venta_form_modal.html
     │   ├── item_form.html
+    │   └── backoffice_list.html
+    ├── postventa/
     │   └── backoffice_form.html
-    └── postventa/
-        ├── backoffice_list.html
-        ├── despacho_list.html
-        └── courier_list.html
+    ├── despacho/
+    │   ├── proveedor_list.html
+    │   └── despacho_form.html
+    └── courier/
+        ├── proveedor_list.html
+        └── courier_form.html
 ```
 
 ### Estructura de archivos estáticos
@@ -369,7 +417,7 @@ Instala PyMySQL como driver MySQLdb para Django.
 
 ### config/settings.py
 Configura BD con parámetros desde `.env`, charset utf8mb4, LANGUAGE_CODE='es-pe'.
-Apps registradas: `apps.discador`, `apps.ventas`, `apps.users`, `apps.postventa`.
+Apps registradas: `apps.discador`, `apps.ventas`, `apps.users`, `apps.postventa`, `apps.despacho`, `apps.courier`.
 
 ### config/urls.py
 Incluye URLs de las tres apps: `ventas` (raíz), `discador` y `users`.

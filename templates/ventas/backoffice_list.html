@@ -21,6 +21,7 @@
                                 <th>BASE</th>
                                 <th>Status BO</th>
                                 <th>Fecha BO</th>
+                                <th>Despacho</th>
                                 <th>Sts Courier</th>
                                 <th>Fch. Courier</th>
                                 <th>Acciones</th>
@@ -28,7 +29,7 @@
                         </thead>
                         <tbody>
                             {% for venta in ventas %}
-                                {% with bo=venta.bo_seguimiento cour=venta.courier_estado %}
+                                {% with bo=venta.bo_seguimiento cour=venta.courier_estado desp=venta.despacho_estado %}
                                 <tr>
                                     <td>
                                         {% if venta.base_llamada %}
@@ -67,6 +68,13 @@
                                         {% endif %}
                                     </td>
                                     <td>
+                                        {% if desp %}
+                                            {{ desp.get_etapa_display }}
+                                        {% else %}
+                                            Pdte. Despacho
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         {% if cour %}
                                             {{ cour.get_sts_courier_display }}
                                         {% else %}
@@ -81,24 +89,24 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'postventa:backoffice_create' venta.id %}"
-                                           class="btn btn-sm btn-primary">
-                                            <i class="bi bi-pencil"></i> BO
-                                        </a>
-                                        <a href="{% url 'despacho:despacho_create' venta.id %}"
-                                           class="btn btn-sm btn-outline-info">
-                                            <i class="bi bi-truck"></i> Despacho
-                                        </a>
-                                        <a href="{% url 'courier:courier_create' venta.id %}"
-                                           class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-bicycle"></i> Courier
-                                        </a>
-                                    </td>
+    <a href="{% url 'postventa:backoffice_create' venta.id %}"
+       class="btn btn-sm btn-primary">
+        <i class="bi bi-pencil"></i> BO
+    </a>
+    <a href="{% url 'despacho:despacho_create' venta.id %}"
+       class="btn btn-sm btn-info">
+        <i class="bi bi-box"></i> Despacho
+    </a>
+    <a href="{% url 'courier:courier_create' venta.id %}"
+       class="btn btn-sm btn-success">
+        <i class="bi bi-bicycle"></i> Courier
+    </a>
+</td>
                                 </tr>
                                 {% endwith %}
                             {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px;"></i>
                                     No hay registros de venta
                                 </td>

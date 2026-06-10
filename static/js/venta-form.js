@@ -268,6 +268,11 @@ window.initClienteSearch = function() {
         if (el) el.value = valor;
     }
 
+    function setText(id, valor) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = valor;
+    }
+
     function mostrarMensaje(texto, tipo) {
         mensaje.className = 'alert alert-' + tipo;
         mensaje.textContent = texto;
@@ -471,13 +476,13 @@ window.initClienteSearch = function() {
         .then(function(data) {
             if (data.ok) {
                 const l = data.lead;
-                setValue('id_base_telefono', l.telefono || '');
-                setValue('id_base_nombres', l.nombres || '');
-                setValue('id_base_paterno', l.paterno || '');
-                setValue('id_base_materno', l.materno || '');
-                setValue('id_base_documento', l.documento || '');
-                setValue('id_base_correo', l.correo || '');
-                setValue('id_base_observaciones', l.observaciones || '');
+                setText('id_base_telefono', l.telefono || '');
+                setText('id_base_nombres', l.nombres || '');
+                setText('id_base_paterno', l.paterno || '');
+                setText('id_base_materno', l.materno || '');
+                setText('id_base_documento', l.documento || '');
+                setText('id_base_correo', l.correo || '');
+                setText('id_base_observaciones', l.observaciones || '');
                 if (campoTipoDocumento) setValue('id_cliente_tipo_documento', l.tipo_documento || 'DNI');
                 setValue('id_cliente_documento', l.documento || '');
                 setValue('id_cliente_nombres', l.nombres || '');
@@ -519,8 +524,8 @@ window.initClienteSearch = function() {
             const tel2 = document.getElementById('id_cliente_telefono_2');
             const leadTel = document.getElementById('id_base_telefono_display');
             let valor = '';
-            if (leadTel && leadTel.value) {
-                valor = leadTel.value;
+            if (leadTel && leadTel.textContent) {
+                valor = leadTel.textContent.trim();
             } else if (tel1 && tel1.value) {
                 valor = tel1.value;
             } else if (tel2 && tel2.value) {

@@ -31,26 +31,32 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="vp-lead-field">
-<small class="text-muted">Teléfono</small>
-                     <div><input type="text" id="id_base_telefono_display" class="form-control vp-readonly" readonly value="{{ base_llamada_telefono|default:'' }}"></div>
+                    <small class="text-muted">Teléfono</small>
+                    <div id="id_base_telefono_display">{{ base_llamada_telefono|default:'' }}</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="vp-lead-field">
                     <small class="text-muted">Nombres</small>
-                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_nombres|default:'' }}"></div>
+                    <div id="id_base_nombres">{{ base_llamada_nombres|default:'' }}</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="vp-lead-field">
                     <small class="text-muted">Documento</small>
-                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_documento|default:'' }}"></div>
+                    <div id="id_base_documento">{{ base_llamada_documento|default:'' }}</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="vp-lead-field">
                     <small class="text-muted">Correo</small>
-                    <div><input type="text" class="form-control vp-readonly" readonly value="{{ base_llamada_correo|default:'' }}"></div>
+                    <div id="id_base_correo">{{ base_llamada_correo|default:'' }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="vp-lead-field">
+                    <small class="text-muted">Observaciones</small>
+                    <div id="id_base_observaciones">{{ base_llamada_observaciones|default:'' }}</div>
                 </div>
             </div>
         </div>

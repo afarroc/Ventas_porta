@@ -109,15 +109,13 @@ Cliente maestro con documento único.
 
 Registro maestro de operaciones de venta.
 
-**Secciones del Formulario (actualizado 2026-06-06):**
+**Secciones del Formulario (actualizado 2026-06-09):**
 
 #### Agente
-- `agente_nombre`: Nombre del vendedor/agente (requerido)
+- `agente`: ForeignKey a User (reemplaza campo transitorio `agente_nombre`)
 
-#### Cliente (Transitorio)
-- `cliente_tipo_documento`, `cliente_nombres`, `cliente_paterno`, `cliente_materno`
-- `cliente_documento`
-- `cliente_telefono_1`, `cliente_telefono_2`
+#### Cliente
+- `cliente`: ForeignKey a Cliente (formulario permite buscar/crear cliente inline)
 
 #### Recibo Electrónico
 - `recibo_electronico`: Sí/No/Si desea/No desea
@@ -128,7 +126,7 @@ Registro maestro de operaciones de venta.
 #### Producto y Venta
 - `producto_nombre`: CHIP (sin modelo, precio fijo S/. 1) o PACK (con modelo y precio variable)
 - `origen`: PORTABILIDAD (requiere operador y telefono_portar) o LINEA_NUEVA
-- `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD) — **Nota**: `LINEA_NUEVA` no es un operador válido, fue removido en Sprint 13
+- `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD)
 - `telefono_portar`: Número a portar (obligatorio si origen=PORTABILIDAD)
 - `modelo_producto`: Modelo de equipo (solo para PACK)
 - `plan_producto`: Plan ENTEL → determina `precio_plan`

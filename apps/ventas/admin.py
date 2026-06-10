@@ -61,20 +61,19 @@ class ClienteAdmin(admin.ModelAdmin):
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'agente_nombre', 'cliente', 'tipo_linea', 'creado', 'precio_venta'
+        'id', 'agente', 'cliente', 'tipo_linea', 'creado', 'precio_venta'
     ]
     list_filter = ['tipo_linea', 'facturacion_requerida']
-    search_fields = ['agente_nombre', 'cliente__nombres', 'cliente__documento']
+    search_fields = ['agente__username', 'agente__first_name', 'cliente__nombres', 'cliente__documento']
     readonly_fields = ['creado', 'actualizado']
     inlines = [ItemVentaInline, SeguimientoBOInline, EstadoDespachoInline, EstadoCourierInline]
 
     fieldsets = (
         ('Agente', {
-            'fields': ('agente_nombre',)
+            'fields': ('agente',)
         }),
         ('Cliente', {
-            'fields': ('cliente', 'cliente_nombres', 'cliente_paterno', 'cliente_materno',
-                      'cliente_tipo_documento', 'cliente_documento', 'cliente_telefono_1', 'cliente_telefono_2')
+            'fields': ('cliente',)
         }),
         ('Recibo Electrónico', {
             'fields': ('recibo_electronico', 'correo_electronico_recibo', 'horario_visita', 'clausulas', 'abdcp')
@@ -101,4 +100,4 @@ class VentaAdmin(admin.ModelAdmin):
 class ItemVentaAdmin(admin.ModelAdmin):
     list_display = ['id', 'venta', 'tipo_venta', 'tipo_producto', 'precio_plan']
     list_filter = ['tipo_venta', 'tipo_producto']
-    search_fields = ['venta__cliente_nombres', 'tipo_producto']
+    search_fields = ['venta__cliente__nombres', 'tipo_producto']

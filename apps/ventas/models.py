@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 
 class Cliente(models.Model):
@@ -26,16 +27,8 @@ class Cliente(models.Model):
 
 
 class Venta(models.Model):
-    agente_nombre = models.CharField(max_length=150, verbose_name="Agente (Vendedor)")
-
+    agente = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ventas', verbose_name="Agente")
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='ventas', verbose_name="Cliente")
-    cliente_nombres = models.CharField(max_length=100, blank=True, verbose_name="Nombres")
-    cliente_paterno = models.CharField(max_length=50, blank=True, verbose_name="Paterno")
-    cliente_materno = models.CharField(max_length=50, blank=True, verbose_name="Materno")
-    cliente_tipo_documento = models.CharField(max_length=20, choices=Cliente.TIPO_DOCUMENTO_CHOICES, default='DNI', verbose_name="Tipo de Documento")
-    cliente_documento = models.CharField(max_length=20, blank=True, verbose_name="Documento")
-    cliente_telefono_1 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 01")
-    cliente_telefono_2 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono 02")
 
     RECIBO_ELECTRONICO_CHOICES = [('SI_DESEA', 'Si desea'), ('NO_DESEA', 'No desea')]
     recibo_electronico = models.CharField(max_length=10, choices=RECIBO_ELECTRONICO_CHOICES, blank=True, verbose_name="Recibo Electrónico")
@@ -169,12 +162,8 @@ class Venta(models.Model):
     facturacion_requerida = models.CharField(max_length=2, choices=FACTURACION_CHOICES, blank=True, verbose_name="¿Requiere Factura?")
 
     base = models.CharField(max_length=50, blank=True, verbose_name="Base")
-    tipo_renta = models.CharField(max_length=20, blank=True, verbose_name="Tipo Renta")
-    tipo_renta2 = models.CharField(max_length=20, blank=True, verbose_name="Tipo Renta 2")
-    base3 = models.CharField(max_length=50, blank=True, verbose_name="Base3")
-    q_ventas = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Cantidad de Ventas")
-
     TIPO_RENTA_CHOICES = [('R.BAJA', 'R.BAJA'), ('R.MEDIA', 'R.MEDIA'), ('R.ALTA', 'R.ALTA')]
+    tipo_renta = models.CharField(max_length=20, choices=TIPO_RENTA_CHOICES, blank=True, verbose_name="Tipo Renta")
 
     multiples_lineas = models.BooleanField(
         default=False,
@@ -183,6 +172,7 @@ class Venta(models.Model):
     )
     tipo_renta2 = models.CharField(
         max_length=20,
+        choices=TIPO_RENTA_CHOICES,
         blank=True,
         verbose_name="Tipo Renta Multilínea",
         help_text="Calculado igual que tipo_renta, pero para la segunda línea o línea adicional",
@@ -279,7 +269,9 @@ class Venta(models.Model):
             self.base_llamada.save(update_fields=update_fields)
 
     def __str__(self):
-        return f"Venta {self.id} - {self.cliente_nombres} {self.cliente_paterno}"
+        if self.cliente:
+            return f"Venta {self.id} - {self.cliente.nombres} {self.cliente.paterno}"
+        return f"Venta {self.id}"
 
 
 class ItemVenta(models.Model):

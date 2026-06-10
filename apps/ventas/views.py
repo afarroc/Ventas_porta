@@ -11,11 +11,13 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from .models import Venta, ItemVenta, Cliente
 from apps.discador.models import BaseLlamada, CallRecord
-from .forms import VentaForm, ItemVentaForm
+from apps.users.models import UserProfile
+from .forms import VentaForm, ItemVentaForm, ClienteForm
 from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
+from uuid import UUID
 
 ItemVentaFormSet = inlineformset_factory(
-    Venta, ItemVenta, form=ItemVentaForm, extra=2, max_num=2, can_delete=False
+    Venta, ItemVenta, form=ItemVentaForm, extra=2, max_num=2, can_delete=False,
 )
 
 
@@ -249,7 +251,7 @@ def venta_api_create(request, id_lead):
         with transaction.atomic():
             venta = form.save(commit=False)
             venta.base_llamada = base
-            venta.agente_nombre = request.user.get_full_name() or request.user.username or request.user.email or 'Usuario'
+            venta.agente = request.user
             
             cliente_documento = form.cleaned_data.get('cliente_documento')
             cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
@@ -350,7 +352,7 @@ def venta_trazabilidad_api(request, pk):
     data = {
         'venta': {
             'id': venta.id,
-            'cliente': f"{venta.cliente_nombres} {venta.cliente_paterno}" if venta.cliente_nombres else None,
+            'cliente': f"{venta.cliente.nombres} {venta.cliente.paterno}" if venta.cliente else (f"{venta.cliente_nombres} {venta.cliente_paterno}" if venta.cliente_nombres else None),
             'origen': venta.origen,
             'producto': venta.producto_nombre,
             'precio_venta': str(venta.precio_venta) if venta.precio_venta else None,
@@ -512,12 +514,7 @@ class VentaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         with transaction.atomic():
             user = self.request.user
-            full_name = (user.get_full_name() or user.username or user.email or 'Usuario').strip()
-            if not full_name:
-                full_name = user.get_username() or str(user.pk)
-            profile = getattr(user, 'profile', None)
-            if profile:
-                form.instance.agente_nombre = full_name
+            form.instance.agente = user
 
             cliente_documento = form.cleaned_data.get('cliente_documento')
             cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')

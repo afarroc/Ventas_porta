@@ -5,10 +5,34 @@ from apps.discador.models import BaseLlamada
 from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
 
+class ClienteForm(forms.ModelForm):
+    class Meta:
+        model = Cliente
+        fields = ['tipo_documento', 'documento', 'nombres', 'paterno', 'materno', 'telefono_1', 'telefono_2']
+        widgets = {
+            'tipo_documento': forms.Select(attrs={'class': 'form-select'}),
+            'documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar', 'autocomplete': 'username'}),
+            'nombres': forms.TextInput(attrs={'class': 'form-control'}),
+            'paterno': forms.TextInput(attrs={'class': 'form-control'}),
+            'materno': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_2': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'tipo_documento': 'Tipo de Documento',
+            'documento': 'Documento',
+            'nombres': 'Nombres',
+            'paterno': 'Paterno',
+            'materno': 'Materno',
+            'telefono_1': 'Teléfono 01',
+            'telefono_2': 'Teléfono 02',
+        }
+
+
 class VentaForm(forms.ModelForm):
     registrar_nuevo_cliente = forms.BooleanField(
         required=False,
-        label="Cliente no encontrado: registrar nuevo",
+        label="Registrar nuevo cliente",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
     # Lead fields shown as read-only visually via CSS; must stay enabled for JS updates
@@ -20,9 +44,52 @@ class VentaForm(forms.ModelForm):
     base_documento = forms.CharField(required=False, label="Documento Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
     base_observaciones = forms.CharField(required=False, label="Observaciones Base", widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control vp-readonly', 'readonly': True}))
 
+    cliente_tipo_documento = forms.ChoiceField(
+        choices=Cliente.TIPO_DOCUMENTO_CHOICES,
+        initial='DNI',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Tipo de Documento'
+    )
+    cliente_documento = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar'}),
+        label='Documento'
+    )
+    cliente_nombres = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='Nombres'
+    )
+    cliente_paterno = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='Paterno'
+    )
+    cliente_materno = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='Materno'
+    )
+    cliente_telefono_1 = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='Teléfono 01'
+    )
+    cliente_telefono_2 = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='Teléfono 02'
+    )
+
     class Meta:
         model = Venta
-        exclude = ['creado', 'actualizado', 'agente_nombre', 'cliente', 'base_llamada']
+        exclude = ['creado', 'actualizado', 'agente', 'cliente', 'base_llamada']
         widgets = {
             'recibo_electronico': forms.Select(attrs={'class': 'form-select'}),
             'abdcp': forms.Select(attrs={'class': 'form-select'}),
@@ -31,7 +98,6 @@ class VentaForm(forms.ModelForm):
             'facturacion_requerida': forms.Select(attrs={'class': 'form-select'}),
             'zona_referencia': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Ej: Frente al parque, al lado de la bodega Don José'}),
             'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'cliente_documento': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese DNI para buscar', 'autocomplete': 'username'}),
             'horario_visita': forms.Select(attrs={'class': 'form-select'}),
             'producto_nombre': forms.Select(attrs={'class': 'form-select', 'autocomplete': 'off'}),
             'origen': forms.Select(attrs={'class': 'form-select', 'autocomplete': 'off'}),
@@ -46,15 +112,6 @@ class VentaForm(forms.ModelForm):
             'departamento': forms.Select(attrs={'class': 'form-control departamento-select'}),
             'provincia': forms.Select(attrs={'class': 'form-control provincia-select'}),
             'distrito': forms.Select(attrs={'class': 'form-control distrito-select'}),
-            }
-        labels = {
-            'cliente_nombres': 'Nombres',
-            'cliente_paterno': 'Paterno',
-            'cliente_materno': 'Materno',
-            'cliente_documento': 'Documento',
-            'cliente_tipo_documento': 'Tipo de Documento',
-            'cliente_telefono_1': 'Teléfono 01',
-            'cliente_telefono_2': 'Teléfono 02',
         }
 
     def __init__(self, *args, **kwargs):
@@ -106,7 +163,7 @@ class VentaForm(forms.ModelForm):
         registrar_nuevo = cleaned_data.get('registrar_nuevo_cliente', False)
         recibo = cleaned_data.get('recibo_electronico')
         correo_recibo = cleaned_data.get('correo_electronico_recibo')
-        
+
         # Producto y Venta validations
         producto = cleaned_data.get('producto_nombre')
         origen = cleaned_data.get('origen')
@@ -127,7 +184,7 @@ class VentaForm(forms.ModelForm):
             if modelo:
                 raise forms.ValidationError("Los productos tipo CHIP no tienen modelo de equipo.")
             cleaned_data['precio_venta'] = 1
-        
+
         # Regla 2: Origen PORTABILIDAD requiere operador y telefono_portar
         if origen == 'PORTABILIDAD':
             valid_operadores = ['CLARO', 'MOVISTAR', 'VIETTEL', 'VIRGIN']
@@ -171,21 +228,6 @@ class VentaForm(forms.ModelForm):
         if multiples_lineas and not tipo_renta2:
             raise forms.ValidationError("Si la venta es multilínea, debe completar el Tipo Renta 2.")
 
-        if registrar_nuevo:
-            if not nombres or not paterno:
-                raise forms.ValidationError("Para registrar un cliente nuevo debe completar al menos nombres y apellido paterno.")
-            # Check if a cliente with the same documento already exists (active)
-            if Cliente.objects.filter(documento=documento, activo=True).exists():
-                raise forms.ValidationError("Ya existe un cliente activo con ese documento. Por favor, desmarque la opción de registrar nuevo cliente y use los datos existentes.")
-        else:
-            if not Cliente.objects.filter(documento=documento, activo=True).exists():
-                raise forms.ValidationError("El cliente no está registrado. Complete los datos para registrar uno nuevo o vuelva a buscar.")
-
-        # If recibo_electronico is SI_DESEA, correo is required
-        if recibo == 'SI_DESEA':
-            if not correo_recibo:
-                raise forms.ValidationError("Debe ingresar el correo electrónico si selecciona 'Si desea'.")
-
         # Try to find BaseLlamada by documento
         if documento:
             base_qs = BaseLlamada.objects.filter(documento=documento)
@@ -206,8 +248,6 @@ class VentaForm(forms.ModelForm):
                 # No base found; clear instance.base_llamada only if not already set (locked)
                 if not self.instance.base_llamada:
                     self.instance.base_llamada = None
-                # Optionally clear initial values (they'll be empty anyway)
-                # Note: we do not clear read-only fields here because they should remain as set via __init__ if locked.
         return cleaned_data
 
 

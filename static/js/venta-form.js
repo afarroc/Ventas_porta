@@ -242,6 +242,70 @@ document.addEventListener('ventaFormLoaded', function() {
     }
 });
 
+
+/**
+ * Ubigeo - Single source: static/data/ubigeo-peru.json
+ * v1.1781212634
+ */
+window.initUbigeoPeru = function() {
+    var d = document.getElementById('id_departamento'), 
+        p = document.getElementById('id_provincia'), 
+        x = document.getElementById('id_distrito');
+    if (!d || !p || !x) return;
+
+    var data = [], load = null;
+
+    function n(s) { return (s||'').toUpperCase().replace(/Á/g,'A').replace(/É/g,'E').replace(/Í/g,'I').replace(/Ó/g,'O').replace(/Ú/g,'U').replace(/Ñ/g,'N'); }
+
+    function fetchUbigeo() {
+        if (!load) load = fetch('/static/data/ubigeo-peru.json').then(function(r) { return r.json(); });
+        return load;
+    }
+
+    function fill(select, items) {
+        select.innerHTML = '<option value="">Seleccione</option>';
+        items.forEach(function(i) { select.innerHTML += '<option value="'+i[0]+'">'+i[1]+'</option>'; });
+    }
+
+    function loadProvs(code) {
+        fetchUbigeo().then(function(arr) {
+            var items = [];
+            for (var i=0;i<arr.length;i++) {
+                if (arr[i].departamento===code && arr[i].provincia!=='00' && arr[i].distrito==='00') {
+                    items.push([arr[i].provincia, arr[i].nombre]);
+                }
+            }
+            fill(p, items); p.disabled = items.length===0;
+            x.innerHTML = '<option value="">Seleccione distrito</option>'; x.disabled = true;
+        });
+    }
+
+    function loadDists(code, prov) {
+        fetchUbigeo().then(function(arr) {
+            var items = [];
+            for (var i=0;i<arr.length;i++) {
+                if (arr[i].departamento===code && arr[i].provincia===prov && arr[i].distrito!=='00') {
+                    items.push([arr[i].distrito, arr[i].nombre]);
+                }
+            }
+            fill(x, items); x.disabled = items.length===0;
+        });
+    }
+
+    d.addEventListener('change', function() { loadProvs(d.value); });
+    p.addEventListener('change', function() { loadDists(d.value, p.value); });
+
+    if (d.value) { loadProvs(d.value); if (p.value) loadDists(d.value, p.value); }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initUbigeoPeru==='function') initUbigeoPeru();
+});
+
+document.addEventListener('ventaFormLoaded', function() {
+    if (typeof initUbigeoPeru==='function') initUbigeoPeru();
+});
+
 /**
  * Cliente Search Initialization
  * Used by both full page and modal forms

@@ -21,16 +21,20 @@ ItemVentaFormSet = inlineformset_factory(
 )
 
 
-@login_required
 @require_GET
 def get_provincias(request):
     """AJAX endpoint to get provincias by departamento."""
     depto = request.GET.get('departamento', '').strip()
+    # Normalizar: si viene nombre en lugar de código, buscar por nombre en DEPTO_CHOICES
+    if depto and depto not in PROV_CHOICES:
+        for code, nombre in DEPTO_CHOICES:
+            if nombre.upper() == depto.upper():
+                depto = code
+                break
     provincias = PROV_CHOICES.get(depto, [('', 'Seleccione provincia')])
     return JsonResponse({'provincias': provincias})
 
 
-@login_required
 @require_GET
 def get_distritos(request):
     """AJAX endpoint to get distritos by departamento and provincia."""

@@ -1,139 +1,31 @@
-DEPTO_CHOICES = [
-    ('', 'Seleccione departamento'),
-    ('AMAZONAS', 'Amazonas'),
-    ('ANCASH', 'Ancash'),
-    ('APURIMAC', 'Apurímac'),
-    ('AREQUIPA', 'Arequipa'),
-    ('AYACUCHO', 'Ayacucho'),
-    ('CAJAMARCA', 'Cajamarca'),
-    ('CALLAO', 'Callao'),
-    ('CUSCO', 'Cusco'),
-    ('HUANCAYO', 'Huancayo'),
-    ('HUÁNUCO', 'Huánuco'),
-    ('ICA', 'Ica'),
-    ('JUNIN', 'Junín'),
-    ('LA_LIBERTAD', 'La Libertad'),
-    ('LAMBAYEQUE', 'Lambayeque'),
-    ('LIMA', 'Lima'),
-    ('LORETO', 'Loreto'),
-    ('MADRE_DE_DIOS', 'Madre de Dios'),
-    ('PASCO', 'Pasco'),
-    ('PIURA', 'Piura'),
-    ('PUNO', 'Puno'),
-    ('SAN_MARTIN', 'San Martín'),
-    ('TACNA', 'Tacna'),
-    ('TUMBES', 'Tumbes'),
-    ('UCAYALI', 'Ucayali'),
-]
+import json
+from pathlib import Path
 
-PROV_CHOICES = {
-    'LIMA': [
-        ('', 'Seleccione provincia'),
-        ('LIMA', 'Lima'),
-        ('BARRANCA', 'Barranca'),
-        ('CAJATAMBO', 'Cajatambo'),
-        ('CANTA', 'Canta'),
-        ('CAÑETE', 'Cañete'),
-        ('HUARAL', 'Huaral'),
-        ('HUARO', 'Huaro'),
-        ('OYON', 'Oyón'),
-        ('POCHAMARCA', 'Pochamaca'),
-        ('SANTA_ROSA_LIMA', 'Santa Rosa'),
-    ],
-    'CALLAO': [
-        ('', 'Seleccione provincia'),
-        ('CALLAO', 'Callao'),
-    ],
-    'ANCASH': [
-        ('', 'Seleccione provincia'),
-        ('HUARAZ', 'Huaraz'),
-        ('AIJA', 'Aija'),
-        ('BARRANCA', 'Barranca'),
-        ('CANES', 'Canes'),
-        ('CASCA', 'Casca'),
-        ('COMANDANTE_NOVILLO', 'Cmdte. Novillo'),
-        ('CORONGO', 'Corongo'),
-        ('COCHABAMBA', 'Cochabamba'),
-        ('FLORIDA', 'Florida'),
-        ('HUARI', 'Huari'),
-        ('HUAYLAS', 'Huaylas'),
-        ('YUNGAY', 'Yungay'),
-    ],
-}
+# Cargar ubigeo desde JSON (única fuente de verdad)
+_JSON_PATH = Path(__file__).parent.parent.parent / 'static' / 'data' / 'ubigeo-peru.json'
+with open(_JSON_PATH, 'r', encoding='utf-8') as _f:
+    _UBIGEO_DATA = json.load(_f)
 
-DISTRITOS_CHOICES = {
-    'LIMA_LIMA': [
-        ('', 'Seleccione distrito'),
-        ('LIMA', 'Lima'),
-        ('ANCON', 'Ancon'),
-        ('ATE', 'Ate'),
-        ('BARRANCO', 'Barranco'),
-        ('BREÑA', 'Breña'),
-        ('CARABA', 'Caraba'),
-        ('CHACLACALLA', 'Chaclacalla'),
-        ('CHORRILLOS', 'Chorrillos'),
-        ('CIENEGUILLO', 'Cieneguillo'),
-        ('COMAS', 'Comas'),
-        ('EL_AGUINAL', 'El Aguinal'),
-        ('IND_E_S_I', 'Independencia'),
-        ('JESUS_MARIA', 'Jesús María'),
-        ('LA_MILPA', 'La Milpa'),
-        ('LA_VICTORIA', 'La Victoria'),
-        ('LOS_OLIVOS', 'Los Olivos'),
-        ('LURIGANCHO', 'Lurigancho'),
-        ('LURIN', 'Lurin'),
-        ('MAGDALENA', 'Magdalena'),
-        ('MIRAFLORES', 'Miraflores'),
-        ('PACHACAMAC', 'Pachacámac'),
-        ('PUENTE_PIEDRA', 'Puente Piedra'),
-        ('SURQUILLO', 'Surquillo'),
-        ('SAN_ISIDRO', 'San Isidro'),
-        ('SAN_JUAN', 'San Juan'),
-        ('SAN_LUIS', 'San Luis'),
-        ('SAN_MARTIN', 'San Martín'),
-        ('SANTA_ANA', 'Santa Ana'),
-        ('SANTA_CATALINA', 'Santa Catalina'),
-        ('SANTA_MARIA', 'Santa María'),
-        ('VICTORIA', 'Victoria'),
-    ],
-    'LIMA_BARRANCA': [
-        ('', 'Seleccione distrito'),
-        ('BARRANCA', 'Barranca'),
-        ('PARAMARDO', 'Paramardo'),
-        ('PATANAMAN', 'Patamanco'),
-        ('RÉCUBA', 'Recuba'),
-    ],
-    'CALLAO_CALLAO': [
-        ('', 'Seleccione distrito'),
-        ('CALLAO', 'Callao'),
-        ('BEGOÑA', 'Begoña'),
-        ('CERDEÑA', 'Cerdeña'),
-        ('GRAFITO', 'Grafito'),
-        ('LA_PREGUNTA', 'La Pregunta'),
-        ('LOS_GRANDES', 'Los Grandes'),
-        ('MI_PERU', 'Mi Perú'),
-        ('RAYMI', 'Raymi'),
-        ('VENTANILLA', 'Ventanilla'),
-    ],
-    'ANCASH_HUARAZ': [
-        ('', 'Seleccione distrito'),
-        ('HUARAZ', 'Huaraz'),
-        ('CAMPOS', 'Campos'),
-        ('CENTRO_LLIC', 'Centro Llico'),
-        ('COLQUIOC', 'Colquioc'),
-        ('HUANCHACO', 'Huanchac'),
-        ('IND_R_S', 'Independencia'),
-        ('LLACANORA', 'Llacanora'),
-        ('LLIMPE', 'Llimpe'),
-        ('MONTERÓN', 'Monterón'),
-        ('PAMPAROMAS', 'Pamparomas'),
-        ('PARCIAL', 'Parcial'),
-        ('POCOLLPA', 'Pocollpa'),
-        ('POMATA', 'Pomata'),
-        ('PUYAS', 'Puyas'),
-        ('RÚMIC', 'Rúmic'),
-        ('SANTA', 'Santa'),
-        ('TARICA', 'Tarica'),
-        ('YANAC', 'Yanac'),
-    ],
-}
+DEPTO_CHOICES = [('', 'Seleccione departamento')]
+PROV_CHOICES = {}
+DISTRITOS_CHOICES = {}
+
+for item in _UBIGEO_DATA:
+    depto_code = item['departamento']
+    prov_code = item['provincia']
+    dist_code = item['distrito']
+    nombre = item['nombre']
+
+    if prov_code == '00' and dist_code == '00':
+        DEPTO_CHOICES.append((depto_code, nombre))
+    elif dist_code == '00':
+        if depto_code not in PROV_CHOICES:
+            PROV_CHOICES[depto_code] = [('', 'Seleccione provincia')]
+        PROV_CHOICES[depto_code].append((prov_code, nombre))
+    else:
+        key = f"{depto_code}_{prov_code}"
+        if key not in DISTRITOS_CHOICES:
+            DISTRITOS_CHOICES[key] = [('', 'Seleccione distrito')]
+        DISTRITOS_CHOICES[key].append((dist_code, nombre))
+
+del item, depto_code, prov_code, dist_code, nombre, key

@@ -1,3 +1,4 @@
+{% load static %}
 {% comment %}Shared form fields for venta - used by both full page and modal{% endcomment %}
 
 <!-- Lead (hidden fields for form submission) -->
@@ -319,8 +320,9 @@
     </div>
 </div>
 
-<script id="venta-form-config" type="application/json">
-{"urlProvincias": "{% url 'ventas:get_provincias' %}", "urlDistritos": "{% url 'ventas:get_distritos' %}"}
+<!-- Ubigeo now uses local JSON data -->
+<script id="ubigeo-config" type="application/json">
+{"jsonPath": "{% static 'data/ubigeo-peru.json' %}"}
 </script>
 
 <script id="cliente-search-config" type="application/json">

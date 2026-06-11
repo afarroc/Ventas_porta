@@ -35,7 +35,6 @@ class VentaForm(forms.ModelForm):
         label="Registrar nuevo cliente",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
-    # Lead fields shown as read-only visually via CSS; must stay enabled for JS updates
     base_telefono = forms.CharField(required=False, label="Teléfono Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
     base_nombres = forms.CharField(required=False, label="Nombres Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
     base_paterno = forms.CharField(required=False, label="Paterno Base", widget=forms.TextInput(attrs={'class': 'form-control vp-readonly', 'readonly': True}))
@@ -87,6 +86,25 @@ class VentaForm(forms.ModelForm):
         label='Teléfono 02'
     )
 
+    departamento = forms.ChoiceField(
+        choices=DEPTO_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Departamento'
+    )
+    provincia = forms.ChoiceField(
+        choices=[('', 'Seleccione provincia')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Provincia'
+    )
+    distrito = forms.ChoiceField(
+        choices=[('', 'Seleccione distrito')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Distrito'
+    )
+
     class Meta:
         model = Venta
         exclude = ['creado', 'actualizado', 'agente', 'cliente', 'base_llamada']
@@ -109,9 +127,6 @@ class VentaForm(forms.ModelForm):
             'tipo_pago': forms.Select(attrs={'class': 'form-select', 'autocomplete': 'off'}),
             'tipo_via': forms.Select(attrs={'class': 'form-select'}),
             'centro_poblado': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: AA.HH. Las Brisas'}),
-            'departamento': forms.Select(attrs={'class': 'form-control departamento-select'}),
-            'provincia': forms.Select(attrs={'class': 'form-control provincia-select'}),
-            'distrito': forms.Select(attrs={'class': 'form-control distrito-select'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -139,13 +154,20 @@ class VentaForm(forms.ModelForm):
 
         if self.instance and self.instance.pk:
             self.fields['registrar_nuevo_cliente'].disabled = True
+            # Populate provincia choices based on departamento
+            if self.instance.departamento:
+                self.fields['provincia'].choices = PROV_CHOICES.get(self.instance.departamento, [('', 'Seleccione provincia')])
+            # Populate distrito choices based on departamento + provincia
+            if self.instance.departamento and self.instance.provincia:
+                key = f"{self.instance.departamento}_{self.instance.provincia}"
+                self.fields['distrito'].choices = DISTRITOS_CHOICES.get(key, [('', 'Seleccione distrito')])
 
         # Set default value for tipo_linea if not set
         if not self.initial.get('tipo_linea') and not (self.instance and self.instance.tipo_linea):
             self.fields['tipo_linea'].initial = 'POSTPAGO'
 
         # If there is a base_llamada, populate the read-only fields (for both new and existing instances)
-        if self.instance.base_llamada:
+        if self.instance and self.instance.base_llamada:
             base = self.instance.base_llamada
             self.fields['base_telefono'].initial = base.telefono
             self.fields['base_nombres'].initial = base.nombres

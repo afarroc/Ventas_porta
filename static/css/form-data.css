@@ -1254,3 +1254,60 @@ body {
   background: var(--vp-primary-light);
   color: var(--vp-primary);
 }
+
+/* Responsive Navbar */
+@media (max-width: 768px) {
+  .vp-navbar-container {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 16px;
+  }
+
+  .vp-navbar-brand {
+    flex: 0 0 100%;
+    margin-bottom: 12px;
+  }
+
+  .vp-navbar-nav {
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 2px;
+  }
+
+  .vp-navbar-nav.ms-auto {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+
+  .vp-navbar-link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .vp-navbar-item .dropdown-menu {
+    position: static;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 1px solid var(--vp-border);
+  }
+}
+
+@media (max-width: 576px) {
+  .vp-navbar-container {
+    padding: 8px 12px;
+  }
+
+  .vp-navbar-brand {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .vp-navbar-link {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .vp-navbar-item .dropdown-menu {
+    margin-left: 0;
+  }
+}

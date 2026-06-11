@@ -1,14 +1,14 @@
 /* Form and Data Management Styles for Ventas_Porta */
 /* Based on Management360 analyst app styles */
 
+/* Google Fonts - Nunito */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 /* Box-sizing reset */
 .vp-root,
 .vp-root * {
   box-sizing: border-box;
 }
-
-/* Google Fonts - Nunito */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 
 .vp-root {
   font-family: 'Nunito', system-ui, sans-serif;

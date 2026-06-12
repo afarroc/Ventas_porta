@@ -164,7 +164,11 @@
             </div>
             <div class="col-md-3" id="modelo_producto_group" style="display: none;">
                 {{ form.modelo_producto.label_tag }}
-                {{ form.modelo_producto }}
+                <select class="form-select" id="id_modelo_producto_display" autocomplete="off">
+                    {% for value, label in form.modelo_producto.field.choices %}
+                        <option value="{{ value }}"{% if form.modelo_producto.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-3">
                 {{ form.plan_producto.label_tag }}

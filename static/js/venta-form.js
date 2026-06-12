@@ -12,7 +12,7 @@ window.initVentaFormFields = function() {
     const telefonoPortarField = document.getElementById('telefono_portar_field');
     const telefonoPortarInput = document.getElementById('id_telefono_portar_display') || document.getElementById('id_telefono_portar');
     const modeloGroup = document.getElementById('modelo_producto_group');
-    const modeloSelect = document.getElementById('id_modelo_producto');
+    const modeloSelect = document.getElementById('id_modelo_producto_display') || document.getElementById('id_modelo_producto');
     const precioVentaSelect = document.getElementById('id_precio_venta_display') || document.getElementById('id_precio_venta');
     const planSelect = document.getElementById('id_plan_producto_display') || document.getElementById('id_plan_producto');
     const precioPlanInput = document.getElementById('id_precio_plan_display') || document.getElementById('id_precio_plan');
@@ -76,19 +76,49 @@ window.initVentaFormFields = function() {
         'ZTE_BLADE_A610_NEGRO_4G': []
     };
 
+
+    // Modelos agrupados por tipo de producto
+    const modeloPackList = ['IPHONE_4S', 'IPHONE_6_PLUS', 'HUAWEI_MATE_S', 'HUAWEI_MATE_S_NEGRO',
+        'HUAWEI_P9_LITE', 'HUAWEI_Y360_II_BLANCO', 'HUAWEI_Y360_II_NEGRO', 'HUAWEI_Y360_II_NEGRO_DASH',
+        'HUAWEI_Y360_II_NEGRO_3G', 'HUAWEI_Y360_BLANCO', 'HUAWEI_Y360_NEGRO', 'LG_G4_STYLUS_BLANCO',
+        'LG_G4_STYLUS_METALICO', 'LG_G5_TITAN', 'LG_X_STYLE_BLANCO', 'LG_X_STYLE_NEGRO',
+        'MOTO_G_PLAY', 'MOTO_G_PLUS', 'MOTO_X_PLAY', 'MOTO_Z_PLAY', 'GALAXY_J1', 'GALAXY_J7',
+        'ZTE_BLADE_A315_BLANCO', 'ZTE_BLADE_A315_NEGRO', 'ZTE_BLADE_A610_GRIS',
+        'ZTE_BLADE_A610_GRIS_DASH', 'ZTE_BLADE_A610_BLANCO', 'ZTE_BLADE_A610_GRIS_CLEAN',
+        'ZTE_BLADE_A610_NEGRO', 'ZTE_BLADE_A610_NEGRO_4G', 'ZTE_BLADE_L5_BLANCO', 'ZTE_BLADE_L5_GRIS'];
+    const modeloChipList = ['SUPER_CHIP_ENTEL_PLUS', 'SUPERCHIP_ENTEL'];
+
     function updatePorProducto() {
         if (!productoSelect) return;
         const valor = (productoSelect.value || '').trim();
         const isPack = valor === 'PACK';
 
         if (isPack) {
-            if (modeloSelect) modeloSelect.disabled = false;
+            if (modeloSelect) {
+                modeloSelect.disabled = false;
+                // Filtrar opciones: solo mostrar modelos PACK
+                Array.from(modeloSelect.options).forEach(option => {
+                    const value = option.value;
+                    if (value === '' || modeloPackList.includes(value)) {
+                        option.style.display = '';
+                        option.disabled = false;
+                    } else {
+                        option.style.display = 'none';
+                        option.disabled = true;
+                    }
+                });
+            }
             if (modeloGroup) modeloGroup.style.display = 'block';
             if (precioVentaSelect) precioVentaSelect.disabled = false;
         } else {
             if (modeloSelect) {
                 modeloSelect.value = '';
                 modeloSelect.disabled = true;
+                // Filtrar opciones: solo mostrar modelos CHIP (nada)
+                Array.from(modeloSelect.options).forEach(option => {
+                    option.style.display = 'none';
+                    option.disabled = true;
+                });
             }
             if (modeloGroup) modeloGroup.style.display = 'none';
             if (precioVentaSelect) {

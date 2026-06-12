@@ -130,18 +130,18 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">
-                {{ form.producto_nombre.label_tag }}
-                <select class="form-select" id="id_producto_nombre_display" autocomplete="off">
-                    {% for value, label in form.producto_nombre.field.choices %}
-                        <option value="{{ value }}"{% if form.producto_nombre.value == value %} selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
                 {{ form.origen.label_tag }}
                 <select class="form-select" id="id_origen_display" autocomplete="off">
                     {% for value, label in form.origen.field.choices %}
                         <option value="{{ value }}"{% if form.origen.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                {{ form.producto_nombre.label_tag }}
+                <select class="form-select" id="id_producto_nombre_display" autocomplete="off">
+                    {% for value, label in form.producto_nombre.field.choices %}
+                        <option value="{{ value }}"{% if form.producto_nombre.value == value %} selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>

@@ -137,14 +137,6 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
-                {{ form.producto_nombre.label_tag }}
-                <select class="form-select" id="id_producto_nombre_display" autocomplete="off">
-                    {% for value, label in form.producto_nombre.field.choices %}
-                        <option value="{{ value }}"{% if form.producto_nombre.value == value %} selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
             <div class="col-md-3" id="telefono_portar_group" style="display: none;">
                 {{ form.operador.label_tag }}
                 <select class="form-select" id="id_operador_display" autocomplete="off">
@@ -161,6 +153,14 @@
                         <i class="bi bi-telephone"></i>
                     </button>
                 </div>
+            </div>
+            <div class="col-md-3">
+                {{ form.producto_nombre.label_tag }}
+                <select class="form-select" id="id_producto_nombre_display" autocomplete="off">
+                    {% for value, label in form.producto_nombre.field.choices %}
+                        <option value="{{ value }}"{% if form.producto_nombre.value == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-3" id="modelo_producto_group" style="display: none;">
                 {{ form.modelo_producto.label_tag }}

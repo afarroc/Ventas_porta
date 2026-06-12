@@ -1311,3 +1311,19 @@ body {
     margin-left: 0;
   }
 }
+
+/* Cliente section validation styles */
+.cliente-valido .card-header {
+    border-left: 4px solid var(--vp-success);
+}
+
+.cliente-pendiente .card-header {
+    border-left: 4px solid var(--vp-warning);
+}
+
+/* Modal form buttons - success state for validated form */
+.modal-form-buttons .btn-success-valid {
+    background: var(--vp-success);
+    color: #fff;
+    border-color: var(--vp-success);
+}

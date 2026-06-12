@@ -90,12 +90,10 @@
                 <div id="clienteMensaje" class="mt-2"></div>
             </div>
             <div class="col-md-4">
-                <div class="form-check mt-4">
-                    {{ form.registrar_nuevo_cliente }}
-                    <label class="form-check-label" for="{{ form.registrar_nuevo_cliente.id_for_label }}">
-                        Registrar nuevo cliente
-                    </label>
-                </div>
+                <button type="button" class="btn btn-sm btn-outline-success mt-4" id="btnRegistrarCliente" style="display: none;">
+                    <i class="bi bi-person-plus"></i> Registrar Cliente
+                </button>
+                <input type="hidden" name="cliente_validado" id="id_cliente_validado" value="false">
             </div>
         </div>
         <div class="row g-3 cliente-campos mt-2">

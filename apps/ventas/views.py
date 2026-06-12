@@ -106,6 +106,68 @@ def buscar_cliente_ajax(request):
 
 
 @login_required
+def registrar_cliente_ajax(request, id_lead):
+    """API endpoint for registering a new cliente without creating venta."""
+    from uuid import UUID
+    
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'mensaje': 'Método no permitido.'})
+    
+    try:
+        UUID(str(id_lead))
+    except ValueError:
+        return JsonResponse({'ok': False, 'mensaje': 'ID de lead inválido.'})
+    
+    try:
+        base = BaseLlamada.objects.get(id_lead=id_lead)
+    except BaseLlamada.DoesNotExist:
+        return JsonResponse({'ok': False, 'mensaje': 'Lead no encontrado.'})
+    
+    if not _check_lead_access(request.user, base, request.session):
+        return JsonResponse({'ok': False, 'mensaje': 'No tiene acceso a este lead.'})
+    
+    tipo_documento = request.POST.get('cliente_tipo_documento', 'DNI').strip()
+    documento = request.POST.get('cliente_documento', '').strip()
+    nombres = request.POST.get('cliente_nombres', '').strip()
+    paterno = request.POST.get('cliente_paterno', '').strip()
+    materno = request.POST.get('cliente_materno', '').strip()
+    telefono_1 = request.POST.get('cliente_telefono_1', '').strip()
+    telefono_2 = request.POST.get('cliente_telefono_2', '').strip()
+    
+    if not documento:
+        return JsonResponse({'ok': False, 'mensaje': 'El documento es obligatorio.'})
+    if not nombres:
+        return JsonResponse({'ok': False, 'mensaje': 'Los nombres son obligatorios.'})
+    if not paterno:
+        return JsonResponse({'ok': False, 'mensaje': 'El apellido paterno es obligatorio.'})
+    
+    cliente_existe = Cliente.objects.filter(documento=documento, activo=True).first()
+    if cliente_existe:
+        return JsonResponse({
+            'ok': True,
+            'mensaje': 'Cliente ya existe en la base de datos.',
+            'cliente_id': cliente_existe.id
+        })
+    
+    cliente = Cliente.objects.create(
+        tipo_documento=tipo_documento,
+        documento=documento,
+        nombres=nombres,
+        paterno=paterno,
+        materno=materno,
+        telefono_1=telefono_1,
+        telefono_2=telefono_2,
+        activo=True,
+    )
+    
+    return JsonResponse({
+        'ok': True,
+        'mensaje': 'Cliente registrado correctamente.',
+        'cliente_id': cliente.id
+    })
+
+
+@login_required
 @require_GET
 def validar_cliente_ajax(request):
     documento = request.GET.get('documento', '').strip()

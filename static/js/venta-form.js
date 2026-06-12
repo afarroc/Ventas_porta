@@ -316,16 +316,17 @@ window.initClienteSearch = function() {
     const urlBuscar = config.urlBuscar || '/ventas/buscar-cliente/';
     const urlValidar = config.urlValidar || '/ventas/validar-cliente/';
     const baseId = config.baseId || '';
+    const urlRegistrar = baseId ? "/ventas/registrar-cliente/" + baseId + "/" : "";
     const urlRecargar = baseId ? "/ventas/recargar-lead/" + baseId + "/" : "";
 
     const btnBuscar = document.getElementById('btnBuscarCliente');
     const btnValidar = document.getElementById('btnValidarCliente');
     const btnRecargar = document.getElementById('btnRecargarLead');
+    const btnRegistrarCliente = document.getElementById('btnRegistrarCliente');
     const campoDocumento = document.getElementById('id_cliente_documento');
     const campoTipoDocumento = document.getElementById('id_cliente_tipo_documento');
     const mensaje = document.getElementById('clienteMensaje');
     const camposCliente = document.querySelectorAll('.cliente-campos input');
-    const checkboxNuevo = document.getElementById('id_registrar_nuevo_cliente');
 
     function setValue(id, valor) {
         const el = document.getElementById(id);
@@ -376,6 +377,25 @@ window.initClienteSearch = function() {
         fb.textContent = texto;
     }
 
+    function marcarSeccionValida(valida) {
+        const campoValidado = document.getElementById('id_cliente_validado');
+        if (campoValidado) {
+            campoValidado.value = valida ? 'true' : 'false';
+        }
+        const submitBtn = document.querySelector('#ventaModalForm button[type="submit"]') ||
+                          document.querySelector('#ventaForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = !valida;
+            if (valida) {
+                submitBtn.classList.add('btn-success');
+                submitBtn.classList.remove('btn-primary');
+            } else {
+                submitBtn.classList.remove('btn-success');
+                submitBtn.classList.add('btn-primary');
+            }
+        }
+    }
+
     function buscarCliente() {
         const tipo = campoTipoDocumento ? campoTipoDocumento.value.trim() : 'DNI';
         const documento = campoDocumento.value.trim();
@@ -387,7 +407,7 @@ window.initClienteSearch = function() {
         setValue('id_cliente_telefono_1', '');
         setValue('id_cliente_telefono_2', '');
         mostrarMensaje('Buscando cliente...', 'info');
-        fetch(urlBuscar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+        fetch(urlBuscar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento), {
             method: 'GET',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
@@ -402,12 +422,9 @@ window.initClienteSearch = function() {
                 setValue('id_cliente_documento', c.documento);
                 setValue('id_cliente_telefono_1', c.telefono_1 || '');
                 setValue('id_cliente_telefono_2', c.telefono_2 || '');
-                if (checkboxNuevo) {
-                    checkboxNuevo.checked = false;
-                    checkboxNuevo.disabled = true;
-                }
                 bloquearCamposCliente(true);
                 limpiarErroresCampos();
+                marcarSeccionValida(true);
                 mostrarMensaje('Cliente encontrado: ' + c.nombres + ' ' + c.paterno + ' ' + c.materno, 'success');
             } else {
                 setValue('id_cliente_nombres', '');
@@ -416,13 +433,10 @@ window.initClienteSearch = function() {
                 setValue('id_cliente_documento', documento);
                 setValue('id_cliente_telefono_1', '');
                 setValue('id_cliente_telefono_2', '');
-                if (checkboxNuevo) {
-                    checkboxNuevo.checked = true;
-                    checkboxNuevo.disabled = false;
-                }
                 bloquearCamposCliente(false);
                 limpiarErroresCampos();
-                mostrarMensaje('Cliente no encontrado. Complete los datos para registrar uno nuevo.', 'warning');
+                marcarSeccionValida(false);
+                mostrarMensaje('Cliente no encontrado. Complete los datos y registre.', 'warning');
             }
         })
         .catch(function() {
@@ -439,7 +453,7 @@ window.initClienteSearch = function() {
         }
         mostrarMensaje('Validando cliente...', 'info');
         limpiarErroresCampos();
-        fetch(urlValidar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento) + '&csrfmiddlewaretoken=' + document.querySelector('[name=csrfmiddlewaretoken]').value, {
+        fetch(urlValidar + '?tipo_documento=' + encodeURIComponent(tipo) + '&documento=' + encodeURIComponent(documento), {
             method: 'GET',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
@@ -454,28 +468,17 @@ window.initClienteSearch = function() {
                 setValue('id_cliente_documento', c.documento);
                 setValue('id_cliente_telefono_1', c.telefono_1 || '');
                 setValue('id_cliente_telefono_2', c.telefono_2 || '');
-                if (checkboxNuevo) {
-                    checkboxNuevo.checked = false;
-                    checkboxNuevo.disabled = true;
-                }
                 bloquearCamposCliente(true);
                 limpiarErroresCampos();
+                marcarSeccionValida(true);
                 mostrarMensaje('Cliente existente validado. Datos protegidos.', 'success');
             } else {
-                bloquearCamposCliente(false);
                 const nombres = document.getElementById('id_cliente_nombres');
                 const paterno = document.getElementById('id_cliente_paterno');
                 const materno = document.getElementById('id_cliente_materno');
-                const doc = document.getElementById('id_cliente_documento');
-                const tel1 = document.getElementById('id_cliente_telefono_1');
-                const tel2 = document.getElementById('id_cliente_telefono_2');
 
                 let hayErrores = false;
 
-                if (!doc || !doc.value.trim()) {
-                    mostrarErrorCampo(doc, 'Documento es obligatorio.');
-                    hayErrores = true;
-                }
                 if (!nombres || !nombres.value.trim()) {
                     mostrarErrorCampo(nombres, 'Nombres es obligatorio.');
                     hayErrores = true;
@@ -490,40 +493,84 @@ window.initClienteSearch = function() {
                     mostrarErrorCampo(paterno, 'Paterno solo debe contener letras.');
                     hayErrores = true;
                 }
-                if (!materno || !materno.value.trim()) {
-                    mostrarErrorCampo(materno, 'Materno es obligatorio.');
-                    hayErrores = true;
-                } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(materno.value.trim())) {
+                if (materno && materno.value.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(materno.value.trim())) {
                     mostrarErrorCampo(materno, 'Materno solo debe contener letras.');
-                    hayErrores = true;
-                }
-                if (tel1 && tel1.value.trim() && !/^\d+$/.test(tel1.value.trim())) {
-                    mostrarErrorCampo(tel1, 'Teléfono 01 solo debe contener números.');
-                    hayErrores = true;
-                }
-                if (tel2 && tel2.value.trim() && !/^\d+$/.test(tel2.value.trim())) {
-                    mostrarErrorCampo(tel2, 'Teléfono 02 solo debe contener números.');
                     hayErrores = true;
                 }
 
                 if (!hayErrores) {
-                    if (checkboxNuevo) {
-                        checkboxNuevo.checked = true;
-                        checkboxNuevo.disabled = false;
-                    }
-                    bloquearCamposCliente(true);
+                    bloquearCamposCliente(false);
                     limpiarErroresCampos();
-                    mostrarMensaje('Cliente no encontrado. Datos válidos. Se guardará como cliente nuevo.', 'success');
-                } else {
-                    if (checkboxNuevo) {
-                        checkboxNuevo.checked = true;
-                        checkboxNuevo.disabled = false;
+                    if (btnRegistrarCliente) {
+                        btnRegistrarCliente.style.display = 'inline-block';
                     }
+                    mostrarMensaje('Cliente no encontrado. Complete los datos y haga clic en "Registrar Cliente".', 'warning');
+                } else {
+                    bloquearCamposCliente(false);
                 }
             }
         })
         .catch(function() {
             mostrarMensaje('Error al validar cliente.', 'danger');
+        });
+    }
+
+    function registrarCliente() {
+        const tipo = campoTipoDocumento ? campoTipoDocumento.value.trim() : 'DNI';
+        const documento = campoDocumento.value.trim();
+        const nombres = document.getElementById('id_cliente_nombres');
+        const paterno = document.getElementById('id_cliente_paterno');
+        const materno = document.getElementById('id_cliente_materno');
+        const tel1 = document.getElementById('id_cliente_telefono_1');
+        const tel2 = document.getElementById('id_cliente_telefono_2');
+
+        if (!documento) {
+            mostrarErrorCampo(campoDocumento, 'Documento es obligatorio.');
+            return;
+        }
+        if (!nombres || !nombres.value.trim()) {
+            mostrarErrorCampo(nombres, 'Nombres es obligatorio.');
+            return;
+        }
+        if (!paterno || !paterno.value.trim()) {
+            mostrarErrorCampo(paterno, 'Paterno es obligatorio.');
+            return;
+        }
+
+        mostrarMensaje('Registrando cliente...', 'info');
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        const params = new URLSearchParams();
+        params.append('cliente_tipo_documento', tipo);
+        params.append('cliente_documento', documento);
+        params.append('cliente_nombres', nombres.value.trim());
+        params.append('cliente_paterno', paterno.value.trim());
+        params.append('cliente_materno', materno ? materno.value.trim() : '');
+        params.append('cliente_telefono_1', tel1 ? tel1.value.trim() : '');
+        params.append('cliente_telefono_2', tel2 ? tel2.value.trim() : '');
+        params.append('csrfmiddlewaretoken', csrfToken);
+
+        fetch(urlRegistrar, {
+            method: 'POST',
+            headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString()
+        })
+        .then(r => r.json())
+        .then(function(data) {
+            if (data.ok) {
+                bloquearCamposCliente(true);
+                limpiarErroresCampos();
+                if (btnRegistrarCliente) {
+                    btnRegistrarCliente.style.display = 'none';
+                }
+                marcarSeccionValida(true);
+                mostrarMensaje(data.mensaje, 'success');
+            } else {
+                mostrarMensaje(data.mensaje || 'Error al registrar cliente.', 'danger');
+            }
+        })
+        .catch(function() {
+            mostrarMensaje('Error de conexión al registrar cliente.', 'danger');
         });
     }
 
@@ -554,12 +601,9 @@ window.initClienteSearch = function() {
                 setValue('id_cliente_materno', l.materno || '');
                 setValue('id_cliente_telefono_1', l.telefono || '');
                 setValue('id_cliente_telefono_2', '');
-                if (checkboxNuevo) {
-                    checkboxNuevo.checked = true;
-                    checkboxNuevo.disabled = false;
-                }
                 bloquearCamposCliente(false);
                 limpiarErroresCampos();
+                marcarSeccionValida(false);
                 mostrarMensaje('Datos del lead recargados correctamente.', 'success');
             } else {
                 mostrarMensaje(data.mensaje || 'Error al recargar lead.', 'danger');
@@ -572,12 +616,26 @@ window.initClienteSearch = function() {
 
     if (btnBuscar && campoDocumento) {
         btnBuscar.addEventListener('click', buscarCliente);
-        if (btnValidar) {
-            btnValidar.addEventListener('click', validarCliente);
-        }
-        if (btnRecargar) {
-            btnRecargar.addEventListener('click', recargarLead);
-        }
+    }
+    if (btnValidar) {
+        btnValidar.addEventListener('click', validarCliente);
+    }
+    if (btnRecargar) {
+        btnRecargar.addEventListener('click', recargarLead);
+    }
+    if (btnRegistrarCliente) {
+        btnRegistrarCliente.addEventListener('click', registrarCliente);
+    }
+
+    // Prevenir submit al presionar Enter en campos del cliente
+    if (campoDocumento) {
+        campoDocumento.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (btnBuscar) buscarCliente();
+            }
+        });
     }
 
     const btnTelefonoPortar = document.getElementById('btnTelefonoPortar');
@@ -603,9 +661,27 @@ window.initClienteSearch = function() {
     }
 };
 
-// Auto-inicialización para página completa (cliente search)
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof initClienteSearch === 'function') {
         initClienteSearch();
+    }
+});
+
+// Prevent form submission if cliente section is not validated (for full page form)
+document.addEventListener('DOMContentLoaded', function() {
+    const ventaForm = document.getElementById('ventaForm');
+    if (ventaForm) {
+        ventaForm.addEventListener('submit', function(e) {
+            const clienteValidado = document.getElementById('id_cliente_validado');
+            if (clienteValidado && clienteValidado.value !== 'true') {
+                e.preventDefault();
+                const mensaje = document.getElementById('clienteMensaje');
+                if (mensaje) {
+                    mensaje.className = 'alert alert-warning';
+                    mensaje.textContent = 'Debe validar o registrar al cliente antes de guardar la venta.';
+                    mensaje.style.display = 'block';
+                }
+            }
+        });
     }
 });

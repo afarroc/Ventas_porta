@@ -186,40 +186,34 @@ class VentaForm(forms.ModelForm):
         recibo = cleaned_data.get('recibo_electronico')
         correo_recibo = cleaned_data.get('correo_electronico_recibo')
 
-        # Producto y Venta validations
+        if not documento:
+            raise forms.ValidationError("Debe ingresar el documento del cliente.")
+
+        base_llamada = getattr(self.instance, 'base_llamada', None)
+        if base_llamada and base_llamada.resultado_gestion == 'VENTA_CONVERTIDA':
+            raise forms.ValidationError("Este lead ya fue convertido en venta. No se puede registrar una nueva venta.")
+
         producto = cleaned_data.get('producto_nombre')
         origen = cleaned_data.get('origen')
         operador = cleaned_data.get('operador')
         telefono_portar = cleaned_data.get('telefono_portar')
         modelo = cleaned_data.get('modelo_producto')
 
-        if not documento:
-            raise forms.ValidationError("Debe ingresar el documento del cliente.")
-
-        # Regla 10.1: No permitir crear venta si el lead ya está convertido
-        base_llamada = getattr(self.instance, 'base_llamada', None)
-        if base_llamada and base_llamada.resultado_gestion == 'VENTA_CONVERTIDA':
-            raise forms.ValidationError("Este lead ya fue convertido en venta. No se puede registrar una nueva venta.")
-
-        # Regla 1: Producto CHIP no tiene modelo ni precio variable
         if producto == 'CHIP':
             if modelo:
                 raise forms.ValidationError("Los productos tipo CHIP no tienen modelo de equipo.")
             cleaned_data['precio_venta'] = 1
 
-        # Regla 2: Origen PORTABILIDAD requiere operador y telefono_portar
         if origen == 'PORTABILIDAD':
             valid_operadores = ['CLARO', 'MOVISTAR', 'VIETTEL', 'VIRGIN']
             if not operador or operador not in valid_operadores:
                 raise forms.ValidationError("Seleccione un operador válido (Claro, Movistar, Viettel, Virgin) para portabilidad.")
             if not telefono_portar:
                 raise forms.ValidationError("El número a portar es obligatorio para portabilidad.")
-            # Regla 10.2: Validar formato básico de teléfono portado (solo dígitos, 7-15 caracteres)
             if telefono_portar and not telefono_portar.isdigit():
                 raise forms.ValidationError("El número a portar debe contener solo dígitos.")
             if telefono_portar and (len(telefono_portar) < 7 or len(telefono_portar) > 15):
                 raise forms.ValidationError("El número a portar debe tener entre 7 y 15 dígitos.")
-            # Validar que el teléfono portado no esté ya asociado a otra venta de portabilidad
             from apps.ventas.models import Venta as VentaModel
             telefono_limpio = telefono_portar.strip()
             venta_existente = VentaModel.objects.filter(
@@ -229,36 +223,27 @@ class VentaForm(forms.ModelForm):
             if venta_existente:
                 raise forms.ValidationError(f"El número {telefono_limpio} ya está registrado en la venta #{venta_existente.id}.")
 
-        if registrar_nuevo:
-            if not nombres or not paterno:
-                raise forms.ValidationError("Para registrar un cliente nuevo debe completar al menos nombres y apellido paterno.")
-            # Check if a cliente with the same documento already exists (active)
-            if Cliente.objects.filter(documento=documento, activo=True).exists():
-                raise forms.ValidationError("Ya existe un cliente activo con ese documento. Por favor, desmarque la opción de registrar nuevo cliente y use los datos existentes.")
-        else:
-            if not Cliente.objects.filter(documento=documento, activo=True).exists():
-                raise forms.ValidationError("El cliente no está registrado. Complete los datos para registrar uno nuevo o vuelva a buscar.")
+        cliente_existe = Cliente.objects.filter(documento=documento, activo=True).exists()
+        if not cliente_existe:
+            raise forms.ValidationError(
+                "El cliente no está registrado. Valide los datos y haga clic en 'Registrar Cliente' para crear uno nuevo."
+            )
 
-        # If recibo_electronico is SI_DESEA, correo is required
         if recibo == 'SI_DESEA':
             if not correo_recibo:
                 raise forms.ValidationError("Debe ingresar el correo electrónico si selecciona 'Si desea'.")
 
-        # Regla 10.3: Si multilínea, requerir tipo_renta2
         multiples_lineas = cleaned_data.get('multiples_lineas', False)
         tipo_renta2 = cleaned_data.get('tipo_renta2', '')
         if multiples_lineas and not tipo_renta2:
             raise forms.ValidationError("Si la venta es multilínea, debe completar el Tipo Renta 2.")
 
-        # Try to find BaseLlamada by documento
         if documento:
             base_qs = BaseLlamada.objects.filter(documento=documento)
             if base_qs.exists():
                 base = base_qs.first()
-                # Only set base_llamada if not already set (to allow locking via URL)
                 if not self.instance.base_llamada:
                     self.instance.base_llamada = base
-                    # Also populate read-only fields for immediate display (if not already set via __init__)
                     self.fields['base_telefono'].initial = base.telefono
                     self.fields['base_nombres'].initial = base.nombres
                     self.fields['base_paterno'].initial = base.paterno
@@ -267,7 +252,6 @@ class VentaForm(forms.ModelForm):
                     self.fields['base_documento'].initial = base.documento
                     self.fields['base_observaciones'].initial = base.observaciones
             else:
-                # No base found; clear instance.base_llamada only if not already set (locked)
                 if not self.instance.base_llamada:
                     self.instance.base_llamada = None
         return cleaned_data

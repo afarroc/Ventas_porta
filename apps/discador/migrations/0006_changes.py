@@ -3,17 +3,20 @@ import uuid
 
 
 def ensure_unique_id_lead(apps, schema_editor):
-    BaseLlamada = apps.get_model('discador', 'BaseLlamada')
     seen = set()
-    for base in BaseLlamada.objects.all():
-        val = base.id_lead
-        if val in seen or val is None:
-            val = uuid.uuid4()
-            while val in seen:
-                val = uuid.uuid4()
-            base.id_lead = val
-            base.save(update_fields=['id_lead'])
-        seen.add(val)
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute('SELECT `id`, `id_lead` FROM `discador_base`')
+        rows = list(cursor.fetchall())
+
+    with schema_editor.connection.cursor() as cursor:
+        for lead_id, existing_id_lead in rows:
+            val = existing_id_lead
+            if val in seen or val is None or val == '':
+                val = uuid.uuid4().hex
+                while val in seen:
+                    val = uuid.uuid4().hex
+                cursor.execute('UPDATE `discador_base` SET `id_lead` = %s WHERE `id` = %s', [val, lead_id])
+            seen.add(val)
 
 
 class Migration(migrations.Migration):
@@ -30,15 +33,24 @@ class Migration(migrations.Migration):
                     reverse_sql=migrations.RunSQL.noop,
                 ),
                 migrations.RunSQL(
+                    sql='ALTER TABLE `discador_base` ADD COLUMN `id_lead` char(32) NULL',
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunPython(ensure_unique_id_lead, migrations.RunPython.noop),
+                migrations.RunSQL(
                     sql='ALTER TABLE `discador_base` MODIFY `telefono` varchar(15) NOT NULL',
                     reverse_sql=migrations.RunSQL.noop,
                 ),
                 migrations.RunSQL(
-                    sql='ALTER TABLE `discador_base` ADD CONSTRAINT UNIQUE (`telefono`)',
+                    sql='ALTER TABLE `discador_base` MODIFY `id_lead` char(32) NOT NULL',
                     reverse_sql=migrations.RunSQL.noop,
                 ),
                 migrations.RunSQL(
-                    sql='ALTER TABLE `discador_base` ADD CONSTRAINT UNIQUE (`id_lead`)',
+                    sql='ALTER TABLE `discador_base` ADD UNIQUE `uq_discador_base_telefono` (`telefono`)',
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql='ALTER TABLE `discador_base` ADD UNIQUE `uq_discador_base_id_lead` (`id_lead`)',
                     reverse_sql=migrations.RunSQL.noop,
                 ),
             ],

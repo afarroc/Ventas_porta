@@ -11,6 +11,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name='basellamada',
+            name='resultado_gestion',
+            field=models.CharField(blank=True, choices=[('', 'Sin gestión'), ('GESTIONADO', 'Gestionado'), ('VENTA_CONVERTIDA', 'Venta Convertida')], max_length=100, verbose_name='Resultado de Gestión'),
+        ),
         migrations.AddField(
             model_name='basellamada',
             name='venta',

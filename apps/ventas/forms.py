@@ -1,6 +1,5 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from .models import Venta, ItemVenta, Cliente
+from .models import Venta, ItemVenta, Cliente, PLANES_CHIP, MODELOS_CHIP_LIST
 from apps.discador.models import BaseLlamada
 from .ubigeo_peru import DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES
 
@@ -152,6 +151,12 @@ class VentaForm(forms.ModelForm):
                 widget.attrs.setdefault('class', '')
                 widget.attrs['class'] += ' form-check-input'
 
+        model_field = self.fields.get('modelo_producto')
+        if isinstance(model_field, forms.ChoiceField):
+            choices = list(model_field.choices)
+            if ('0', '') not in choices:
+                model_field.choices = [('0', '')] + [choice for choice in choices if choice[0] != '']
+
         if self.instance and self.instance.pk:
             self.fields['registrar_nuevo_cliente'].disabled = True
             # Populate provincia choices based on departamento
@@ -177,6 +182,12 @@ class VentaForm(forms.ModelForm):
             self.fields['base_documento'].initial = base.documento
             self.fields['base_observaciones'].initial = base.observaciones
 
+    def clean_modelo_producto(self):
+        modelo = (self.cleaned_data.get('modelo_producto') or '').strip()
+        if modelo == '0':
+            return ''
+        return modelo
+
     def clean(self):
         cleaned_data = super().clean()
         documento = cleaned_data.get('cliente_documento')
@@ -198,11 +209,74 @@ class VentaForm(forms.ModelForm):
         operador = cleaned_data.get('operador')
         telefono_portar = cleaned_data.get('telefono_portar')
         modelo = cleaned_data.get('modelo_producto')
+        plan = cleaned_data.get('plan_producto')
+        tipo_linea = cleaned_data.get('tipo_linea')
+
+        modelo = (modelo or '').strip()
+        if modelo == '0':
+            modelo = ''
+            cleaned_data['modelo_producto'] = ''
 
         if producto == 'CHIP':
-            if modelo:
-                raise forms.ValidationError("Los productos tipo CHIP no tienen modelo de equipo.")
             cleaned_data['precio_venta'] = 1
+
+            if modelo:
+                self.add_error(
+                    'modelo_producto',
+                    forms.ValidationError(
+                        "Los productos tipo CHIP no tienen modelo de equipo. "
+                        "El campo modelo debe estar vacío."
+                    )
+                )
+
+            if not plan:
+                self.add_error('plan_producto', forms.ValidationError("Para CHIP, debe seleccionar un plan ENTEL CHIP."))
+            elif plan not in PLANES_CHIP:
+                self.add_error(
+                    'plan_producto',
+                    forms.ValidationError(
+                        f"Para CHIP, el plan debe ser uno de: {', '.join(PLANES_CHIP)}"
+                    )
+                )
+
+        if producto == 'PACK':
+            if not modelo:
+                self.add_error('modelo_producto', forms.ValidationError("Para PACK, debe seleccionar un modelo de equipo válido."))
+            elif modelo in MODELOS_CHIP_LIST:
+                self.add_error(
+                    'modelo_producto',
+                    forms.ValidationError(
+                        f"El modelo '{modelo}' es un chip. Para PACK, "
+                        "seleccione un modelo de equipo válido."
+                    )
+                )
+
+            if not plan:
+                self.add_error('plan_producto', forms.ValidationError("Para PACK, debe seleccionar un plan."))
+            elif tipo_linea == 'PREPAGO':
+                precio = Venta.PRECIOS_PREPAGO.get(modelo)
+                if precio is None:
+                    self.add_error(
+                        'precio_venta',
+                        forms.ValidationError(
+                            f"No hay precio definido para el modelo {modelo} "
+                            f"en modo Prepago. Consulte con el área comercial."
+                        )
+                    )
+                cleaned_data['precio_venta'] = precio
+            elif tipo_linea == 'POSTPAGO':
+                precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
+                if precio is None:
+                    self.add_error(
+                        'precio_venta',
+                        forms.ValidationError(
+                            f"No hay precio definido para la combinación "
+                            f"modelo={modelo}, plan={plan} en modo Postpago."
+                        )
+                    )
+                cleaned_data['precio_venta'] = precio
+            else:
+                self.add_error('tipo_linea', forms.ValidationError(f"Tipo de línea inválido: {tipo_linea}"))
 
         if origen == 'PORTABILIDAD':
             valid_operadores = ['CLARO', 'MOVISTAR', 'VIETTEL', 'VIRGIN']

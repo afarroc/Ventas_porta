@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, BackofficeListView, buscar_cliente_ajax, validar_cliente_ajax, registrar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create, get_provincias, get_distritos, ItemVentaCreateView, venta_trazabilidad_api
+from .views import HomeView, VentaListView, VentaDetailView, VentaCreateView, BackofficeListView, buscar_cliente_ajax, validar_cliente_ajax, registrar_cliente_ajax, recargar_lead_ajax, venta_modal_partial, venta_api_create, get_provincias, get_distritos, obtener_precio_venta_api, ItemVentaCreateView, venta_trazabilidad_api
 
 app_name = 'ventas'
 
@@ -17,6 +17,7 @@ urlpatterns = [
     path('api/ventas/crear/<uuid:id_lead>/', venta_api_create, name='venta_api_create'),
     path('api/ubigeo/provincias/', get_provincias, name='get_provincias'),
     path('api/ubigeo/distritos/', get_distritos, name='get_distritos'),
+    path('api/ventas/precio-venta/', obtener_precio_venta_api, name='obtener_precio_venta'),
     path('ventas/<int:venta_id>/item/nuevo/', ItemVentaCreateView.as_view(), name='item_create'),
     path('ventas/backoffice/', BackofficeListView.as_view(), name='backoffice_list'),
     path('api/venta/<int:pk>/trazabilidad/', venta_trazabilidad_api, name='venta_trazabilidad'),

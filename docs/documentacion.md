@@ -124,16 +124,47 @@ Registro maestro de operaciones de venta.
 - `abdcp`: Autorización para datos de portabilidad
 
 #### Producto y Venta
-- `producto_nombre`: CHIP (sin modelo, precio fijo S/. 1) o PACK (con modelo y precio variable)
+- `producto_nombre`: `CHIP` o `PACK`
 - `origen`: PORTABILIDAD (requiere operador y telefono_portar) o LINEA_NUEVA
 - `operador`: Claro/Movistar/Viettel/Virgin (obligatorio si origen=PORTABILIDAD)
 - `telefono_portar`: Número a portar (obligatorio si origen=PORTABILIDAD)
-- `modelo_producto`: Modelo de equipo (solo para PACK)
-- `plan_producto`: Plan ENTEL → determina `precio_plan`
+- `modelo_producto`: Modelo de equipo solo para `PACK`; para `CHIP` debe estar vacío o `'0'` y se normaliza a vacío
+- `plan_producto`: Plan ENTEL obligatorio. Para `CHIP` solo planes `ENTEL_CHIP_*`; para `PACK` puede ser CONTROL, CHIP o LIBRE
 - `precio_plan`: Precio del plan (readonly, determinado por plan_producto)
-- `precio_venta`: Precio de venta (filtrado por modelo_producto)
-- `tipo_linea`: Postpago (default) o Prepago
+- `precio_venta`: Precio de venta determinado por regla canónica
+- `tipo_linea`: Postpago (default) o Prepago; no condiciona modelo ni plan, pero sí condiciona precio en `PACK`
 - `tipo_renta`: R.BAJA/R.MEDIA/R.ALTA (calculado automáticamente)
+
+**Regla canónica de precio:**
+
+| Producto | tipo_linea | Precio de venta |
+|----------|------------|-----------------|
+| `CHIP` | cualquiera | `1` fijo |
+| `PACK` | `POSTPAGO` | matriz `modelo_producto + plan_producto` |
+| `PACK` | `PREPAGO` | precio fijo por `modelo_producto` |
+
+**Endpoint de precio:**
+
+- `GET /api/ventas/precio-venta/?producto=PACK&modelo=MOTO_G_PLAY&plan=ENTEL_CONTROL_49_CONTROL&tipo_linea=POSTPAGO`
+- Retorna `{"ok": true, "precio": 49}` si existe precio definido.
+- Retorna `{"ok": false, "mensaje": "..."}` si falta dato o no existe combinación.
+- La validación definitiva está en backend (`apps/ventas/forms.py` y `apps/ventas/models.py`); el frontend solo sincroniza selects y tipo de renta.
+
+**Regla canónica de `tipo_renta`:**
+
+`tipo_renta` se calcula desde una tabla explícita llave-valor definida en `apps/ventas/models.py` y replicada en `static/js/venta-form.js`.
+
+- Para `CHIP`, el valor de la llave es `precio_plan`.
+- Para `PACK`, el valor de la llave es `precio_venta`.
+- Si una combinación no existe en backend, se lanza `ValueError`.
+- En frontend, si no existe mapping, el campo queda vacío; actualmente todas las combinaciones reales de precio definidas en las matrices están cubiertas.
+
+| Origen | Producto | Valores con R.BAJA | Valores con R.MEDIA | Valores con R.ALTA |
+|--------|----------|-------------------|--------------------|-------------------|
+| `PORTABILIDAD` | `PACK` | 1, 4, 9, 13, 29, 49 | 74, 75, 89 | 99, 129, 149, 189, 199, 229, 249, 299, 349, 399, 599, 699 |
+| `PORTABILIDAD` | `CHIP` | 25, 29, 39, 45, 49 | 59, 74, 75, 89 | 99, 109, 145, 209 |
+| `LINEA_NUEVA` | `PACK` | 1, 4, 9, 13, 29, 49 | 75, 89 | 99, 129, 149, 189, 199, 229, 249, 299, 349, 399, 599, 699 |
+| `LINEA_NUEVA` | `CHIP` | 25, 29, 39, 45 | 59, 74, 89 | 109, 145, 209 |
 
 #### Dirección de Despacho
 - `tipo_via`: Avenida/Calle/Jirón/Pasaje/Prolongación/Carretera/Malecón/Alameda/Urbanización/Asociación/Pueblo Joven (choices - 11 opciones)
@@ -561,6 +592,7 @@ Cada área opera de forma independiente sobre la misma venta. Los datos de prove
 | `/ventas/recargar-lead/<uuid>/` | GET | Recarga datos del lead |
 | `/ventas/modal/<uuid>/` | GET | HTML formulario modal vía API |
 | `/api/ventas/crear/<uuid>/` | POST | Crea venta vía API JSON |
+| `/api/ventas/precio-venta/` | GET | Obtiene precio de venta según reglas canónicas |
 | `/api/ubigeo/provincias/` | GET | Obtiene provincias por departamento (AJAX) |
 | `/api/ubigeo/distritos/` | GET | Obtiene distritos por departamento+provincia (AJAX) |
 
@@ -813,20 +845,34 @@ BaseLlamada.objects.values('base_procedencia').annotate(
 | LINEA_NUEVA | CHIP | 25-45 | R.BAJA |
 | LINEA_NUEVA | CHIP | 59+ | R.MEDIA |
 
-### 19.2 Validaciones Implementadas
+### 19.2 Regla canónica de precio
 
-1. **Producto CHIP**: Sin modelo ni precio variable (precio fijo S/. 1)
-2. **Origen PORTABILIDAD**: Operador y teléfono_portar obligatorios
-3. **Tipo documento**: DNI/RUC/CE/Pasaporte
-4. **Recibo electrónico**: Si 'SI_DESEA', correo obligatorio
-5. **Tipo renta multilínea**: Si `multiples_lineas=True`, se requiere `tipo_renta2`
-6. **Tracking único**: No se permite duplicar tracking entre despacho y courier de la misma venta
-7. **Lead VENTA_CONVERTIDA**: No se puede asignar a agentes en discador
-8. **Calcular tipo_renta actualizado**: Rangos definidos según §19.1
+| Producto | tipo_linea | Regla |
+|----------|------------|-------|
+| `CHIP` | cualquiera | `precio_venta = 1`, `modelo_producto` vacío o `'0'`, `plan_producto` obligatorio y solo `ENTEL_CHIP_*` |
+| `PACK` | `POSTPAGO` | `modelo_producto` obligatorio y no chip; `plan_producto` obligatorio; `precio_venta = matriz(modelo, plan)` |
+| `PACK` | `PREPAGO` | `modelo_producto` obligatorio y no chip; `plan_producto` obligatorio; `precio_venta = precio fijo por modelo` |
 
-### 19.3 Validaciones Pendientes
+`tipo_linea` no condiciona modelo ni plan, pero sí condiciona la regla de precio cuando `producto_nombre = PACK`.
 
-1. Confirmar opciones de MODELOS_PRODUCTO con catálogo ENTEL actual
+Para `CHIP`, `tipo_renta` se calcula con `precio_plan`, no con `precio_venta`.
+
+### 19.3 Validaciones Implementadas
+
+1. **Producto CHIP**: sin modelo de equipo, precio fijo S/. 1, plan obligatorio solo `ENTEL_CHIP_*`
+2. **Producto PACK**: modelo de equipo obligatorio, plan obligatorio, precio por matriz postpago o prepago según `tipo_linea`
+3. **Origen PORTABILIDAD**: operador y teléfono_portar obligatorios
+4. **Tipo documento**: DNI/RUC/CE/Pasaporte
+5. **Recibo electrónico**: Si 'SI_DESEA', correo obligatorio
+6. **Tipo renta multilínea**: Si `multiples_lineas=True`, se requiere `tipo_renta2`
+7. **Tracking único**: No se permite duplicar tracking entre despacho y courier de la misma venta
+8. **Lead VENTA_CONVERTIDA**: No se puede asignar a agentes en discador
+9. **Calcular tipo_renta actualizado**: rangos definidos según §19.1
+
+### 19.4 Validaciones Pendientes
+
+1. Confirmar opciones de `MODELOS_PRODUCTO` con catálogo ENTEL actual
 2. Verificar precios de venta y plan correspondientes al portafolio vigente
+3. Completar matrices comerciales `PRECIOS_POSTPAGO` y `PRECIOS_PREPAGO` con todos los casos vigentes
 
 

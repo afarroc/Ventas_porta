@@ -38,6 +38,84 @@ window.initVentaFormFields = function() {
         'ENTEL_LIBRE_99_LIBRE': 99
     };
 
+    const tipoRentaTable = {
+        'PORTABILIDAD_PACK_1': 'R.BAJA',
+        'PORTABILIDAD_PACK_4': 'R.BAJA',
+        'PORTABILIDAD_PACK_9': 'R.BAJA',
+        'PORTABILIDAD_PACK_13': 'R.BAJA',
+        'PORTABILIDAD_PACK_29': 'R.BAJA',
+        'PORTABILIDAD_PACK_49': 'R.BAJA',
+        'PORTABILIDAD_PACK_74': 'R.MEDIA',
+        'PORTABILIDAD_PACK_75': 'R.MEDIA',
+        'PORTABILIDAD_PACK_89': 'R.MEDIA',
+        'PORTABILIDAD_PACK_99': 'R.ALTA',
+        'PORTABILIDAD_PACK_129': 'R.ALTA',
+        'PORTABILIDAD_PACK_149': 'R.ALTA',
+        'PORTABILIDAD_PACK_189': 'R.ALTA',
+        'PORTABILIDAD_PACK_199': 'R.ALTA',
+        'PORTABILIDAD_PACK_229': 'R.ALTA',
+        'PORTABILIDAD_PACK_249': 'R.ALTA',
+        'PORTABILIDAD_PACK_299': 'R.ALTA',
+        'PORTABILIDAD_PACK_349': 'R.ALTA',
+        'PORTABILIDAD_PACK_399': 'R.ALTA',
+        'PORTABILIDAD_PACK_599': 'R.ALTA',
+        'PORTABILIDAD_PACK_699': 'R.ALTA',
+        'PORTABILIDAD_CHIP_25': 'R.BAJA',
+        'PORTABILIDAD_CHIP_29': 'R.BAJA',
+        'PORTABILIDAD_CHIP_39': 'R.BAJA',
+        'PORTABILIDAD_CHIP_45': 'R.BAJA',
+        'PORTABILIDAD_CHIP_49': 'R.BAJA',
+        'PORTABILIDAD_CHIP_59': 'R.MEDIA',
+        'PORTABILIDAD_CHIP_74': 'R.MEDIA',
+        'PORTABILIDAD_CHIP_75': 'R.MEDIA',
+        'PORTABILIDAD_CHIP_89': 'R.MEDIA',
+        'PORTABILIDAD_CHIP_99': 'R.ALTA',
+        'PORTABILIDAD_CHIP_109': 'R.ALTA',
+        'PORTABILIDAD_CHIP_145': 'R.ALTA',
+        'PORTABILIDAD_CHIP_209': 'R.ALTA',
+        'LINEA_NUEVA_PACK_1': 'R.BAJA',
+        'LINEA_NUEVA_PACK_4': 'R.BAJA',
+        'LINEA_NUEVA_PACK_9': 'R.BAJA',
+        'LINEA_NUEVA_PACK_13': 'R.BAJA',
+        'LINEA_NUEVA_PACK_29': 'R.BAJA',
+        'LINEA_NUEVA_PACK_49': 'R.BAJA',
+        'LINEA_NUEVA_PACK_75': 'R.MEDIA',
+        'LINEA_NUEVA_PACK_89': 'R.MEDIA',
+        'LINEA_NUEVA_PACK_99': 'R.ALTA',
+        'LINEA_NUEVA_PACK_129': 'R.ALTA',
+        'LINEA_NUEVA_PACK_149': 'R.ALTA',
+        'LINEA_NUEVA_PACK_189': 'R.ALTA',
+        'LINEA_NUEVA_PACK_199': 'R.ALTA',
+        'LINEA_NUEVA_PACK_229': 'R.ALTA',
+        'LINEA_NUEVA_PACK_249': 'R.ALTA',
+        'LINEA_NUEVA_PACK_299': 'R.ALTA',
+        'LINEA_NUEVA_PACK_349': 'R.ALTA',
+        'LINEA_NUEVA_PACK_399': 'R.ALTA',
+        'LINEA_NUEVA_PACK_599': 'R.ALTA',
+        'LINEA_NUEVA_PACK_699': 'R.ALTA',
+        'LINEA_NUEVA_CHIP_25': 'R.BAJA',
+        'LINEA_NUEVA_CHIP_29': 'R.BAJA',
+        'LINEA_NUEVA_CHIP_39': 'R.BAJA',
+        'LINEA_NUEVA_CHIP_45': 'R.BAJA',
+        'LINEA_NUEVA_CHIP_59': 'R.MEDIA',
+        'LINEA_NUEVA_CHIP_74': 'R.MEDIA',
+        'LINEA_NUEVA_CHIP_89': 'R.MEDIA',
+        'LINEA_NUEVA_CHIP_109': 'R.ALTA',
+        'LINEA_NUEVA_CHIP_145': 'R.ALTA',
+        'LINEA_NUEVA_CHIP_209': 'R.ALTA'
+    };
+
+    const planChipList = [
+        'ENTEL_CHIP_29_CONTROL',
+        'ENTEL_CHIP_39_CONTROL',
+        'ENTEL_CHIP_45_CONTROL',
+        'ENTEL_CHIP_59_CONTROL',
+        'ENTEL_CHIP_74_CONTROL',
+        'ENTEL_CHIP_89_CONTROL',
+        'ENTEL_CHIP_109_CONTROL',
+        'ENTEL_CHIP_145_CONTROL',
+    ];
+
     const modeloPreciosMap = {
         'ZTE_BLADE_L5_GRIS': [1, 49, 59, 79, 119],
         'ZTE_BLADE_L5_BLANCO': [49, 59, 119],
@@ -88,6 +166,33 @@ window.initVentaFormFields = function() {
         'ZTE_BLADE_A610_NEGRO', 'ZTE_BLADE_A610_NEGRO_4G', 'ZTE_BLADE_L5_BLANCO', 'ZTE_BLADE_L5_GRIS'];
     const modeloChipList = ['SUPER_CHIP_ENTEL_PLUS', 'SUPERCHIP_ENTEL'];
 
+    function filtrarPlanesPorProducto(producto) {
+        if (!planSelect) return;
+        const mostrarChip = producto === 'CHIP';
+
+        Array.from(planSelect.options).forEach(option => {
+            const value = option.value;
+            const esPlanChip = planChipList.includes(value);
+            if (!mostrarChip || esPlanChip) {
+                option.style.display = '';
+                option.disabled = false;
+            } else {
+                option.style.display = 'none';
+                option.disabled = true;
+            }
+        });
+
+        if (mostrarChip && planSelect.value && !planChipList.includes(planSelect.value)) {
+            planSelect.value = '';
+            updatePrecioPlan();
+        }
+        if (!mostrarChip && planSelect.value && planChipList.includes(planSelect.value)) {
+            planSelect.value = '';
+            updatePrecioPlan();
+        }
+        syncHiddenField('id_plan_producto', planSelect.value);
+    }
+
     function updatePorProducto() {
         if (!productoSelect) return;
         const valor = (productoSelect.value || '').trim();
@@ -96,6 +201,9 @@ window.initVentaFormFields = function() {
         if (isPack) {
             if (modeloSelect) {
                 modeloSelect.disabled = false;
+                if (!modeloSelect.value || !modeloPackList.includes(modeloSelect.value)) {
+                    modeloSelect.value = '';
+                }
                 // Filtrar opciones: solo mostrar modelos PACK
                 Array.from(modeloSelect.options).forEach(option => {
                     const value = option.value;
@@ -107,13 +215,19 @@ window.initVentaFormFields = function() {
                         option.disabled = true;
                     }
                 });
+                syncHiddenField('id_modelo_producto', modeloSelect.value);
             }
             if (modeloGroup) modeloGroup.style.display = 'block';
-            if (precioVentaSelect) precioVentaSelect.disabled = false;
+            if (precioVentaSelect) {
+                precioVentaSelect.disabled = false;
+                syncHiddenField('id_precio_venta', precioVentaSelect.value);
+            }
+            filtrarPlanesPorProducto('PACK');
         } else {
             if (modeloSelect) {
                 modeloSelect.value = '';
                 modeloSelect.disabled = true;
+                syncHiddenField('id_modelo_producto', '');
                 // Filtrar opciones: solo mostrar modelos CHIP (nada)
                 Array.from(modeloSelect.options).forEach(option => {
                     option.style.display = 'none';
@@ -124,7 +238,9 @@ window.initVentaFormFields = function() {
             if (precioVentaSelect) {
                 precioVentaSelect.value = '1';
                 precioVentaSelect.disabled = true;
+                syncHiddenField('id_precio_venta', '1');
             }
+            filtrarPlanesPorProducto('CHIP');
         }
     }
 
@@ -164,36 +280,89 @@ window.initVentaFormFields = function() {
     function filtrarPreciosPorModelo() {
         if (!modeloSelect || !precioVentaSelect) return;
         const modelo = modeloSelect.value;
-        const preciosValidos = modeloPreciosMap[modelo] || [];
+        const preciosValidos = modeloPreciosMap[modelo];
+        const allowedPrices = preciosValidos ? new Set(preciosValidos) : null;
+        const mostrarTodos = allowedPrices === null || allowedPrices.size === 0;
+
         Array.from(precioVentaSelect.options).forEach(option => {
-            const valor = parseInt(option.value);
-            if (option.value === '' || preciosValidos.includes(valor)) {
-                option.style.display = '';
-            } else {
-                option.style.display = 'none';
-            }
+            const valor = parseInt(option.value, 10);
+            const isAllowed = mostrarTodos || allowedPrices.has(valor);
+            option.disabled = !isAllowed;
+            option.style.display = isAllowed ? '' : 'none';
         });
-        if (preciosValidos.length > 0) {
-            precioVentaSelect.value = preciosValidos[0];
+
+        if (!mostrarTodos && precioVentaSelect.value && !allowedPrices.has(parseInt(precioVentaSelect.value, 10))) {
+            precioVentaSelect.value = '';
         }
+        syncHiddenField('id_precio_venta', precioVentaSelect.value);
         updateTipoRenta();
     }
 
+    function actualizarPrecioVenta() {
+        if (!productoSelect || !precioVentaSelect) return;
+        const producto = (productoSelect.value || '').trim();
+        const modelo = (modeloSelect ? modeloSelect.value : '').trim();
+        const plan = (planSelect ? planSelect.value : '').trim();
+        const tipoLinea = (tipoLineaSelect ? tipoLineaSelect.value : '').trim();
+
+        if (producto === 'CHIP') {
+            precioVentaSelect.value = '1';
+            syncHiddenField('id_precio_venta', '1');
+            updateTipoRenta();
+            return;
+        }
+
+        if (producto === 'PACK') {
+            if (!modelo || !tipoLinea) return;
+            if (tipoLinea === 'POSTPAGO' && !plan) return;
+
+            const params = new URLSearchParams({
+                producto: producto,
+                modelo: modelo,
+                plan: plan,
+                tipo_linea: tipoLinea,
+            });
+
+            fetch('/api/ventas/precio-venta/?' + params.toString(), {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    precioVentaSelect.value = String(data.precio);
+                    syncHiddenField('id_precio_venta', data.precio);
+                } else {
+                    precioVentaSelect.value = '';
+                    syncHiddenField('id_precio_venta', '');
+                    console.warn(data.mensaje || 'Combinación sin precio definido.');
+                }
+                updateTipoRenta();
+            })
+            .catch(function() {
+                precioVentaSelect.value = '';
+                syncHiddenField('id_precio_venta', '');
+                updateTipoRenta();
+            });
+        }
+    }
+
     function updateTipoRenta() {
-        if (!precioVentaSelect || !precioPlanInput || !tipoRentaInput) return;
-        const pv = parseInt(precioVentaSelect.value, 10) || 0;
-        const pp = parseInt(precioPlanInput.value, 10) || 0;
-        let renta = '';
-        if (pv === 1 && pp <= 49) renta = 'R.BAJA';
-        else if (pv <= 99 && pp >= 50 && pp <= 89) renta = 'R.MEDIA';
-        else if (pv >= 99 && pp >= 89) renta = 'R.ALTA';
-        tipoRentaInput.value = renta;
+        if (!productoSelect || !precioVentaSelect || !precioPlanInput || !tipoRentaInput || !origenSelect) return;
+        const producto = (productoSelect.value || '').trim();
+        const origen = (origenSelect.value || '').trim();
+        const valor = producto === 'CHIP' ? parseInt(precioPlanInput.value, 10) : parseInt(precioVentaSelect.value, 10);
+        if (!origen || !producto || !valor) {
+            tipoRentaInput.value = '';
+            return;
+        }
+        const key = origen + '_' + producto + '_' + valor;
+        tipoRentaInput.value = tipoRentaTable[key] || '';
     }
 
     if (productoSelect) productoSelect.addEventListener('change', function() {
         syncHiddenField('id_producto_nombre', productoSelect.value);
         updatePorProducto();
-        updateTipoRenta();
+        actualizarPrecioVenta();
     });
     if (origenSelect) origenSelect.addEventListener('change', function() {
         syncHiddenField('id_origen', origenSelect.value);
@@ -203,14 +372,20 @@ window.initVentaFormFields = function() {
     if (planSelect) planSelect.addEventListener('change', function() {
         updatePrecioPlan();
         syncHiddenField('id_plan_producto', planSelect.value);
+        actualizarPrecioVenta();
     });
     if (modeloSelect) modeloSelect.addEventListener('change', function() {
         filtrarPreciosPorModelo();
         syncHiddenField('id_modelo_producto', modeloSelect.value);
+        actualizarPrecioVenta();
     });
     if (precioVentaSelect) precioVentaSelect.addEventListener('change', function() {
         updateTipoRenta();
         syncHiddenField('id_precio_venta', precioVentaSelect.value);
+    });
+    if (tipoLineaSelect) tipoLineaSelect.addEventListener('change', function() {
+        syncHiddenField('id_tipo_linea', tipoLineaSelect.value);
+        actualizarPrecioVenta();
     });
     if (operadorSelect) operadorSelect.addEventListener('change', function() {
         syncHiddenField('id_operador', operadorSelect.value);
@@ -245,6 +420,16 @@ window.initVentaFormFields = function() {
         planSelect.value = planInput.value;
         updatePrecioPlan();
     }
+    const precioVentaInput = document.querySelector('[name="precio_venta"]');
+    if (precioVentaInput && precioVentaSelect && precioVentaInput.value) {
+        precioVentaSelect.value = precioVentaInput.value;
+        syncHiddenField('id_precio_venta', precioVentaInput.value);
+    }
+    const tipoLineaInput = document.querySelector('[name="tipo_linea"]');
+    if (tipoLineaInput && tipoLineaSelect && tipoLineaInput.value) {
+        tipoLineaSelect.value = tipoLineaInput.value;
+        syncHiddenField('id_tipo_linea', tipoLineaInput.value);
+    }
     const telefonoPortarInputHidden = document.querySelector('[name="telefono_portar"]');
     if (telefonoPortarInputHidden && telefonoPortarInput && telefonoPortarInputHidden.value) {
         telefonoPortarInput.value = telefonoPortarInputHidden.value;
@@ -252,6 +437,7 @@ window.initVentaFormFields = function() {
 
     updatePorProducto();
     updatePorOrigen();
+    actualizarPrecioVenta();
     updateTipoRenta();
 };
 

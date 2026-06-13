@@ -3,6 +3,90 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 
 
+PLANES_CHIP = [
+    'ENTEL_CHIP_29_CONTROL',
+    'ENTEL_CHIP_39_CONTROL',
+    'ENTEL_CHIP_45_CONTROL',
+    'ENTEL_CHIP_59_CONTROL',
+    'ENTEL_CHIP_74_CONTROL',
+    'ENTEL_CHIP_89_CONTROL',
+    'ENTEL_CHIP_109_CONTROL',
+    'ENTEL_CHIP_145_CONTROL',
+]
+
+MODELOS_CHIP_LIST = [
+    'SUPER_CHIP_ENTEL_PLUS',
+    'SUPERCHIP_ENTEL',
+]
+
+TIPO_RENTA_TABLE = {
+    ('PORTABILIDAD', 'PACK', 1): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 4): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 9): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 13): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 29): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 49): 'R.BAJA',
+    ('PORTABILIDAD', 'PACK', 74): 'R.MEDIA',
+    ('PORTABILIDAD', 'PACK', 75): 'R.MEDIA',
+    ('PORTABILIDAD', 'PACK', 89): 'R.MEDIA',
+    ('PORTABILIDAD', 'PACK', 99): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 129): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 149): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 189): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 199): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 229): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 249): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 299): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 349): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 399): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 599): 'R.ALTA',
+    ('PORTABILIDAD', 'PACK', 699): 'R.ALTA',
+    ('PORTABILIDAD', 'CHIP', 25): 'R.BAJA',
+    ('PORTABILIDAD', 'CHIP', 29): 'R.BAJA',
+    ('PORTABILIDAD', 'CHIP', 39): 'R.BAJA',
+    ('PORTABILIDAD', 'CHIP', 45): 'R.BAJA',
+    ('PORTABILIDAD', 'CHIP', 49): 'R.BAJA',
+    ('PORTABILIDAD', 'CHIP', 59): 'R.MEDIA',
+    ('PORTABILIDAD', 'CHIP', 74): 'R.MEDIA',
+    ('PORTABILIDAD', 'CHIP', 75): 'R.MEDIA',
+    ('PORTABILIDAD', 'CHIP', 89): 'R.MEDIA',
+    ('PORTABILIDAD', 'CHIP', 99): 'R.ALTA',
+    ('PORTABILIDAD', 'CHIP', 109): 'R.ALTA',
+    ('PORTABILIDAD', 'CHIP', 145): 'R.ALTA',
+    ('PORTABILIDAD', 'CHIP', 209): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 1): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 4): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 9): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 13): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 29): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 49): 'R.BAJA',
+    ('LINEA_NUEVA', 'PACK', 75): 'R.MEDIA',
+    ('LINEA_NUEVA', 'PACK', 89): 'R.MEDIA',
+    ('LINEA_NUEVA', 'PACK', 99): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 129): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 149): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 189): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 199): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 229): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 249): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 299): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 349): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 399): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 599): 'R.ALTA',
+    ('LINEA_NUEVA', 'PACK', 699): 'R.ALTA',
+    ('LINEA_NUEVA', 'CHIP', 25): 'R.BAJA',
+    ('LINEA_NUEVA', 'CHIP', 29): 'R.BAJA',
+    ('LINEA_NUEVA', 'CHIP', 39): 'R.BAJA',
+    ('LINEA_NUEVA', 'CHIP', 45): 'R.BAJA',
+    ('LINEA_NUEVA', 'CHIP', 59): 'R.MEDIA',
+    ('LINEA_NUEVA', 'CHIP', 74): 'R.MEDIA',
+    ('LINEA_NUEVA', 'CHIP', 89): 'R.MEDIA',
+    ('LINEA_NUEVA', 'CHIP', 109): 'R.ALTA',
+    ('LINEA_NUEVA', 'CHIP', 145): 'R.ALTA',
+    ('LINEA_NUEVA', 'CHIP', 209): 'R.ALTA',
+}
+
+
 class Cliente(models.Model):
     TIPO_DOCUMENTO_CHOICES = [('DNI', 'DNI'), ('RUC', 'RUC'), ('CE', 'Carnet de Extranjería'), ('PASAPORTE', 'Pasaporte')]
     tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES, default='DNI', verbose_name="Tipo de Documento")
@@ -117,16 +201,61 @@ class Venta(models.Model):
     TIPO_LINEA_CHOICES = [('PREPAGO', 'Prepago'), ('POSTPAGO', 'Postpago')]
     tipo_linea = models.CharField(max_length=20, choices=TIPO_LINEA_CHOICES, blank=True, verbose_name="Tipo de Línea")
     PRECIO_VENTA_CHOICES = [
-        (1, '1'), (9, '9'), (29, '29'), (39, '39'), (49, '49'), (59, '59'), (79, '79'), (89, '89'),
-        (99, '99'), (109, '109'), (119, '119'), (129, '129'), (149, '149'), (189, '189'), (199, '199'),
-        (229, '229'), (349, '349'), (399, '399'), (429, '429'), (499, '499'), (599, '599'), (699, '699'),
+        (1, '1'), (4, '4'), (9, '9'), (13, '13'),
+        (29, '29'), (39, '39'), (49, '49'), (59, '59'),
+        (79, '79'), (89, '89'), (99, '99'), (109, '109'),
+        (119, '119'), (129, '129'), (149, '149'), (189, '189'),
+        (199, '199'), (229, '229'), (249, '249'), (299, '299'),
+        (349, '349'), (399, '399'), (429, '429'), (499, '499'),
+        (599, '599'), (699, '699'),
     ]
     precio_venta = models.IntegerField(choices=PRECIO_VENTA_CHOICES, null=True, blank=True, verbose_name="Precio de Venta")
     PRECIO_PLAN_CHOICES = [
         (29, '29'), (39, '39'), (45, '45'), (49, '49'), (59, '59'), (74, '74'), (75, '75'),
-        (89, '89'), (99, '99'), (109, '109'), (145, '145'), (149, '149'),
+        (89, '89'), (99, '99'), (109, '109'), (145, '145'), (149, '149'), (199, '199'),
     ]
     precio_plan = models.IntegerField(choices=PRECIO_PLAN_CHOICES, null=True, blank=True, verbose_name="Precio del Plan")
+
+    PRECIOS_POSTPAGO = {
+        ('MOTO_G_PLAY', 'ENTEL_CONTROL_49_CONTROL'): 49,
+        ('MOTO_G_PLAY', 'ENTEL_CONTROL_75_CONTROL'): 49,
+        ('MOTO_G_PLAY', 'ENTEL_CONTROL_99_CONTROL'): 99,
+        ('MOTO_G_PLAY', 'ENTEL_CONTROL_149_CONTROL'): 1,
+        ('MOTO_G_PLUS', 'ENTEL_CONTROL_75_CONTROL'): 4,
+        ('MOTO_G_PLUS', 'ENTEL_CONTROL_99_CONTROL'): 349,
+        ('MOTO_G_PLUS', 'ENTEL_CONTROL_149_CONTROL'): 399,
+        ('HUAWEI_P9_LITE', 'ENTEL_CONTROL_99_CONTROL'): 149,
+        ('HUAWEI_P9_LITE', 'ENTEL_CONTROL_149_CONTROL'): 1,
+        ('GALAXY_J7', 'ENTEL_CONTROL_99_CONTROL'): 199,
+        ('GALAXY_J7', 'ENTEL_CONTROL_149_CONTROL'): 13,
+        ('GALAXY_J7', 'ENTEL_CONTROL_199_CONTROL'): 1,
+        ('ZTE_BLADE_A315_NEGRO', 'ENTEL_CONTROL_49_CONTROL'): 129,
+        ('ZTE_BLADE_A315_NEGRO', 'ENTEL_CONTROL_75_CONTROL'): 1,
+        ('ZTE_BLADE_A315_NEGRO', 'ENTEL_CONTROL_99_CONTROL'): 29,
+        ('ZTE_BLADE_L5_GRIS', 'ENTEL_CONTROL_49_CONTROL'): 49,
+        ('ZTE_BLADE_L5_GRIS', 'ENTEL_CONTROL_75_CONTROL'): 1,
+        ('ZTE_BLADE_L5_GRIS', 'ENTEL_CONTROL_99_CONTROL'): 1,
+        ('HUAWEI_Y360_NEGRO', 'ENTEL_CONTROL_49_CONTROL'): 29,
+        ('HUAWEI_Y360_NEGRO', 'ENTEL_CONTROL_75_CONTROL'): 9,
+        ('HUAWEI_Y360_NEGRO', 'ENTEL_CONTROL_99_CONTROL'): 1,
+        ('LG_X_STYLE_NEGRO', 'ENTEL_CONTROL_75_CONTROL'): 49,
+        ('LG_X_STYLE_NEGRO', 'ENTEL_CONTROL_99_CONTROL'): 1,
+        ('MOTO_Z_PLAY', 'ENTEL_CONTROL_149_CONTROL'): 599,
+        ('MOTO_Z_PLAY', 'ENTEL_CONTROL_199_CONTROL'): 699,
+    }
+
+    PRECIOS_PREPAGO = {
+        'MOTO_G_PLAY': 199,
+        'MOTO_G_PLUS': 299,
+        'HUAWEI_P9_LITE': 249,
+        'GALAXY_J7': 229,
+        'ZTE_BLADE_A315_NEGRO': 189,
+        'ZTE_BLADE_L5_GRIS': 149,
+        'HUAWEI_Y360_NEGRO': 99,
+        'LG_X_STYLE_NEGRO': 199,
+        'MOTO_Z_PLAY': 699,
+    }
+
     TIPO_PAGO_CHOICES = [('EFECTIVO', 'Efectivo'), ('TARJETA', 'Tarjeta')]
     tipo_pago = models.CharField(max_length=10, choices=TIPO_PAGO_CHOICES, blank=True, verbose_name="Tipo de Pago")
 
@@ -198,73 +327,83 @@ class Venta(models.Model):
         ordering = ['-creado']
 
     @staticmethod
+    def obtener_precio_venta(producto, modelo, plan, tipo_linea):
+        """Regla canónica de precio. Retorna None si no hay precio definido."""
+        if producto == 'CHIP':
+            return 1
+
+        if producto == 'PACK':
+            if tipo_linea == 'PREPAGO':
+                return Venta.PRECIOS_PREPAGO.get(modelo)
+            return Venta.PRECIOS_POSTPAGO.get((modelo, plan))
+        return None
+
+    @staticmethod
     def calcular_tipo_renta(origen, producto, precio_venta, precio_plan):
         """
-        Calcula tipo_renta basado en reglas de negocio (docs/documentacion.md Sección 19.1).
-
-        Reglas:
-        - PORTABILIDAD + PACK: 29-49=R.BAJA, 59-75=R.MEDIA, 89+=R.ALTA
-        - PORTABILIDAD + CHIP: 39-59=R.BAJA, 74-89=R.MEDIA, 109+=R.ALTA
-        - LINEA_NUEVA + PACK: 49-75=R.BAJA/R.MEDIA (ambos), 99+=R.ALTA
-        - LINEA_NUEVA + CHIP: 25-45=R.BAJA, 59+=R.MEDIA
+        Calcula tipo_renta usando la tabla canónica de negocio.
+        Para CHIP se usa precio_plan; para PACK se usa precio_venta.
         """
-        if origen == 'PORTABILIDAD':
-            if producto == 'PACK':
-                if 29 <= precio_venta <= 49:
-                    return 'R.BAJA'
-                elif 59 <= precio_venta <= 75:
-                    return 'R.MEDIA'
-                else:
-                    return 'R.ALTA'
-            elif producto == 'CHIP':
-                if 39 <= precio_venta <= 59:
-                    return 'R.BAJA'
-                elif 74 <= precio_venta <= 89:
-                    return 'R.MEDIA'
-                else:
-                    return 'R.ALTA'
-        elif origen == 'LINEA_NUEVA':
-            if producto == 'PACK':
-                if 49 <= precio_venta <= 75:
-                    return 'R.BAJA'
-                elif precio_venta > 75 and precio_venta < 99:
-                    return 'R.MEDIA'
-                else:
-                    return 'R.ALTA'
-            elif producto == 'CHIP':
-                if 25 <= precio_venta <= 45:
-                    return 'R.BAJA'
-                else:
-                    return 'R.MEDIA'
-        return ''
+        if producto == 'CHIP':
+            valor = precio_plan
+        else:
+            valor = precio_venta
+
+        if not valor:
+            return ''
+
+        tipo = TIPO_RENTA_TABLE.get((origen, producto, valor))
+        if tipo is None:
+            raise ValueError(
+                f"Tipo de renta no definido para: "
+                f"origen={origen}, producto={producto}, valor={valor}"
+            )
+        return tipo
 
     def save(self, *args, **kwargs):
-        if self.origen and self.producto_nombre and self.precio_venta:
+        if self.producto_nombre and not self.precio_venta:
+            precio = self.obtener_precio_venta(
+                self.producto_nombre,
+                self.modelo_producto,
+                self.plan_producto,
+                self.tipo_linea
+            )
+            if precio is None:
+                raise ValueError(
+                    f"No hay precio definido para: "
+                    f"producto={self.producto_nombre}, "
+                    f"modelo={self.modelo_producto}, "
+                    f"plan={self.plan_producto}, "
+                    f"tipo_linea={self.tipo_linea}"
+                )
+            self.precio_venta = precio
+
+        if self.origen and self.producto_nombre:
             self.tipo_renta = self.calcular_tipo_renta(
-                self.origen, 
-                self.producto_nombre, 
-                self.precio_venta, 
+                self.origen,
+                self.producto_nombre,
+                self.precio_venta,
                 self.precio_plan
             )
-        
-        # Track if this is a new venta being created
+
         is_new = self.pk is None
         super().save(*args, **kwargs)
-        
-        # Update BaseLlamada when venta is created
+
         if is_new and self.base_llamada:
             from apps.discador.models import CallRecord
-            ultimo_registro = CallRecord.objects.filter(base_llamada=self.base_llamada).order_by('-inicio').first()
-            
+            ultimo_registro = CallRecord.objects.filter(
+                base_llamada=self.base_llamada
+            ).order_by('-inicio').first()
+
             self.base_llamada.resultado_gestion = "VENTA_CONVERTIDA"
             self.base_llamada.fecha_gestion = timezone.now()
             self.base_llamada.hora_gestion = self.base_llamada.fecha_gestion.time() if self.base_llamada.fecha_gestion else None
-            
+
             if ultimo_registro:
                 self.base_llamada.tipo_contacto = ultimo_registro.get_resultado_display() or ultimo_registro.resultado
                 self.base_llamada.tipo_valido = 'Válido'
                 self.base_llamada.status_java = 'VENTA'
-            
+
             update_fields = ['resultado_gestion', 'fecha_gestion', 'hora_gestion', 'tipo_contacto', 'tipo_valido', 'status_java']
             self.base_llamada.save(update_fields=update_fields)
 

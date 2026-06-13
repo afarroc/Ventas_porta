@@ -45,6 +45,63 @@ def get_distritos(request):
     return JsonResponse({'distritos': distritos})
 
 
+@login_required
+@require_GET
+def obtener_precio_venta_api(request):
+    """
+    API endpoint para obtener precio según reglas canónicas.
+    Solo apoyo frontend. La validación real está en forms.py.
+    """
+    producto = request.GET.get('producto')
+    modelo = request.GET.get('modelo')
+    plan = request.GET.get('plan')
+    tipo_linea = request.GET.get('tipo_linea')
+
+    if tipo_linea not in ['POSTPAGO', 'PREPAGO']:
+        return JsonResponse({
+            'ok': False,
+            'mensaje': f'Tipo de línea inválido: {tipo_linea}. Debe ser POSTPAGO o PREPAGO.'
+        })
+
+    modelo = (modelo or '').strip()
+    if modelo == '0':
+        modelo = ''
+
+    if not producto:
+        return JsonResponse({'ok': False, 'mensaje': 'Falta el producto'})
+
+    from .models import Venta
+
+    if producto == 'CHIP':
+        return JsonResponse({'ok': True, 'precio': 1})
+
+    if producto == 'PACK':
+        if not modelo:
+            return JsonResponse({'ok': False, 'mensaje': 'Falta el modelo'})
+
+        if tipo_linea == 'PREPAGO':
+            precio = Venta.PRECIOS_PREPAGO.get(modelo)
+            if precio is None:
+                return JsonResponse({
+                    'ok': False,
+                    'mensaje': f'No hay precio prepago definido para {modelo}'
+                })
+            return JsonResponse({'ok': True, 'precio': precio})
+
+        if not plan:
+            return JsonResponse({'ok': False, 'mensaje': 'Falta el plan'})
+
+        precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
+        if precio is None:
+            return JsonResponse({
+                'ok': False,
+                'mensaje': f'No hay precio postpago para {modelo} + {plan}'
+            })
+        return JsonResponse({'ok': True, 'precio': precio})
+
+    return JsonResponse({'ok': False, 'mensaje': 'Producto inválido'})
+
+
 class HomeView(TemplateView):
     template_name = 'home.html'
 

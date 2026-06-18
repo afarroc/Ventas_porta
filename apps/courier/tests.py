@@ -31,10 +31,8 @@ class EstadoCourierModelTest(TestCase):
             activo=True,
         )
         self.venta = Venta.objects.create(
-            agente_nombre='Agente Test',
+            agente=self.user,
             cliente=self.cliente,
-            cliente_nombres='Pedro',
-            cliente_paterno='López',
             cliente_documento='12345678',
         )
         self.proveedor = ProveedorCourier.objects.create(nombre='Olva Courier')
@@ -71,10 +69,8 @@ class CourierViewsTest(TestCase):
             activo=True,
         )
         self.venta = Venta.objects.create(
-            agente_nombre='Test Agent',
+            agente=self.user,
             cliente=self.cliente,
-            cliente_nombres='Test',
-            cliente_paterno='Cliente',
             cliente_documento='33333333',
         )
 

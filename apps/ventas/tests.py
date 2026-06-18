@@ -236,6 +236,109 @@ class PrecioVentaApiTest(TestCase):
         self.assertFalse(response.json()['ok'])
 
 
+class ValidarProductoApiTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='agente', password='pass')
+        self.client = Client()
+        self.client.login(username='agente', password='pass')
+
+    def test_validar_producto_chip_valido(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'LINEA_NUEVA',
+                'producto': 'CHIP',
+                'modelo': '',
+                'plan': 'ENTEL_CHIP_45_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data['ok'])
+        self.assertEqual(data['precio'], 1)
+        self.assertEqual(data['precio_plan'], 45)
+        self.assertEqual(data['tipo_renta'], 'R.BAJA')
+
+    def test_validar_producto_chip_normalizes_zero_model(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'LINEA_NUEVA',
+                'producto': 'CHIP',
+                'modelo': '0',
+                'plan': 'ENTEL_CHIP_45_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['ok'])
+
+    def test_validar_producto_chip_rejects_equipment_model(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'LINEA_NUEVA',
+                'producto': 'CHIP',
+                'modelo': 'MOTO_G_PLAY',
+                'plan': 'ENTEL_CHIP_45_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        data = response.json()
+        self.assertFalse(data['ok'])
+        self.assertEqual(data['campo'], 'modelo_producto')
+
+    def test_validar_producto_pack_postpago_valido(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'LINEA_NUEVA',
+                'producto': 'PACK',
+                'modelo': 'MOTO_G_PLAY',
+                'plan': 'ENTEL_CONTROL_49_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        data = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data['ok'])
+        self.assertEqual(data['precio'], 49)
+        self.assertEqual(data['tipo_renta'], 'R.BAJA')
+
+    def test_validar_producto_pack_rejects_chip_model(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'LINEA_NUEVA',
+                'producto': 'PACK',
+                'modelo': 'SUPER_CHIP_ENTEL_PLUS',
+                'plan': 'ENTEL_CONTROL_49_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        data = response.json()
+        self.assertFalse(data['ok'])
+        self.assertEqual(data['campo'], 'modelo_producto')
+
+    def test_validar_producto_portabilidad_requires_operador(self):
+        response = self.client.get(
+            reverse('ventas:validar_producto'),
+            {
+                'origen': 'PORTABILIDAD',
+                'operador': '',
+                'telefono_portar': '987654321',
+                'producto': 'CHIP',
+                'modelo': '',
+                'plan': 'ENTEL_CHIP_45_CONTROL',
+                'tipo_linea': 'POSTPAGO',
+            },
+        )
+        data = response.json()
+        self.assertFalse(data['ok'])
+        self.assertEqual(data['campo'], 'operador')
+
+
 class VentaCreateViewSmokeTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()

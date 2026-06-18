@@ -22,9 +22,9 @@
                             {% for venta in ventas %}
                             <tr>
                                 <td>{{ venta.id }}</td>
-                                <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
-                                <td>{{ venta.get_tipo_linea_display }}</td>
-                                <td>{{ venta.fecha_venta }}</td>
+                                <td>{{ venta.cliente.nombres|default:"" }} {{ venta.cliente.paterno|default:"" }} {% if venta.cliente %}({{ venta.cliente.documento }}){% endif %}</td>
+                                <td>{{ venta.get_tipo_linea_display|default:"" }}</td>
+                                <td>{{ venta.creado|date:"d/m/Y H:i" }}</td>
                                 <td>{{ venta.precio_venta }}</td>
                             </tr>
                             {% empty %}

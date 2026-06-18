@@ -95,8 +95,8 @@
                                 {% with bo=venta.bo_seguimiento cour=venta.courier_estado %}
                                 <tr>
                                     <td>{{ venta.id }}</td>
-                                    <td>{{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</td>
-                                    <td>{{ venta.agente_nombre }}</td>
+                                    <td>{{ venta.cliente.nombres|default:"" }} {{ venta.cliente.paterno|default:"" }} {% if venta.cliente %}({{ venta.cliente.documento }}){% endif %}</td>
+                                    <td>{{ venta.agente.get_full_name|default:venta.agente.username|default:"-" }}</td>
                                     <td>{{ venta.base_llamada.base_procedencia|default:"-" }}</td>
                                     <td>{{ venta.tipo_renta|default:"-" }}</td>
                                     <td>
@@ -117,14 +117,14 @@
                                         {% if cour %}
                                             {{ cour.get_sts_courier_display }}
                                         {% else %}
-                                            Pdte. BO
+                                            Pdte. Courier
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if cour and cour.fch_courier %}
                                             {{ cour.fch_courier }}
                                         {% else %}
-                                            Pdte. BO
+                                            Pdte. Courier
                                         {% endif %}
                                     </td>
                                 </tr>

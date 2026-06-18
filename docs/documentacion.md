@@ -150,6 +150,13 @@ Registro maestro de operaciones de venta.
 - Retorna `{"ok": false, "mensaje": "..."}` si falta dato o no existe combinación.
 - La validación definitiva está en backend (`apps/ventas/forms.py` y `apps/ventas/models.py`); el frontend solo sincroniza selects y tipo de renta.
 
+**Endpoint de validación de Producto y Venta:**
+
+- `GET /api/ventas/validar-producto/?origen=LINEA_NUEVA&producto=PACK&modelo=MOTO_G_PLAY&plan=ENTEL_CONTROL_49_CONTROL&tipo_linea=POSTPAGO`
+- Retorna `ok=true`, `precio`, `precio_plan`, `tipo_renta` y `mensaje` cuando la combinación es válida.
+- Retorna `ok=false`, `campo` y `mensaje` cuando falta operador/teléfono en portabilidad, modelo de equipo en PACK, plan válido, o cuando no existe precio/tipo_renta definido.
+- El botón **Validar Producto** del formulario llama a este endpoint y bloquea **Guardar Venta** hasta que Cliente y Producto estén validados.
+
 **Regla canónica de `tipo_renta`:**
 
 `tipo_renta` se calcula desde una tabla explícita llave-valor definida en `apps/ventas/models.py` y replicada en `static/js/venta-form.js`.
@@ -593,6 +600,7 @@ Cada área opera de forma independiente sobre la misma venta. Los datos de prove
 | `/ventas/modal/<uuid>/` | GET | HTML formulario modal vía API |
 | `/api/ventas/crear/<uuid>/` | POST | Crea venta vía API JSON |
 | `/api/ventas/precio-venta/` | GET | Obtiene precio de venta según reglas canónicas |
+| `/api/ventas/validar-producto/` | GET | Valida Producto y Venta; retorna precio, precio_plan y tipo_renta calculados |
 | `/api/ubigeo/provincias/` | GET | Obtiene provincias por departamento (AJAX) |
 | `/api/ubigeo/distritos/` | GET | Obtiene distritos por departamento+provincia (AJAX) |
 
@@ -868,6 +876,7 @@ Para `CHIP`, `tipo_renta` se calcula con `precio_plan`, no con `precio_venta`.
 7. **Tracking único**: No se permite duplicar tracking entre despacho y courier de la misma venta
 8. **Lead VENTA_CONVERTIDA**: No se puede asignar a agentes en discador
 9. **Calcular tipo_renta actualizado**: rangos definidos según §19.1
+10. **Validación frontend de Producto y Venta**: botón **Validar Producto** consulta `/api/ventas/validar-producto/`, sincroniza `precio_venta`, `precio_plan` y `tipo_renta`, marca `producto_validado=true`, y mantiene bloqueado **Guardar Venta** hasta validar Cliente y Producto.
 
 ### 19.4 Validaciones Pendientes
 

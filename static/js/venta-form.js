@@ -19,6 +19,9 @@ window.initVentaFormFields = function() {
     const tipoRentaInput = document.getElementById('id_tipo_renta');
     const tipoLineaSelect = document.getElementById('id_tipo_linea_display') || document.getElementById('id_tipo_linea');
     const tipoPagoSelect = document.getElementById('id_tipo_pago_display') || document.getElementById('id_tipo_pago');
+    const btnValidarProducto = document.getElementById('btnValidarProducto');
+    const productoMensaje = document.getElementById('productoMensaje');
+    const productoValidado = document.getElementById('id_producto_validado');
 
     function syncHiddenField(hiddenId, value) {
         const hidden = document.getElementById(hiddenId);
@@ -359,39 +362,186 @@ window.initVentaFormFields = function() {
         tipoRentaInput.value = tipoRentaTable[key] || '';
     }
 
+    function limpiarErrorProductoCampo(campo) {
+        const ids = {
+            origen: 'id_origen_display',
+            operador: 'id_operador_display',
+            telefono_portar: 'id_telefono_portar_display',
+            producto_nombre: 'id_producto_nombre_display',
+            modelo_producto: 'id_modelo_producto_display',
+            plan_producto: 'id_plan_producto_display',
+            tipo_linea: 'id_tipo_linea_display',
+            tipo_renta: 'id_tipo_renta'
+        };
+        const input = document.getElementById(ids[campo] || 'id_producto_validado');
+        if (!input) return;
+        input.classList.remove('is-invalid');
+        const fb = input.parentElement ? input.parentElement.querySelector('.invalid-feedback') : null;
+        if (fb) fb.remove();
+    }
+
+    function mostrarErrorProductoCampo(campo, texto) {
+        const ids = {
+            origen: 'id_origen_display',
+            operador: 'id_operador_display',
+            telefono_portar: 'id_telefono_portar_display',
+            producto_nombre: 'id_producto_nombre_display',
+            modelo_producto: 'id_modelo_producto_display',
+            plan_producto: 'id_plan_producto_display',
+            tipo_linea: 'id_tipo_linea_display',
+            tipo_renta: 'id_tipo_renta'
+        };
+        const input = document.getElementById(ids[campo] || 'id_producto_validado');
+        if (!input) return;
+        input.classList.add('is-invalid');
+        let fb = input.parentElement ? input.parentElement.querySelector('.invalid-feedback') : null;
+        if (!fb) {
+            fb = document.createElement('div');
+            fb.className = 'invalid-feedback';
+            input.parentElement.appendChild(fb);
+        }
+        fb.textContent = texto;
+    }
+
+    function mostrarProductoMensaje(texto, tipo) {
+        if (!productoMensaje) return;
+        if (!texto) {
+            productoMensaje.className = '';
+            productoMensaje.textContent = '';
+            productoMensaje.style.display = 'none';
+            return;
+        }
+        productoMensaje.className = 'alert alert-' + (tipo || 'info') + ' mt-2';
+        productoMensaje.textContent = texto;
+        productoMensaje.style.display = 'block';
+    }
+
+    function resetProductoValidacion() {
+        if (productoValidado) productoValidado.value = 'false';
+        mostrarProductoMensaje('', '');
+        ['origen', 'operador', 'telefono_portar', 'producto_nombre', 'modelo_producto', 'plan_producto', 'tipo_linea', 'tipo_renta'].forEach(limpiarErrorProductoCampo);
+        actualizarSubmitVenta();
+    }
+
+    function actualizarSubmitVenta() {
+        const clienteValidado = document.getElementById('id_cliente_validado');
+        const productoValidadoActual = document.getElementById('id_producto_validado');
+        const clienteOk = !clienteValidado || clienteValidado.value === 'true';
+        const productoOk = !productoValidadoActual || productoValidadoActual.value === 'true';
+        const submitBtn = document.querySelector('#ventaModalForm button[type="submit"]') ||
+                          document.querySelector('#ventaForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = !(clienteOk && productoOk);
+            if (clienteOk && productoOk) {
+                submitBtn.classList.add('btn-success');
+                submitBtn.classList.remove('btn-primary');
+            } else {
+                submitBtn.classList.remove('btn-success');
+                submitBtn.classList.add('btn-primary');
+            }
+        }
+    }
+
+    function marcarProductoValido(valida) {
+        if (productoValidado) productoValidado.value = valida ? 'true' : 'false';
+        actualizarSubmitVenta();
+    }
+
+    function validarProducto() {
+        if (!btnValidarProducto) return;
+
+        const origen = (origenSelect ? origenSelect.value : '').trim();
+        const operador = (operadorSelect ? operadorSelect.value : '').trim();
+        const telefonoPortar = (telefonoPortarInput ? telefonoPortarInput.value : '').trim();
+        const producto = (productoSelect ? productoSelect.value : '').trim();
+        const modelo = producto === 'CHIP' ? '' : ((modeloSelect ? modeloSelect.value : '').trim());
+        const plan = (planSelect ? planSelect.value : '').trim();
+        const tipoLinea = (tipoLineaSelect ? tipoLineaSelect.value : '').trim();
+
+        mostrarProductoMensaje('Validando producto...', 'info');
+        const params = new URLSearchParams({
+            origen: origen,
+            operador: operador,
+            telefono_portar: telefonoPortar,
+            producto: producto,
+            modelo: modelo,
+            plan: plan,
+            tipo_linea: tipoLinea
+        });
+
+        fetch('/api/ventas/validar-producto/?' + params.toString(), {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                syncHiddenField('id_precio_venta', data.precio);
+                syncHiddenField('id_precio_plan', data.precio_plan || '');
+                syncHiddenField('id_tipo_renta', data.tipo_renta || '');
+                syncHiddenField('id_tipo_linea', tipoLinea);
+                if (precioVentaSelect && data.precio) precioVentaSelect.value = String(data.precio);
+                if (precioPlanInput && data.precio_plan) precioPlanInput.value = String(data.precio_plan);
+                if (tipoRentaInput && data.tipo_renta) tipoRentaInput.value = data.tipo_renta;
+                marcarProductoValido(true);
+                mostrarProductoMensaje(data.mensaje || 'Producto validado correctamente.', 'success');
+            } else {
+                marcarProductoValido(false);
+                mostrarProductoMensaje(data.mensaje || 'No se pudo validar el producto.', 'danger');
+                if (data.campo) mostrarErrorProductoCampo(data.campo, data.mensaje || 'Campo inválido.');
+            }
+        })
+        .catch(function() {
+            marcarProductoValido(false);
+            mostrarProductoMensaje('Error de conexión al validar producto.', 'danger');
+        });
+    }
+
+    window.actualizarSubmitVenta = actualizarSubmitVenta;
+    window.validarProducto = validarProducto;
+
+    if (btnValidarProducto) btnValidarProducto.addEventListener('click', validarProducto);
+
     if (productoSelect) productoSelect.addEventListener('change', function() {
         syncHiddenField('id_producto_nombre', productoSelect.value);
         updatePorProducto();
         actualizarPrecioVenta();
+        resetProductoValidacion();
     });
     if (origenSelect) origenSelect.addEventListener('change', function() {
         syncHiddenField('id_origen', origenSelect.value);
         updatePorOrigen();
         updateTipoRenta();
+        resetProductoValidacion();
     });
     if (planSelect) planSelect.addEventListener('change', function() {
         updatePrecioPlan();
         syncHiddenField('id_plan_producto', planSelect.value);
         actualizarPrecioVenta();
+        resetProductoValidacion();
     });
     if (modeloSelect) modeloSelect.addEventListener('change', function() {
         filtrarPreciosPorModelo();
         syncHiddenField('id_modelo_producto', modeloSelect.value);
         actualizarPrecioVenta();
+        resetProductoValidacion();
     });
     if (precioVentaSelect) precioVentaSelect.addEventListener('change', function() {
         updateTipoRenta();
         syncHiddenField('id_precio_venta', precioVentaSelect.value);
+        resetProductoValidacion();
     });
     if (tipoLineaSelect) tipoLineaSelect.addEventListener('change', function() {
         syncHiddenField('id_tipo_linea', tipoLineaSelect.value);
         actualizarPrecioVenta();
+        resetProductoValidacion();
     });
     if (operadorSelect) operadorSelect.addEventListener('change', function() {
         syncHiddenField('id_operador', operadorSelect.value);
+        resetProductoValidacion();
     });
     if (telefonoPortarInput) telefonoPortarInput.addEventListener('input', function() {
         syncHiddenField('id_telefono_portar', telefonoPortarInput.value);
+        resetProductoValidacion();
     });
 
     const productoNombreInput = document.querySelector('[name="producto_nombre"]');
@@ -598,18 +748,7 @@ window.initClienteSearch = function() {
         if (campoValidado) {
             campoValidado.value = valida ? 'true' : 'false';
         }
-        const submitBtn = document.querySelector('#ventaModalForm button[type="submit"]') ||
-                          document.querySelector('#ventaForm button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = !valida;
-            if (valida) {
-                submitBtn.classList.add('btn-success');
-                submitBtn.classList.remove('btn-primary');
-            } else {
-                submitBtn.classList.remove('btn-success');
-                submitBtn.classList.add('btn-primary');
-            }
-        }
+        actualizarSubmitVenta();
     }
 
     function buscarCliente() {
@@ -889,13 +1028,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (ventaForm) {
         ventaForm.addEventListener('submit', function(e) {
             const clienteValidado = document.getElementById('id_cliente_validado');
-            if (clienteValidado && clienteValidado.value !== 'true') {
+            const productoValidado = document.getElementById('id_producto_validado');
+            const clienteOk = !clienteValidado || clienteValidado.value === 'true';
+            const productoOk = !productoValidado || productoValidado.value === 'true';
+
+            if (!clienteOk || !productoOk) {
                 e.preventDefault();
-                const mensaje = document.getElementById('clienteMensaje');
-                if (mensaje) {
-                    mensaje.className = 'alert alert-warning';
-                    mensaje.textContent = 'Debe validar o registrar al cliente antes de guardar la venta.';
-                    mensaje.style.display = 'block';
+                const clienteMensaje = document.getElementById('clienteMensaje');
+                const productoMensaje = document.getElementById('productoMensaje');
+                if (!clienteOk && clienteMensaje) {
+                    clienteMensaje.className = 'alert alert-warning';
+                    clienteMensaje.textContent = 'Debe validar o registrar al cliente antes de guardar la venta.';
+                    clienteMensaje.style.display = 'block';
+                }
+                if (!productoOk && productoMensaje) {
+                    productoMensaje.className = 'alert alert-warning';
+                    productoMensaje.textContent = 'Debe validar el producto antes de guardar la venta.';
+                    productoMensaje.style.display = 'block';
                 }
             }
         });

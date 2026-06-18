@@ -90,8 +90,8 @@
             <div class="card-body">
                 {% with venta=base.venta_set.first %}
                 <p><strong>ID Venta:</strong> {{ venta.id }}</p>
-                <p><strong>Agente:</strong> {{ venta.agente_nombre }}</p>
-                <p><strong>Cliente:</strong> {{ venta.cliente_nombres }} {{ venta.cliente_paterno }}</p>
+                <p><strong>Agente:</strong> {{ venta.agente.get_full_name|default:venta.agente.username|default:"-" }}</p>
+                <p><strong>Cliente:</strong> {% if venta.cliente %}{{ venta.cliente.nombres }} {{ venta.cliente.paterno }}{% else %}-{% endif %}</p>
                 <p><strong>Producto:</strong> {{ venta.producto_nombre }} - {{ venta.origen }}</p>
                 <p><strong>Precio Venta:</strong> S/. {{ venta.precio_venta|default:"-" }}</p>
                 <p><strong>Fecha:</strong> {{ venta.creado|date:"d/m/Y H:i" }}</p>

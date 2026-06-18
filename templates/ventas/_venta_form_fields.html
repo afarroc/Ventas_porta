@@ -210,9 +210,18 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-sm btn-outline-success mt-4" id="btnValidarProducto">
+                    <i class="bi bi-check-circle"></i> Validar Producto
+                </button>
+            </div>
+            <div class="col-12">
+                <div id="productoMensaje" class="mt-2"></div>
+            </div>
+            <input type="hidden" name="producto_validado" id="id_producto_validado" value="false">
+        </div>
+    </div>
 </div>
-     </div>
- </div>
  
  <!-- Dirección de Despacho -->
 <div class="card mb-4">

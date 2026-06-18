@@ -513,13 +513,28 @@ document.addEventListener('submit', function(e) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const baseId = e.target.getAttribute('data-base-id');
         
-        // Verificar que el cliente está validado antes de guardar
+        // Verificar que el cliente y producto estén validados antes de guardar
         const clienteValidado = e.target.querySelector('#id_cliente_validado');
         if (clienteValidado && clienteValidado.value !== 'true') {
             if (typeof mostrarMensaje === 'function') {
                 mostrarMensaje('Debe validar o registrar al cliente antes de guardar la venta.', 'warning');
             } else {
                 alert('Debe validar o registrar al cliente antes de guardar la venta.');
+            }
+            return;
+        }
+        const productoValidado = e.target.querySelector('#id_producto_validado');
+        if (productoValidado && productoValidado.value !== 'true') {
+            const mensaje = e.target.querySelector('#productoMensaje');
+            if (mensaje) {
+                mensaje.className = 'alert alert-warning mt-2';
+                mensaje.textContent = 'Debe validar el producto antes de guardar la venta.';
+                mensaje.style.display = 'block';
+            }
+            if (typeof mostrarMensaje === 'function') {
+                mostrarMensaje('Debe validar el producto antes de guardar la venta.', 'warning');
+            } else {
+                alert('Debe validar el producto antes de guardar la venta.');
             }
             return;
         }

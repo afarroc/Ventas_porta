@@ -14,8 +14,8 @@ class ClienteForm(forms.ModelForm):
             'nombres': forms.TextInput(attrs={'class': 'form-control'}),
             'paterno': forms.TextInput(attrs={'class': 'form-control'}),
             'materno': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefono_1': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefono_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 987654321'}),
+            'telefono_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 987654321'}),
         }
         labels = {
             'tipo_documento': 'Tipo de Documento',
@@ -75,13 +75,13 @@ class VentaForm(forms.ModelForm):
     cliente_telefono_1 = forms.CharField(
         max_length=20,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 987654321'}),
         label='Teléfono 01'
     )
     cliente_telefono_2 = forms.CharField(
         max_length=20,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 987654321'}),
         label='Teléfono 02'
     )
 
@@ -200,6 +200,11 @@ class VentaForm(forms.ModelForm):
         if not documento:
             raise forms.ValidationError("Debe ingresar el documento del cliente.")
 
+        for tel_field in ('cliente_telefono_1', 'cliente_telefono_2', 'telefono_portar'):
+            valor = cleaned_data.get(tel_field)
+            if valor:
+                cleaned_data[tel_field] = ''.join(c for c in str(valor) if c.isdigit())
+
         base_llamada = getattr(self.instance, 'base_llamada', None)
         if base_llamada and base_llamada.resultado_gestion == 'VENTA_CONVERTIDA':
             raise forms.ValidationError("Este lead ya fue convertido en venta. No se puede registrar una nueva venta.")
@@ -284,18 +289,15 @@ class VentaForm(forms.ModelForm):
                 raise forms.ValidationError("Seleccione un operador válido (Claro, Movistar, Viettel, Virgin) para portabilidad.")
             if not telefono_portar:
                 raise forms.ValidationError("El número a portar es obligatorio para portabilidad.")
-            if telefono_portar and not telefono_portar.isdigit():
-                raise forms.ValidationError("El número a portar debe contener solo dígitos.")
-            if telefono_portar and (len(telefono_portar) < 7 or len(telefono_portar) > 15):
+            if len(telefono_portar) < 7 or len(telefono_portar) > 15:
                 raise forms.ValidationError("El número a portar debe tener entre 7 y 15 dígitos.")
             from apps.ventas.models import Venta as VentaModel
-            telefono_limpio = telefono_portar.strip()
             venta_existente = VentaModel.objects.filter(
                 origen='PORTABILIDAD',
-                telefono_portar__iexact=telefono_limpio
+                telefono_portar__iexact=telefono_portar
             ).exclude(pk=self.instance.pk if self.instance.pk else None).first()
             if venta_existente:
-                raise forms.ValidationError(f"El número {telefono_limpio} ya está registrado en la venta #{venta_existente.id}.")
+                raise forms.ValidationError(f"El número {telefono_portar} ya está registrado en la venta #{venta_existente.id}.")
 
         cliente_existe = Cliente.objects.filter(documento=documento, activo=True).exists()
         if not cliente_existe:

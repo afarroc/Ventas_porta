@@ -33,6 +33,16 @@ python manage.py runserver
 
 Abrir `http://localhost:8000/admin/`.
 
+## Validación de Producto y Venta
+
+El formulario de ventas incluye validación por secciones:
+
+1. **Cliente**: buscar/validar cliente existente o registrar cliente nuevo.
+2. **Producto y Venta**: hacer clic en **Validar Producto** para consultar `/api/ventas/validar-producto/`.
+3. **Guardar Venta**: permanece bloqueado hasta que Cliente y Producto estén validados.
+
+El endpoint valida reglas de negocio para `CHIP` y `PACK`, portabilidad, modelo, plan, tipo de línea, precio y tipo de renta. La validación definitiva sigue en backend (`VentaForm.clean()` y `Venta.calcular_tipo_renta()`).
+
 ## Estructura
 
 ```

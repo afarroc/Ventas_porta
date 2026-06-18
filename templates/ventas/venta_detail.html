@@ -15,11 +15,11 @@
                 <dl class="vp-dl">
                     <div class="vp-dl-row">
                         <dt>Cliente</dt>
-                        <dd>{% if venta.cliente %}{{ venta.cliente.nombres }} {{ venta.cliente.paterno }} {{ venta.cliente.materno }}{% else %}{{ venta.cliente_nombres }} {{ venta.cliente_paterno }} {{ venta.cliente_materno }}{% endif %}</dd>
+                        <dd>{% if venta.cliente %}{{ venta.cliente.nombres }} {{ venta.cliente.paterno }} {{ venta.cliente.materno|default:"" }}{% else %}-{% endif %}</dd>
                     </div>
                     <div class="vp-dl-row">
                         <dt>Documento</dt>
-                        <dd>{% if venta.cliente %}{{ venta.cliente.documento }}{% else %}{{ venta.cliente_documento }}{% endif %}</dd>
+                        <dd>{% if venta.cliente %}{{ venta.cliente.documento }}{% else %}-{% endif %}</dd>
                     </div>
                     <div class="vp-dl-row">
                         <dt>Tipo Línea</dt>

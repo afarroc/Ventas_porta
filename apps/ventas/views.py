@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.db import transaction
-from .models import Venta, ItemVenta, Cliente
+from .models import Venta, ItemVenta, Cliente, PLANES_CHIP, MODELOS_CHIP_LIST
 from apps.discador.models import BaseLlamada, CallRecord
 from apps.users.models import UserProfile
 from .forms import VentaForm, ItemVentaForm, ClienteForm
@@ -19,6 +19,20 @@ from uuid import UUID
 ItemVentaFormSet = inlineformset_factory(
     Venta, ItemVenta, form=ItemVentaForm, extra=2, max_num=2, can_delete=False,
 )
+
+# Mapa de precios por plan (reutilizado de venta-form.js)
+planPrecioMap = {
+    'ENTEL_CHIP_29_CONTROL': 29, 'ENTEL_CHIP_39_CONTROL': 39,
+    'ENTEL_CHIP_45_CONTROL': 45, 'ENTEL_CHIP_59_CONTROL': 59,
+    'ENTEL_CHIP_74_CONTROL': 74, 'ENTEL_CHIP_89_CONTROL': 89,
+    'ENTEL_CHIP_109_CONTROL': 109, 'ENTEL_CHIP_145_CONTROL': 145,
+    'ENTEL_CONTROL_49_CONTROL': 49, 'ENTEL_CONTROL_75_CONTROL': 75,
+    'ENTEL_CONTROL_99_CONTROL': 99, 'ENTEL_CONTROL_149_CONTROL': 149,
+    'ENTEL_CONTROL_199_CONTROL': 199,
+    'ENTEL_75_CONTROL': 75,
+    'ENTEL_LIBRE_149_LIBRE': 149,
+    'ENTEL_LIBRE_99_LIBRE': 99
+}
 
 
 @require_GET
@@ -100,6 +114,115 @@ def obtener_precio_venta_api(request):
         return JsonResponse({'ok': True, 'precio': precio})
 
     return JsonResponse({'ok': False, 'mensaje': 'Producto inválido'})
+
+
+@login_required
+@require_GET
+def validar_producto_venta_api(request):
+    """
+    API endpoint para validar la sección Producto y Venta completa.
+    Retorna precio, precio_plan y tipo_renta calculados si es válido.
+    """
+    def error(campo, mensaje):
+        return JsonResponse({'ok': False, 'campo': campo, 'mensaje': mensaje})
+
+    producto = (request.GET.get('producto') or '').strip()
+    origen = (request.GET.get('origen') or '').strip()
+    operador = (request.GET.get('operador') or '').strip()
+    telefono_portar = ''.join(filter(str.isdigit, (request.GET.get('telefono_portar') or '').strip()))
+    modelo = (request.GET.get('modelo') or '').strip()
+    if modelo == '0':
+        modelo = ''
+    plan = (request.GET.get('plan') or '').strip()
+    tipo_linea = (request.GET.get('tipo_linea') or '').strip()
+
+    valid_origenes = [valor for valor, _ in Venta.ORIGEN_CHOICES]
+    valid_operadores = [valor for valor, _ in Venta.OPERADOR_CHOICES]
+    valid_tipos_linea = [valor for valor, _ in Venta.TIPO_LINEA_CHOICES]
+
+    if origen not in valid_origenes:
+        return error('origen', 'Seleccione un origen válido.')
+
+    if tipo_linea not in valid_tipos_linea:
+        return error('tipo_linea', 'Seleccione tipo de línea (Prepago/Postpago).')
+
+    if origen == 'PORTABILIDAD':
+        if operador not in valid_operadores:
+            return error('operador', 'Para portabilidad, debe seleccionar un operador válido.')
+        if not telefono_portar:
+            return error('telefono_portar', 'El teléfono a portar es obligatorio.')
+        if len(telefono_portar) < 7 or len(telefono_portar) > 15:
+            return error('telefono_portar', 'El teléfono a portar debe tener entre 7 y 15 dígitos.')
+
+    if producto == 'CHIP':
+        if modelo:
+            return error('modelo_producto', 'Para CHIP no debe seleccionar modelo.')
+        if not plan:
+            return error('plan_producto', 'Para CHIP debe seleccionar un plan.')
+        if plan not in PLANES_CHIP:
+            return error('plan_producto', 'Para CHIP, el plan debe ser uno de: ' + ', '.join(PLANES_CHIP))
+
+        precio_plan = planPrecioMap.get(plan)
+        if precio_plan is None:
+            return error('plan_producto', f'No hay precio definido para el plan {plan}.')
+        try:
+            tipo_renta = Venta.calcular_tipo_renta(origen, producto, 1, precio_plan)
+        except ValueError as e:
+            return error('tipo_renta', str(e))
+
+        return JsonResponse({
+            'ok': True,
+            'precio': 1,
+            'precio_plan': precio_plan,
+            'tipo_renta': tipo_renta,
+            'mensaje': 'Producto CHIP validado correctamente.'
+        })
+
+    if producto == 'PACK':
+        if not modelo:
+            return error('modelo_producto', 'Para PACK debe seleccionar un modelo de equipo.')
+        if modelo in MODELOS_CHIP_LIST:
+            return error('modelo_producto', 'El modelo seleccionado es para CHIP, no para PACK.')
+        if not plan:
+            return error('plan_producto', 'Para PACK debe seleccionar un plan.')
+
+        if tipo_linea == 'PREPAGO':
+            precio = Venta.PRECIOS_PREPAGO.get(modelo)
+            if precio is None:
+                return error('modelo_producto', f'No hay precio prepago definido para {modelo}.')
+            try:
+                tipo_renta = Venta.calcular_tipo_renta(origen, producto, precio, 0)
+            except ValueError as e:
+                return error('tipo_renta', str(e))
+
+            return JsonResponse({
+                'ok': True,
+                'precio': precio,
+                'precio_plan': planPrecioMap.get(plan, 0),
+                'tipo_renta': tipo_renta,
+                'mensaje': 'Producto PACK prepago validado correctamente.'
+            })
+
+        precio_plan = planPrecioMap.get(plan)
+        if precio_plan is None:
+            return error('plan_producto', f'No hay precio definido para el plan {plan}.')
+        precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
+        if precio is None:
+            return error('modelo_producto', f'No hay precio postpago para {modelo} + {plan}.')
+        try:
+            tipo_renta = Venta.calcular_tipo_renta(origen, producto, precio, precio_plan)
+        except ValueError as e:
+            return error('tipo_renta', str(e))
+
+        return JsonResponse({
+            'ok': True,
+            'precio': precio,
+            'precio_plan': precio_plan,
+            'tipo_renta': tipo_renta,
+            'mensaje': 'Producto PACK postpago validado correctamente.'
+        })
+
+    return error('producto_nombre', 'Producto inválido.')
 
 
 class HomeView(TemplateView):
@@ -475,7 +598,7 @@ def venta_trazabilidad_api(request, pk):
     data = {
         'venta': {
             'id': venta.id,
-            'cliente': f"{venta.cliente.nombres} {venta.cliente.paterno}" if venta.cliente else (f"{venta.cliente_nombres} {venta.cliente_paterno}" if venta.cliente_nombres else None),
+            'cliente': f"{venta.cliente.nombres} {venta.cliente.paterno}" if venta.cliente else None,
             'origen': venta.origen,
             'producto': venta.producto_nombre,
             'precio_venta': str(venta.precio_venta) if venta.precio_venta else None,

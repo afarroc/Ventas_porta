@@ -85,6 +85,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# WARNING: MariaDB at 192.168.18.59:3306 INNODB TABLES CORRUPTED
+# SERVER REQUIREMENT: Restart MariaDB or restore from backup after fixing tablespace
 
 DATABASES = {
     'default': {

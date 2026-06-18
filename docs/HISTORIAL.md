@@ -1,4 +1,10 @@
 # Registro de Cambios (Changelog)
+## 2026-06-18
+- **feat(validation):** Implementar validación de sección Producto y Venta en formulario de ventas. Se agregó endpoint `/api/ventas/validar-producto/`, botón `btnValidarProducto`, campo `producto_validado`, mensajes de validación, bloqueo de Guardar para formulario completo y modal, y tests de API.
+- **fix(js):** Definir `resetProductoValidacion()` y `actualizarSubmitVenta()` para evitar rotura al cambiar producto y coordinar validación de Cliente + Producto.
+- **fix(modal):** El modal de venta ahora bloquea guardado si Producto no fue validado.
+- **docs:** Actualizar `docs/documentacion.md`, `docs/HISTORIAL.md`, `README.md` y `.kilo/plans/validacion-producto-venta.md` con el flujo de validación de Producto.
+
 ## 2026-06-11
 - **feat(validation):** Implementar validación de sección cliente en formulario de ventas. El botón "Registrar Cliente" aparece cuando el cliente no existe, crea el cliente vía API y habilita el botón "Guardar Venta".
 - **feat(forms):** Simplificar validación en VentaForm.clean() - ahora solo verifica que el cliente exista en BD (el cliente debe haber sido registrado previamente vía el botón dedicado).

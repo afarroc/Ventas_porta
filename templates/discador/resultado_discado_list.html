@@ -64,8 +64,8 @@
                         <td>{{ lead.resultado_gestion|default:"-" }}</td>
                         <td>{{ lead.get_tipo_valido_display|default:"No definido" }}</td>
                         <td>
-                            {% if lead.venta_set.first %}
-                                <span class="badge bg-success">Venta #{{ lead.venta_set.first.id }}</span>
+                            {% if lead.ventas_asociadas.first %}
+                                <span class="badge bg-success">Venta #{{ lead.ventas_asociadas.first.id }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}

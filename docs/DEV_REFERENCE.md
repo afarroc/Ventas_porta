@@ -1,6 +1,21 @@
-# Dev Reference - Sistema de Gestión de Ventas (Actualizado 2026-06-08)
+# Dev Reference - Sistema de Gestión de Ventas (Actualizado 2026-06-20)
 
-## Arquitectura por Áreas
+## Estado actual 2026-06-20
+
+- `BaseLlamada.id_lead` usa `HexUUIDField`; en MySQL se almacena como hex `char(32)`.
+- `apps.catalogo` está registrada en `INSTALLED_APPS`.
+- La integración comercial usa `apps/ventas/catalogo_utils.py`, consulta catálogo primero y mantiene fallback legacy cuando no hay oferta.
+- `Venta.base_llamada` apunta a `BaseLlamada`; `BaseLlamada.venta` apunta a `Venta`.
+- El related_name de `Venta` hacia `BaseLlamada` es `ventas_asociadas`.
+
+## Índice
+
+1. Arquitectura por Áreas
+2. URLs Actualizadas
+3. Modelos - Apps Separadas
+4. Query Pattern Actualizado
+5. Servicios y Signals
+6. Validaciones Implementadas
 
 El sistema se organiza por áreas de negocio independientes sobre la misma entidad `Venta`:
 

@@ -208,7 +208,6 @@ class VentaForm(forms.ModelForm):
                     if hasattr(model_field.choices, 'append'):
                         model_field.choices.append((choice_value, str(precio)))
                     else:
-                        # For Django 5.x BlankChoiceIterator, rebuild choices
                         new_choices = list(model_field.choices)
                         new_choices.append((choice_value, str(precio)))
                         model_field.choices = new_choices

@@ -1,5 +1,12 @@
 # Queries Referenciadas - Separación Apps Despacho/Courier
 
+## Estado actual 2026-06-20
+
+- `BaseLlamada.id_lead` usa `HexUUIDField`; al pasarlo por URL o sesión se usa `str(id_lead)`, es decir, UUID en formato hex.
+- `Venta.base_llamada` apunta a `BaseLlamada`; `BaseLlamada.venta` apunta a `Venta`.
+- El related_name de `Venta` hacia `BaseLlamada` es `ventas_asociadas`.
+- `apps.catalogo` está registrada actualmente; las consultas de ventas consultan catálogo primero y usan fallback legacy cuando no hay oferta.
+
 ## Arquitectura Actual (2026-06-08)
 
 ```
@@ -37,7 +44,7 @@ venta.courier_estado  # Relación 1:1 - OneToOne
 # Proveedor de despacho
 venta.despacho_estado.proveedor.nombre  # Nombre del proveedor
 
-# Proveedor courier  
+# Proveedor courier
 venta.courier_estado.proveedor.nombre  # Nombre del proveedor
 ```
 
@@ -108,7 +115,7 @@ ventas_flujo = Venta.objects.filter(
 
 ### Endpoint: `/api/venta/<int:pk>/trazabilidad/` (IMPLEMENTADO)
 
-**Método:** GET autenticado  
+**Método:** GET autenticado
 **Permisos:** `@login_required`
 
 ```python

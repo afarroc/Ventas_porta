@@ -12,6 +12,8 @@
 - `HISTORIAL.md`: registro cronológico de cambios.
 - `DEV_REFERENCE.md`: referencia técnica de arquitectura, apps separadas, servicios y signals.
 - `queries_referenciadas.md`: queries de trazabilidad Lead → Venta y postventa.
+- `DEPLOYMENT.md`: notas de despliegue duplicadas en raíz.
+- `HANDOFF_2026-06-11.md`: fix de ubigeo y flujo de departamentos/provincias/distritos.
 - `HANDOFF_2026-06-05_ventas.md`: handoff de ventas.
 - `HANDOFF_2026-06-06_venta_refactor.md`: refactor del modelo Venta.
 - `HANDOFF_2026-06-07_apps_separacion.md`: separación de apps postventa, despacho y courier.

@@ -358,7 +358,7 @@ class ResultadoDiscadoListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = BaseLlamada.objects.all().prefetch_related(
             'llamadas',
-            'venta_set'
+            'ventas_asociadas'
         )
         
         profile = getattr(self.request.user, 'profile', None)
@@ -418,7 +418,7 @@ class ResultadoDiscadoDetailView(LoginRequiredMixin, DetailView):
         try:
             return BaseLlamada.objects.prefetch_related(
                 'llamadas',
-                'venta_set'
+                'ventas_asociadas'
             ).get(id_lead=uuid_val)
         except BaseLlamada.DoesNotExist:
             raise Http404("Lead no encontrado")

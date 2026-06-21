@@ -82,13 +82,13 @@
             </div>
         </div>
 
-        {% if base.venta_set.first %}
+        {% if base.ventas_asociadas.first %}
         <div class="card mb-4">
             <div class="card-header">
                 <h5><i class="bi bi-cart-check"></i> Venta Asociada</h5>
             </div>
             <div class="card-body">
-                {% with venta=base.venta_set.first %}
+                {% with venta=base.ventas_asociadas.first %}
                 <p><strong>ID Venta:</strong> {{ venta.id }}</p>
                 <p><strong>Agente:</strong> {{ venta.agente.get_full_name|default:venta.agente.username|default:"-" }}</p>
                 <p><strong>Cliente:</strong> {% if venta.cliente %}{{ venta.cliente.nombres }} {{ venta.cliente.paterno }}{% else %}-{% endif %}</p>

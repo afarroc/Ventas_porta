@@ -12,9 +12,31 @@ RESULTADO_GESTION_CHOICES = [
 ]
 
 
+class HexUUIDField(models.UUIDField):
+    def get_prep_value(self, value):
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        value = super().get_prep_value(value)
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        if value:
+            return uuid.UUID(value).hex
+        return value
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        value = super().get_db_prep_value(value, connection, prepared)
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        if value:
+            return uuid.UUID(value).hex
+        return value
+
+
 class BaseLlamada(models.Model):
     id = models.AutoField(primary_key=True)
-    id_lead = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name="ID Lead")
+    id_lead = HexUUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name="ID Lead")
     telefono = models.CharField(max_length=15, unique=True, verbose_name="Teléfono")
     nombres = models.CharField(max_length=100, blank=True, verbose_name="Nombres Base")
     paterno = models.CharField(max_length=50, blank=True, verbose_name="Paterno Base")

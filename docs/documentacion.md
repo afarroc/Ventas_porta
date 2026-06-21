@@ -14,7 +14,7 @@ Sistema Django para gestión de ventas retail con trazabilidad Lead → Venta y 
 - **Postventa / BO**: seguimiento administrativo de ventas.
 - **Despacho**: estado físico del despacho y tracking.
 - **Courier**: estado de entrega por proveedor courier y tracking.
-- **Catálogo Retail**: app opcional no registrada actualmente; la integración comercial se mantiene mediante fallback legacy.
+- **Catálogo Retail**: app registrada con productos, ofertas, precios, chips compatibles y endpoints API.
 
 ## 2. Estado Actual del Proyecto
 
@@ -31,7 +31,7 @@ apps.despacho
 apps.courier
 ```
 
-`apps.catalogo` existe en el repositorio, pero no está registrada en `INSTALLED_APPS`. Por eso la integración comercial debe ser opcional y tolerante a ausencia de la app.
+`apps.catalogo` está registrada en `config/settings.py`. La integración comercial consulta catálogo primero y mantiene fallback legacy cuando no hay oferta.
 
 ### Cambios relevantes 2026-06-20
 
@@ -375,7 +375,7 @@ Proveedor de courier.
 
 ### 4.7 Módulo Catálogo Retail
 
-`apps.catalogo` existe, pero no está registrada en `config/settings.py`.
+`apps.catalogo` está registrada en `config/settings.py`.
 
 #### Modelos
 
@@ -385,6 +385,66 @@ Proveedor de courier.
 | `ProveedorCatalogo` | `catalogo_proveedor` | Proveedores comerciales. |
 | `Oferta` | `catalogo_oferta` | Oferta por producto, proveedor, plan, tipo de línea y origen. |
 | `ChipCompatibilidad` | `catalogo_chip_compatibilidad` | Compatibilidad equipo/chip. |
+
+#### Campos principales de catálogo
+
+**`ProveedorCatalogo`**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `codigo` | CharField | Código comercial único, normalizado a mayúsculas. |
+| `nombre` | CharField | Nombre del proveedor. |
+| `activo` | BooleanField | Estado activo. |
+| `creado` | DateTimeField | Timestamp de creación. |
+| `actualizado` | DateTimeField | Timestamp de actualización. |
+
+**`Producto`**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `sku` | CharField | SKU único, normalizado a mayúsculas. |
+| `tipo` | CharField | `EQUIPO` o `CHIP`. |
+| `proveedor_principal` | ForeignKey | Proveedor principal opcional. |
+| `marca` | CharField | Marca. |
+| `nombre` | CharField | Nombre descriptivo. |
+| `descripcion` | TextField | Descripción. |
+| `stock_actual` | PositiveIntegerField | Stock actual. |
+| `stock_minimo` | PositiveIntegerField | Stock mínimo. |
+| `requiere_stock` | BooleanField | Control de stock; desactivado por defecto en fase comercial. |
+| `activo` | BooleanField | Estado activo. |
+| `creado` | DateTimeField | Timestamp de creación. |
+| `actualizado` | DateTimeField | Timestamp de actualización. |
+
+**`Oferta`**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `producto` | ForeignKey | Producto asociado. |
+| `proveedor` | ForeignKey | Proveedor protegido contra eliminación. |
+| `plan_codigo` | CharField | Código de plan. |
+| `plan_nombre` | CharField | Nombre del plan. |
+| `precio_plan_mensual` | DecimalField | Precio mensual del plan. |
+| `precio_equipo` | DecimalField | Precio del equipo. |
+| `tipo_linea` | CharField | `PREPAGO` o `POSTPAGO`. |
+| `origen` | CharField | `PORTABILIDAD` o `LINEA_NUEVA`. |
+| `meses_contrato` | PositiveIntegerField | Meses de contrato. |
+| `prioridad` | PositiveIntegerField | Prioridad de selección. |
+| `activo` | BooleanField | Estado activo. |
+| `vigencia_desde` | DateField | Vigencia inicial. |
+| `vigencia_hasta` | DateField | Vigencia final. |
+| `fuente` | CharField | Fuente de la oferta. |
+| `confianza` | CharField | `ALTA`, `MEDIA`, `BAJA`, `REVISION`. |
+| `requiere_revision` | BooleanField | Marca oferta pendiente de revisión comercial. |
+| `observacion_comercial` | TextField | Observación comercial. |
+
+**`ChipCompatibilidad`**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `equipo` | ForeignKey | Producto de tipo `EQUIPO`. |
+| `chip` | ForeignKey | Producto de tipo `CHIP`. |
+| `activo` | BooleanField | Estado activo. |
+| `observacion` | TextField | Observación. |
 
 #### Endpoints si la app está registrada
 
@@ -481,13 +541,22 @@ Ventas_Porta/
 │   │   └── tests.py
 │   ├── postventa/
 │   ├── despacho/
-│   └── courier/
+│   ├── courier/
+│   └── catalogo/
+│       ├── models.py
+│       ├── views.py
+│       ├── urls.py
+│       ├── urls_api.py
+│       ├── admin.py
+│       └── management/commands/catalogo_seed.py
 ├── docs/
 │   ├── INDICE.md
 │   ├── documentacion.md
 │   ├── HISTORIAL.md
 │   ├── DEV_REFERENCE.md
 │   ├── queries_referenciadas.md
+│   ├── DEPLOYMENT.md
+│   ├── HANDOFF_2026-06-11.md
 │   └── HANDOFF_*.md
 ├── static/
 │   ├── js/venta-form.js
@@ -513,11 +582,11 @@ Instala PyMySQL como driver MySQLdb para Django.
 
 ### `config/settings.py`
 
-Carga configuración desde `.env`, usa MySQL/MariaDB, charset `utf8mb4`, `LANGUAGE_CODE='es-pe'` y registra apps operativas. No registra `apps.catalogo`.
+Carga configuración desde `.env`, usa MySQL/MariaDB, charset `utf8mb4`, `LANGUAGE_CODE='es-pe'` y registra apps operativas incluyendo `apps.catalogo`.
 
 ### `config/urls.py`
 
-Incluye URLs raíz de `ventas`, `discador` y `users`. No incluye namespace `catalogo`.
+Incluye URLs raíz de `ventas`, `discador`, `users`, `postventa`, `despacho`, `courier`, `catalogo` y `api/catalogo`.
 
 ### `apps/discador/models.py`
 
@@ -577,6 +646,17 @@ Capa de integración comercial:
 - retorna `None` si `apps.catalogo` no está instalada
 - consulta `Oferta` si está disponible
 - mantiene fallback legacy mediante `PLAN_PRECIO_MAP`
+
+### `apps/catalogo/models.py`
+
+Define modelos comerciales opcionales:
+
+- `ProveedorCatalogo`
+- `Producto`
+- `Oferta`
+- `ChipCompatibilidad`
+
+`apps/catalogo` está registrada en `config/settings.py`; sus modelos solo deben importarse desde código que dependa de la app registrada.
 
 ### `apps/ventas/ubigeo_peru.py`
 

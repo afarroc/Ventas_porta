@@ -6,7 +6,7 @@ Aplicación Django para gestión de ventas, discador, postventa, despacho, couri
 
 - Rama: `feature/catalogo-productos-retail`
 - Apps registradas en `config/settings.py`: `apps.discador`, `apps.ventas`, `apps.users`, `apps.postventa`, `apps.despacho`, `apps.courier`
-- `apps.catalogo` existe como app no registrada; la integración comercial se mantiene opcional mediante `apps/ventas/catalogo_utils.py` con fallback a reglas legacy.
+- `apps.catalogo` está registrada; la integración comercial consulta catálogo primero y mantiene fallback legacy cuando no hay oferta.
 - `BaseLlamada.id_lead` usa `HexUUIDField` para almacenar UUID como `char(32)` compatible con MySQL.
 - Migración aplicada: `apps/discador/migrations/0011_alter_basellamada_id_lead.py`
 - Validaciones de Producto y Venta disponibles en `/api/ventas/precio-venta/` y `/api/ventas/validar-producto/`.
@@ -72,6 +72,8 @@ El endpoint valida reglas de negocio para `CHIP` y `PACK`, portabilidad, modelo,
 | `docs/HISTORIAL.md` | Registro de cambios por fecha. |
 | `docs/DEV_REFERENCE.md` | Referencia técnica de arquitectura, apps separadas, servicios y signals. |
 | `docs/queries_referenciadas.md` | Queries de trazabilidad Lead → Venta y postventa. |
+| `docs/DEPLOYMENT.md` | Notas de despliegue duplicadas en raíz. |
+| `docs/HANDOFF_2026-06-11.md` | Fix de ubigeo: JSON local, `apps/ventas/ubigeo_peru.py`, `initUbigeoPeru()`. |
 | `docs/HANDOFF_2026-06-05_ventas.md` | Handoff de ventas. |
 | `docs/HANDOFF_2026-06-06_venta_refactor.md` | Refactor del modelo Venta. |
 | `docs/HANDOFF_2026-07_apps_separacion.md` | Separación de apps postventa, despacho y courier. |

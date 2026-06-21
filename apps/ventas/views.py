@@ -1,3 +1,5 @@
+import logging
+
 from django.views.generic import ListView, DetailView, TemplateView, CreateView
 from django.views.generic.edit import CreateView
 from django.forms import inlineformset_factory
@@ -10,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.db import transaction
 from .models import Venta, ItemVenta, Cliente, PLANES_CHIP, MODELOS_CHIP_LIST
+from .catalogo_utils import obtener_oferta_catalogo_para_venta, precio_plan_legacy
 from apps.discador.models import BaseLlamada, CallRecord
 from apps.users.models import UserProfile
 from .forms import VentaForm, ItemVentaForm, ClienteForm
@@ -19,20 +22,6 @@ from uuid import UUID
 ItemVentaFormSet = inlineformset_factory(
     Venta, ItemVenta, form=ItemVentaForm, extra=2, max_num=2, can_delete=False,
 )
-
-# Mapa de precios por plan (reutilizado de venta-form.js)
-planPrecioMap = {
-    'ENTEL_CHIP_29_CONTROL': 29, 'ENTEL_CHIP_39_CONTROL': 39,
-    'ENTEL_CHIP_45_CONTROL': 45, 'ENTEL_CHIP_59_CONTROL': 59,
-    'ENTEL_CHIP_74_CONTROL': 74, 'ENTEL_CHIP_89_CONTROL': 89,
-    'ENTEL_CHIP_109_CONTROL': 109, 'ENTEL_CHIP_145_CONTROL': 145,
-    'ENTEL_CONTROL_49_CONTROL': 49, 'ENTEL_CONTROL_75_CONTROL': 75,
-    'ENTEL_CONTROL_99_CONTROL': 99, 'ENTEL_CONTROL_149_CONTROL': 149,
-    'ENTEL_CONTROL_199_CONTROL': 199,
-    'ENTEL_75_CONTROL': 75,
-    'ENTEL_LIBRE_149_LIBRE': 149,
-    'ENTEL_LIBRE_99_LIBRE': 99
-}
 
 
 @require_GET
@@ -63,19 +52,17 @@ def get_distritos(request):
 @require_GET
 def obtener_precio_venta_api(request):
     """
-    API endpoint para obtener precio según reglas canónicas.
-    Solo apoyo frontend. La validación real está en forms.py.
+    API endpoint para obtener precio.
+    Fase 2: consulta primero el catálogo comercial y luego mantiene fallback legacy.
     """
     producto = request.GET.get('producto')
     modelo = request.GET.get('modelo')
     plan = request.GET.get('plan')
     tipo_linea = request.GET.get('tipo_linea')
+    origen = request.GET.get('origen')
 
     if tipo_linea not in ['POSTPAGO', 'PREPAGO']:
-        return JsonResponse({
-            'ok': False,
-            'mensaje': f'Tipo de línea inválido: {tipo_linea}. Debe ser POSTPAGO o PREPAGO.'
-        })
+        return JsonResponse({'ok': False, 'mensaje': f'Tipo de línea inválido: {tipo_linea}. Debe ser POSTPAGO o PREPAGO.'})
 
     modelo = (modelo or '').strip()
     if modelo == '0':
@@ -87,31 +74,32 @@ def obtener_precio_venta_api(request):
     from .models import Venta
 
     if producto == 'CHIP':
-        return JsonResponse({'ok': True, 'precio': 1})
+        oferta = obtener_oferta_catalogo_para_venta(producto, modelo, plan, tipo_linea, origen)
+        if oferta:
+            return JsonResponse({'ok': True, 'precio': str(oferta.precio_equipo), 'precio_plan': str(oferta.precio_plan_mensual), 'catalogo': True, 'oferta_id': oferta.id})
+        return JsonResponse({'ok': True, 'precio': 1, 'catalogo': False})
 
     if producto == 'PACK':
         if not modelo:
             return JsonResponse({'ok': False, 'mensaje': 'Falta el modelo'})
 
+        oferta = obtener_oferta_catalogo_para_venta(producto, modelo, plan, tipo_linea, origen)
+        if oferta:
+            return JsonResponse({'ok': True, 'precio': str(oferta.precio_equipo), 'precio_plan': str(oferta.precio_plan_mensual), 'catalogo': True, 'oferta_id': oferta.id})
+
         if tipo_linea == 'PREPAGO':
             precio = Venta.PRECIOS_PREPAGO.get(modelo)
             if precio is None:
-                return JsonResponse({
-                    'ok': False,
-                    'mensaje': f'No hay precio prepago definido para {modelo}'
-                })
-            return JsonResponse({'ok': True, 'precio': precio})
+                return JsonResponse({'ok': False, 'mensaje': f'No hay precio prepago definido para {modelo}'})
+            return JsonResponse({'ok': True, 'precio': precio, 'catalogo': False})
 
         if not plan:
             return JsonResponse({'ok': False, 'mensaje': 'Falta el plan'})
 
         precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
         if precio is None:
-            return JsonResponse({
-                'ok': False,
-                'mensaje': f'No hay precio postpago para {modelo} + {plan}'
-            })
-        return JsonResponse({'ok': True, 'precio': precio})
+            return JsonResponse({'ok': False, 'mensaje': f'No hay precio postpago para {modelo} + {plan}'})
+        return JsonResponse({'ok': True, 'precio': precio, 'catalogo': False})
 
     return JsonResponse({'ok': False, 'mensaje': 'Producto inválido'})
 
@@ -159,24 +147,25 @@ def validar_producto_venta_api(request):
             return error('modelo_producto', 'Para CHIP no debe seleccionar modelo.')
         if not plan:
             return error('plan_producto', 'Para CHIP debe seleccionar un plan.')
-        if plan not in PLANES_CHIP:
-            return error('plan_producto', 'Para CHIP, el plan debe ser uno de: ' + ', '.join(PLANES_CHIP))
 
-        precio_plan = planPrecioMap.get(plan)
-        if precio_plan is None:
-            return error('plan_producto', f'No hay precio definido para el plan {plan}.')
+        oferta = obtener_oferta_catalogo_para_venta(producto, modelo, plan, tipo_linea, origen)
+        if oferta:
+            precio = oferta.precio_equipo
+            precio_plan = oferta.precio_plan_mensual
+        else:
+            if plan not in PLANES_CHIP:
+                return error('plan_producto', 'Para CHIP, el plan debe ser uno de: ' + ', '.join(PLANES_CHIP))
+            precio_plan = precio_plan_legacy(plan)
+            if precio_plan is None:
+                return error('plan_producto', f'No hay precio definido para el plan {plan}.')
+            precio = 1
+
         try:
-            tipo_renta = Venta.calcular_tipo_renta(origen, producto, 1, precio_plan)
+            tipo_renta = Venta.calcular_tipo_renta(origen, producto, precio, precio_plan)
         except ValueError as e:
             return error('tipo_renta', str(e))
 
-        return JsonResponse({
-            'ok': True,
-            'precio': 1,
-            'precio_plan': precio_plan,
-            'tipo_renta': tipo_renta,
-            'mensaje': 'Producto CHIP validado correctamente.'
-        })
+        return JsonResponse({'ok': True, 'precio': str(precio), 'precio_plan': str(precio_plan), 'tipo_renta': tipo_renta, 'catalogo': bool(oferta), 'oferta_id': oferta.id if oferta else None, 'mensaje': 'Producto CHIP validado correctamente.'})
 
     if producto == 'PACK':
         if not modelo:
@@ -186,41 +175,31 @@ def validar_producto_venta_api(request):
         if not plan:
             return error('plan_producto', 'Para PACK debe seleccionar un plan.')
 
-        if tipo_linea == 'PREPAGO':
+        oferta = obtener_oferta_catalogo_para_venta(producto, modelo, plan, tipo_linea, origen)
+        if oferta:
+            precio = oferta.precio_equipo
+            precio_plan = oferta.precio_plan_mensual
+        elif tipo_linea == 'PREPAGO':
             precio = Venta.PRECIOS_PREPAGO.get(modelo)
             if precio is None:
                 return error('modelo_producto', f'No hay precio prepago definido para {modelo}.')
-            try:
-                tipo_renta = Venta.calcular_tipo_renta(origen, producto, precio, 0)
-            except ValueError as e:
-                return error('tipo_renta', str(e))
+            precio_plan = precio_plan_legacy(plan) or 0
+        elif tipo_linea == 'POSTPAGO':
+            precio_plan = precio_plan_legacy(plan)
+            if precio_plan is None:
+                return error('plan_producto', f'No hay precio definido para el plan {plan}.')
+            precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
+            if precio is None:
+                return error('modelo_producto', f'No hay precio postpago para {modelo} + {plan}.')
+        else:
+            return error('tipo_linea', f'Tipo de línea inválido: {tipo_linea}')
 
-            return JsonResponse({
-                'ok': True,
-                'precio': precio,
-                'precio_plan': planPrecioMap.get(plan, 0),
-                'tipo_renta': tipo_renta,
-                'mensaje': 'Producto PACK prepago validado correctamente.'
-            })
-
-        precio_plan = planPrecioMap.get(plan)
-        if precio_plan is None:
-            return error('plan_producto', f'No hay precio definido para el plan {plan}.')
-        precio = Venta.PRECIOS_POSTPAGO.get((modelo, plan))
-        if precio is None:
-            return error('modelo_producto', f'No hay precio postpago para {modelo} + {plan}.')
         try:
             tipo_renta = Venta.calcular_tipo_renta(origen, producto, precio, precio_plan)
         except ValueError as e:
             return error('tipo_renta', str(e))
 
-        return JsonResponse({
-            'ok': True,
-            'precio': precio,
-            'precio_plan': precio_plan,
-            'tipo_renta': tipo_renta,
-            'mensaje': 'Producto PACK postpago validado correctamente.'
-        })
+        return JsonResponse({'ok': True, 'precio': str(precio), 'precio_plan': str(precio_plan), 'tipo_renta': tipo_renta, 'catalogo': bool(oferta), 'oferta_id': oferta.id if oferta else None, 'mensaje': 'Producto PACK validado correctamente desde catálogo.' if oferta else 'Producto PACK validado correctamente.'})
 
     return error('producto_nombre', 'Producto inválido.')
 
@@ -474,6 +453,9 @@ def venta_api_create(request, id_lead):
     """API endpoint for creating venta - POST only, returns JSON."""
     from uuid import UUID
     from django.db import transaction
+    from django.conf import settings
+    
+    logger = logging.getLogger(__name__)
     
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'mensaje': 'Método no permitido.'})
@@ -494,51 +476,59 @@ def venta_api_create(request, id_lead):
     form = VentaForm(request.POST)
     
     if form.is_valid():
-        with transaction.atomic():
-            venta = form.save(commit=False)
-            venta.base_llamada = base
-            venta.agente = request.user
+        try:
+            with transaction.atomic():
+                venta = form.save(commit=False)
+                venta.base_llamada = base
+                venta.agente = request.user
+                
+                cliente_documento = form.cleaned_data.get('cliente_documento')
+                cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
+                
+                if cliente_documento:
+                    cliente = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
+                    if cliente:
+                        venta.cliente = cliente
+                    else:
+                        cliente = Cliente.objects.create(
+                            tipo_documento=cliente_tipo_documento,
+                            documento=cliente_documento,
+                            nombres=form.cleaned_data.get('cliente_nombres', ''),
+                            paterno=form.cleaned_data.get('cliente_paterno', ''),
+                            materno=form.cleaned_data.get('cliente_materno', ''),
+                            telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
+                            telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
+                            activo=True,
+                        )
+                        venta.cliente = cliente
+                
+                venta.save()
+                
+                # Process items formset
+                items_total = int(request.POST.get('items-TOTAL_FORMS', 0))
+                for i in range(items_total):
+                    tipo_venta = request.POST.get(f'items-{i}-tipo_venta', '')
+                    tipo_producto = request.POST.get(f'items-{i}-tipo_producto', '')
+                    precio_plan = request.POST.get(f'items-{i}-precio_plan', '')
+                    if tipo_venta or tipo_producto:
+                        ItemVenta.objects.create(
+                            venta=venta,
+                            tipo_venta=tipo_venta,
+                            tipo_producto=tipo_producto,
+                            precio_plan=precio_plan if precio_plan else None
+                        )
             
-            cliente_documento = form.cleaned_data.get('cliente_documento')
-            cliente_tipo_documento = form.cleaned_data.get('cliente_tipo_documento', 'DNI')
-            
-            if cliente_documento:
-                cliente = Cliente.objects.filter(documento=cliente_documento, activo=True).first()
-                if cliente:
-                    venta.cliente = cliente
-                else:
-                    cliente = Cliente.objects.create(
-                        tipo_documento=cliente_tipo_documento,
-                        documento=cliente_documento,
-                        nombres=form.cleaned_data.get('cliente_nombres', ''),
-                        paterno=form.cleaned_data.get('cliente_paterno', ''),
-                        materno=form.cleaned_data.get('cliente_materno', ''),
-                        telefono_1=form.cleaned_data.get('cliente_telefono_1', ''),
-                        telefono_2=form.cleaned_data.get('cliente_telefono_2', ''),
-                        activo=True,
-                    )
-                    venta.cliente = cliente
-            
-            venta.save()
-            
-            # Process items formset
-            items_total = int(request.POST.get('items-TOTAL_FORMS', 0))
-            for i in range(items_total):
-                tipo_venta = request.POST.get(f'items-{i}-tipo_venta', '')
-                tipo_producto = request.POST.get(f'items-{i}-tipo_producto', '')
-                precio_plan = request.POST.get(f'items-{i}-precio_plan', '')
-                if tipo_venta or tipo_producto:
-                    ItemVenta.objects.create(
-                        venta=venta,
-                        tipo_venta=tipo_venta,
-                        tipo_producto=tipo_producto,
-                        precio_plan=precio_plan if precio_plan else None
-                    )
-        
-        messages.success(request, "Venta registrada correctamente.")
-        return JsonResponse({'ok': True, 'mensaje': 'Venta registrada correctamente.', 'venta_id': venta.id})
+            messages.success(request, "Venta registrada correctamente.")
+            return JsonResponse({'ok': True, 'mensaje': 'Venta registrada correctamente.', 'venta_id': venta.id})
+        except Exception as e:
+            logger.exception("Error creating venta API")
+            if request.user.is_staff or request.user.is_superuser:
+                return JsonResponse({'ok': False, 'mensaje': f'Error: {str(e)}'})
+            return JsonResponse({'ok': False, 'mensaje': 'Error interno al guardar la venta.'})
+            return JsonResponse({'ok': False, 'mensaje': 'Error interno al guardar la venta.'})
     
     errors = {k: str(v[0]) for k, v in form.errors.items()}
+    logger.warning(f"VentaForm errors: {errors}")
     return JsonResponse({'ok': False, 'mensaje': 'Error en el formulario.', 'errores': errors})
 
 

@@ -1,121 +1,238 @@
 # Documentación - Sistema de Gestión de Ventas
 
+Estado actual: 2026-06-20. Rama: `feature/catalogo-productos-retail`.
+
 ## 1. Descripción General
 
-Sistema Django de gestión de ventas con cuatro módulos principales:
+Sistema Django para gestión de ventas retail con trazabilidad Lead → Venta y flujo postventa por áreas.
 
-- **Módulo Discador**: Gestión de bases de llamadas, asignación de leads a agentes y registro de llamadas (CallRecord) con tipificación y ACW
-- **Módulo Ventas**: Registro de ventas con ítems y datos maestros, integrado con clientes y bases de discador
-- **Módulo Postventa**: Seguimiento postventa por área: BO, Despacho y Courier. Cada área gestiona su propio flujo sobre la misma entidad Venta.
-- **Módulo Usuarios**: Autenticación, perfiles de usuario con roles (Agente/Supervisor/Administrador) y estados operativos
+### Módulos principales
 
----
+- **Discador / WFM**: bases de llamadas, asignación de leads a agentes, llamadas, ACW, tipificación y dashboard agente.
+- **Ventas**: registro de ventas con cliente, producto, portabilidad, precios, tipo de renta, ubigeo, items y validaciones frontend/backend.
+- **Usuarios**: autenticación, perfiles de usuario, roles, disponibilidad, supervisión y estados operativos.
+- **Postventa / BO**: seguimiento administrativo de ventas.
+- **Despacho**: estado físico del despacho y tracking.
+- **Courier**: estado de entrega por proveedor courier y tracking.
+- **Catálogo Retail**: app opcional no registrada actualmente; la integración comercial se mantiene mediante fallback legacy.
 
-## 2. Entidades Principales
+## 2. Estado Actual del Proyecto
 
-### 2.1 Módulo Discador
+### Apps registradas
 
-**Modelo: `BaseLlamada`** (`discador_base`)
+Apps registradas en `config/settings.py`:
 
-Contactos de la base de discado con sus resultados de gestión.
+```text
+apps.discador
+apps.ventas
+apps.users
+apps.postventa
+apps.despacho
+apps.courier
+```
+
+`apps.catalogo` existe en el repositorio, pero no está registrada en `INSTALLED_APPS`. Por eso la integración comercial debe ser opcional y tolerante a ausencia de la app.
+
+### Cambios relevantes 2026-06-20
+
+- `BaseLlamada.id_lead` cambió de `UUIDField` a `HexUUIDField` para compatibilidad con MySQL `char(32)`.
+- Migración aplicada: `apps/discador/migrations/0011_alter_basellamada_id_lead.py`.
+- `apps/ventas/catalogo_utils.py` consulta `apps.catalogo` solo si `apps.is_installed('apps.catalogo')` devuelve `True`.
+- Endpoints de precio y validación usan catálogo primero y fallback legacy después.
+- Se agregaron precios legacy:
+  - `IPHONE_4S + ENTEL_75_CONTROL = 75`
+  - `IPHONE_6_PLUS + ENTEL_75_CONTROL = 75`
+- Se corrigió `prefetch_related('venta_set')` por `prefetch_related('ventas_asociadas')`.
+- Se eliminó referencia rota a `{% url 'catalogo:index' %}` en `templates/home.html`.
+- `VentaForm` maneja `BlankChoiceIterator` de Django 5.x reconstruyendo choices cuando no se puede hacer `append`.
+- Botones de guardado:
+  - `templates/ventas/venta_form.html`: `btnGuardarVentaFull`
+  - `templates/ventas/venta_form_modal.html`: `btnGuardarVenta`
+- El guardado queda bloqueado hasta validar Cliente y Producto.
+
+### Validaciones ejecutadas
+
+```bash
+venv/bin/python manage.py check
+venv/bin/python manage.py makemigrations --check --dry-run
+```
+
+Endpoint validado:
+
+```text
+GET /api/ventas/validar-producto/?origen=LINEA_NUEVA&producto=PACK&modelo=IPHONE_6_PLUS&plan=ENTEL_75_CONTROL&tipo_linea=POSTPAGO
+```
+
+Respuesta validada:
+
+```json
+{
+  "ok": true,
+  "precio": "75",
+  "precio_plan": "75",
+  "tipo_renta": "R.MEDIA",
+  "catalogo": false,
+  "oferta_id": null,
+  "mensaje": "Producto PACK validado correctamente."
+}
+```
+
+### Bloqueo conocido
+
+`venv/bin/python manage.py test apps.discador --noinput` queda inestable por setup/teardown del test database MySQL:
+
+```text
+test_ventas_20260601
+auth_user
+users_profile
+```
+
+El bloqueo no está relacionado con el cambio de `id_lead`.
+
+## 3. Mapa de Documentación
+
+### Raíz `/`
+
+| Archivo | Uso |
+|---|---|
+| `README.md` | Inicio rápido, estado actual, estructura y mapa de documentación. |
+| `DEPLOYMENT.md` | Configuración de BD y arranque. |
+| `HANDOFF_2026-06-11.md` | Fix de ubigeo. |
+
+### `docs/`
+
+| Archivo | Uso |
+|---|---|
+| `docs/INDICE.md` | Índice y orden de lectura. |
+| `docs/documentacion.md` | Documentación principal. |
+| `docs/HISTORIAL.md` | Registro cronológico de cambios. |
+| `docs/DEV_REFERENCE.md` | Referencia técnica de arquitectura, apps separadas, servicios y signals. |
+| `docs/queries_referenciadas.md` | Queries de trazabilidad Lead → Venta y postventa. |
+| `docs/HANDOFF_2026-06-05_ventas.md` | Handoff de ventas. |
+| `docs/HANDOFF_2026-06-06_venta_refactor.md` | Refactor del modelo Venta. |
+| `docs/HANDOFF_2026-06-07_apps_separacion.md` | Separación de apps postventa, despacho y courier. |
+| `docs/HANDOFF_2026-06-07_trazabilidad.md` | Trazabilidad Lead → Venta. |
+| `docs/HANDOFF_2026-06-08_estado_actual.md` | Estado de sprints, bugs críticos y reglas retail. |
+| `docs/HANDOFF_2026-06-10_modelo_venta_refactor.md` | Refactor del modelo Venta. |
+
+Orden recomendado:
+
+1. `README.md`
+2. `docs/INDICE.md`
+3. `docs/documentacion.md`
+4. `docs/HISTORIAL.md`
+5. `docs/DEV_REFERENCE.md`
+6. `docs/queries_referenciadas.md`
+7. Handoffs por fecha.
+
+## 4. Entidades Principales
+
+### 4.1 Módulo Discador
+
+#### Modelo `BaseLlamada` (`discador_base`)
+
+Contactos de la base de discado con resultados de gestión y trazabilidad hacia venta.
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | AutoField | Identificador único autoincremental |
-| `id_lead` | UUIDField | Identificador único del lead |
-| `telefono` | CharField | Teléfono del contacto (único) |
-| `nombres` | CharField | Nombres del contacto |
-| `paterno` | CharField | Apellido paterno |
-| `materno` | CharField | Apellido materno |
-| `correo` | EmailField | Email del contacto |
-| `documento` | CharField | Número de documento (DNI, RUT) |
-| `observaciones` | TextField | Notas adicionales |
-| `contact_callable` | CharField | ¿Es contactable? (0=No, 1=Sí) |
-| `ultimo_intento` | CharField | Último intento registrado en CRM |
-| `ultimo_resultado_crm` | CharField | Último resultado en CRM |
-| `es_callable` | CharField | ¿Es contactable? (0=No, 1=Sí) |
-| `fecha_gestion` | DateField | Fecha de gestión |
-| `hora_gestion` | TimeField | Hora de gestión |
-| `resultado_gestion` | CharField | Resultado del contacto (Sin gestión/Gestionado/Venta Convertida) |
-| `tipo_contacto` | CharField | Tipo de contacto |
-| `tipo_valido` | CharField | Válido/Inválido/No definido |
-| `status_java` | CharField | Status JAVA |
-| `supervisor_nombre` | CharField | Nombre del supervisor |
-| `base_procedencia` | CharField | Base de procedencia del lead (POT, RSG_01, etc.) |
-| `base_manual` | BooleanField | Indica si el lead fue cargado manualmente (no existe en base) |
-| `venta` | ForeignKey(Venta) | Venta asociada generada desde este lead (trazabilidad bidireccional) |
-| `creado` | DateTimeField | Timestamp de creación |
-| `actualizado` | DateTimeField | Timestamp de actualización |
+|---|---|---|
+| `id` | AutoField | Identificador interno autoincremental. |
+| `id_lead` | `HexUUIDField` | UUID almacenado en hex como `char(32)` compatible con MySQL. |
+| `telefono` | CharField | Teléfono único. |
+| `nombres` | CharField | Nombres del contacto. |
+| `paterno` | CharField | Apellido paterno. |
+| `materno` | CharField | Apellido materno. |
+| `correo` | EmailField | Correo. |
+| `documento` | CharField | DNI, RUT u otra identificación. |
+| `observaciones` | TextField | Notas de base. |
+| `contact_callable` | CharField | Contacto llamable: `0` No, `1` Sí. |
+| `ultimo_intento` | CharField | Último intento registrado en CRM. |
+| `ultimo_resultado_crm` | CharField | Último resultado en CRM. |
+| `es_callable` | CharField | Es callable: `0` No, `1` Sí. |
+| `fecha_gestion` | DateField | Fecha de gestión. |
+| `hora_gestion` | TimeField | Hora de gestión. |
+| `resultado_gestion` | CharField | `SIN_GESTION`, `GESTIONADO`, `VENTA_CONVERTIDA`. |
+| `tipo_contacto` | CharField | Tipo de contacto. |
+| `tipo_valido` | CharField | `Válido`, `Inválido`, vacío. |
+| `status_java` | CharField | Status JAVA. |
+| `supervisor_nombre` | CharField | Supervisor. |
+| `base_procedencia` | CharField | Base de procedencia: `POT`, `RSG_01`. |
+| `base_manual` | BooleanField | Lead cargado manualmente. |
+| `venta` | ForeignKey(`ventas.Venta`) | Venta asociada, related_name `lead_venta`. |
+| `creado` | DateTimeField | Timestamp de creación. |
+| `actualizado` | DateTimeField | Timestamp de actualización. |
 
-**Modelo: `CallRecord`** (`discador_llamada`)
+#### Modelo `CallRecord`
 
-Registro individual de llamada por agente con resultado, ACW y tipificación.
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `agente` | ForeignKey(User) | Agente que realizó la llamada |
-| `base_llamada` | ForeignKey(BaseLlamada) | Lead asociado |
-| `inicio` | DateTimeField | Inicio de la llamada |
-| `fin` | DateTimeField | Fin de la llamada |
-| `duracion` | DurationField | Duración calculada (inicio - fin) |
-| `resultado` | CharField | Contestada/No contestada/Ocupada/Desconectada/No voz/Fax/Otro/Liberado sin uso |
-| `observaciones` | TextField | Observaciones del agente |
-| `acw_start` | DateTimeField | Inicio de trabajo post-llamada |
-| `acw_end` | DateTimeField | Fin de trabajo post-llamada |
-| `disposition` | CharField | Tipificación: Venta/No contesta/Cuelga/Fax/No desea/Otro/Liberado sin uso |
-| `liberado_sin_uso` | BooleanField | Marcado como liberado sin gestión |
-
----
-
-### 2.2 Módulo Usuarios
-
-**Modelo: `UserProfile`** (`users_profile`)
-
-Perfil extendido del usuario de Django con rol, estado operativo, disponibilidad y supervisión.
+Registro individual de llamada.
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `user` | OneToOneField(User) | Relación con usuario Django |
-| `rol` | CharField | Rol: Agente/Supervisor/Administrador |
-| `codigo_agente` | CharField | Código único de agente (opcional) |
-| `telefono` | CharField | Teléfono del usuario |
-| `supervisor` | ForeignKey(self) | Supervisor asignado (solo supervisores) |
-| `zona` | CharField | Zona de trabajo |
-| `turno` | CharField | Turno: Diurno/Nocturno/Híbrido |
-| `activo` | BooleanField | Usuario activo |
-| `estado` | CharField | Estado operativo: Activo/Inactivo/Baja/Vacaciones |
-| `disponibilidad` | CharField | Disponibilidad del agente: Disponible/Pausa/No Listo/En Llamada/Coach |
+|---|---|---|
+| `agente` | ForeignKey(User) | Agente que realizó la llamada. |
+| `base_llamada` | ForeignKey(BaseLlamada) | Lead asociado. |
+| `inicio` | DateTimeField | Inicio de llamada. |
+| `fin` | DateTimeField | Fin de llamada. |
+| `duracion` | DurationField | `fin - inicio`. |
+| `resultado` | CharField | Contestada, no contestada, ocupada, desconectada, no voz, fax, otro, liberado sin uso. |
+| `observaciones` | TextField | Observaciones del agente. |
+| `acw_start` | DateTimeField | Inicio de ACW. |
+| `acw_end` | DateTimeField | Fin de ACW. |
+| `disposition` | CharField | Tipificación. |
+| `liberado_sin_uso` | BooleanField | Lead liberado sin gestión. |
 
----
+### 4.2 Módulo Usuarios
 
-### 2.3 Módulo Ventas
+#### Modelo `UserProfile` (`users_profile`)
 
-**Modelo: `Cliente`** (`ventas_cliente`)
+Perfil extendido de `User`.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `user` | OneToOneField(User) | Usuario Django. |
+| `rol` | CharField | Agente, Supervisor, Administrador. |
+| `codigo_agente` | CharField | Código de agente. |
+| `telefono` | CharField | Teléfono de usuario. |
+| `supervisor` | ForeignKey(self) | Supervisor jerárquico. |
+| `zona` | CharField | Zona de trabajo. |
+| `turno` | CharField | Diurno, nocturno, híbrido. |
+| `activo` | BooleanField | Usuario activo. |
+| `estado` | CharField | Activo, inactivo, baja, vacaciones. |
+| `disponibilidad` | CharField | Disponible, pausa, no listo, en llamada, coach. |
+
+### 4.3 Módulo Ventas
+
+#### Modelo `Cliente` (`ventas_cliente`)
 
 Cliente maestro con documento único.
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `documento` | CharField | Documento único (DNI/RUT) |
-| `tipo_documento` | CharField | DNI/RUC/CE/Pasaporte (nuevo) |
-| `nombres` | CharField | Nombres |
-| `paterno` | CharField | Apellido paterno |
-| `materno` | CharField | Apellido materno |
-| `telefono_1` | CharField | Teléfono principal |
-| `telefono_2` | CharField | Teléfono secundario |
-| `activo` | BooleanField | Cliente activo |
+|---|---|---|
+| `tipo_documento` | CharField | DNI, RUC, CE, Pasaporte. |
+| `documento` | CharField | Documento único. |
+| `nombres` | CharField | Nombres. |
+| `paterno` | CharField | Apellido paterno. |
+| `materno` | CharField | Apellido materno. |
+| `telefono_1` | CharField | Teléfono principal. |
+| `telefono_2` | CharField | Teléfono secundario. |
+| `activo` | BooleanField | Cliente activo. |
 
-**Modelo: `Venta`** (`ventas_venta`)
+#### Modelo `Venta` (`ventas_venta`)
 
 Registro maestro de operaciones de venta.
 
-**Secciones del Formulario (actualizado 2026-06-09):**
+Secciones del formulario:
 
-#### Agente
-- `agente`: ForeignKey a User (reemplaza campo transitorio `agente_nombre`)
+| Sección | Campos principales |
+|---|---|
+| Agente | `agente` |
+| Cliente | `cliente`, campos de búsqueda/registro, `cliente_validado` |
+| Recibo Electrónico | `recibo_electronico`, `correo_electronico_recibo`, `horario_visita`, `clausulas`, `abdcp` |
+| Producto y Venta | `producto_nombre`, `origen`, `operador`, `telefono_portar`, `modelo_producto`, `plan_producto`, `precio_venta`, `precio_plan`, `tipo_linea`, `tipo_renta`, `producto_validado` |
+| Dirección de Despacho | `tipo_via`, `nombre_via`, `numero_via`, ubigeo, zona, referencia |
+| Facturación | `facturacion_requerida` |
+| Items | `ItemVenta` en relación 1:N |
+| Postventa | `SeguimientoBO`, `EstadoDespacho`, `EstadoCourier` |
 
-#### Cliente
-- `cliente`: ForeignKey a Cliente (formulario permite buscar/crear cliente inline)
+### 4.4 Módulo Postventa
 
 #### Recibo Electrónico
 - `recibo_electronico`: Sí/No/Si desea/No desea
@@ -196,401 +313,385 @@ Registro maestro de operaciones de venta.
 **Modelo: `SeguimientoBO`** (`postventa_seguimientobo`)
 
 Trazabilidad administrativa de la venta — etapa BO del flujo postventa.
+#### Modelo `SeguimientoBO` (`postventa_seguimientobo`)
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `venta` | OneToOneField | FK a Venta (1:1) |
-| `status_bo` | CharField | Estado BO: EN_BASE/PDTE_BO/EN_BO/VALIDADO/EN_DESPACHO/DESPACHADO |
-| `fecha_bo` | DateField | Fecha de cambio de estado BO |
-| `supervisor` | CharField | Nombre del supervisor |
-| `observaciones` | TextField | Notas |
-| `creado` | DateTimeField | Timestamp de creación |
-| `actualizado` | DateTimeField | Timestamp de actualización |
+|---|---|---|
+| `venta` | OneToOneField | Venta relacionada. |
+| `status_bo` | CharField | `EN_BASE`, `PDTE_BO`, `EN_BO`, `VALIDADO`, `EN_DESPACHO`, `DESPACHADO`. |
+| `fecha_bo` | DateField | Fecha de cambio BO. |
+| `supervisor` | CharField | Supervisor. |
+| `observaciones` | TextField | Notas. |
+| `creado` | DateTimeField | Timestamp de creación. |
+| `actualizado` | DateTimeField | Timestamp de actualización. |
 
-**Modelo: `Proveedor`** (`postventa_proveedor`)
+#### Modelo `HistorialEstado` (`postventa_historial`)
 
-Entidad independiente para proveedores de despacho/courier.
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `nombre` | CharField | Nombre único del proveedor |
-| `activo` | BooleanField | Estado activo |
-| `creado` | DateTimeField | Timestamp de creación |
-
-### 2.5 Módulo Despacho
-
-**Modelo: `Proveedor`** (`despacho_proveedor`)
-
-Proveedores de servicios de despacho. Ver `postventa_proveedor` como alternativa.
+Registra cambios de estado en BO, despacho y courier.
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `nombre` | CharField | Nombre único del proveedor |
-| `activo` | BooleanField | Estado activo |
-| `creado` | DateTimeField | Timestamp de creación |
+|---|---|---|
+| `venta` | ForeignKey | Venta relacionada. |
+| `area` | CharField | `BO`, `DESPACHO`, `COURIER`. |
+| `estado_anterior` | CharField | Estado anterior. |
+| `estado_nuevo` | CharField | Estado nuevo. |
+| `usuario` | ForeignKey(User) | Usuario que realizó el cambio. |
+| `fecha_cambio` | DateTimeField | Timestamp del cambio. |
+| `observaciones` | TextField | Notas. |
 
-**Modelo: `EstadoDespacho`** (`despacho_estado`)
+### 4.5 Módulo Despacho
 
-Trazabilidad de la etapa de despacho/entrega del producto.
+#### Modelo `Proveedor` (`despacho_proveedor`)
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `venta` | OneToOneField | FK a Venta (1:1) |
-| `etapa` | CharField | Etapa: EN_BASE/PDTE_DESPACHO/EN_PREPARACION/EN_TRANSITO/ENTREGADO/RECHAZADO |
-| `fecha_etapa` | DateField | Fecha del cambio de etapa |
-| `proveedor` | ForeignKey | FK a Proveedor (opcional) |
-| `tracking` | CharField | N° Seguimiento/Tracking |
-| `observaciones` | TextField | Notas |
-| `creado` | DateTimeField | Timestamp de creación |
-| `actualizado` | DateTimeField | Timestamp de actualización |
+Proveedor de despacho.
 
-### 2.6 Módulo Courier
-
-**Modelo: `ProveedorCourier`** (`courier_proveedor`)
-
-Proveedores de servicios de courier/entrega.
+#### Modelo `EstadoDespacho` (`despacho_estado`)
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `nombre` | CharField | Nombre único del proveedor |
-| `activo` | BooleanField | Estado activo |
-| `creado` | DateTimeField | Timestamp de creación |
+|---|---|---|
+| `venta` | OneToOneField | Venta relacionada. |
+| `etapa` | CharField | `EN_BASE`, `PDTE_DESPACHO`, `EN_PREPARACION`, `EN_TRANSITO`, `ENTREGADO`, `RECHAZADO`. |
+| `fecha_etapa` | DateField | Fecha de etapa. |
+| `proveedor` | ForeignKey | Proveedor. |
+| `tracking` | CharField | Tracking único por venta entre despacho y courier. |
+| `observaciones` | TextField | Notas. |
 
-**Modelo: `EstadoCourier`** (`courier_estado`)
+### 4.6 Módulo Courier
 
-Trazabilidad del proveedor de courier (flujo paralelo al despacho).
+#### Modelo `ProveedorCourier` (`courier_proveedor`)
+
+Proveedor de courier.
+
+#### Modelo `EstadoCourier` (`courier_estado`)
 
 | Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `venta` | OneToOneField | FK a Venta (1:1) |
-| `sts_courier` | CharField | Estado courier: PDTE_BO/EN_RUTA/ENTREGADO/RECHAZADO |
-| `fch_courier` | DateField | Fecha del estado courier |
-| `proveedor` | ForeignKey | FK a ProveedorCourier (opcional) |
-| `tracking` | CharField | N° Seguimiento/Tracking |
-| `observaciones` | TextField | Notas |
-| `creado` | DateTimeField | Timestamp de creación |
-| `actualizado` | DateTimeField | Timestamp de actualización |
+|---|---|---|
+| `venta` | OneToOneField | Venta relacionada. |
+| `sts_courier` | CharField | `PDTE_BO`, `EN_RUTA`, `ENTREGADO`, `RECHAZADO`. |
+| `fch_courier` | DateField | Fecha de estado. |
+| `proveedor` | ForeignKey | Proveedor courier. |
+| `tracking` | CharField | Tracking. |
+| `observaciones` | TextField | Notas. |
 
----
+### 4.7 Módulo Catálogo Retail
 
-## 3. Relaciones
+`apps.catalogo` existe, pero no está registrada en `config/settings.py`.
 
-```
+#### Modelos
+
+| Modelo | Tabla | Uso |
+|---|---|---|
+| `Producto` | `catalogo_producto` | Productos/equipos/chips. |
+| `ProveedorCatalogo` | `catalogo_proveedor` | Proveedores comerciales. |
+| `Oferta` | `catalogo_oferta` | Oferta por producto, proveedor, plan, tipo de línea y origen. |
+| `ChipCompatibilidad` | `catalogo_chip_compatibilidad` | Compatibilidad equipo/chip. |
+
+#### Endpoints si la app está registrada
+
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/api/catalogo/productos/` | GET | Productos con ofertas. |
+| `/api/catalogo/productos/{sku}/ofertas/` | GET | Ofertas por producto. |
+| `/api/catalogo/equipos/{sku}/chips/` | GET | Chips compatibles. |
+| `/api/catalogo/ofertas/validar/` | POST | Validar oferta. |
+
+#### Integración actual
+
+- `apps/ventas/catalogo_utils.py` expone:
+  - `obtener_oferta_catalogo_para_venta()`
+  - `precio_plan_legacy()`
+  - `PLAN_PRECIO_MAP`
+- Si `apps.catalogo` no está instalada, `obtener_oferta_catalogo_para_venta()` retorna `None`.
+- Los endpoints de ventas usan fallback legacy cuando no hay oferta comercial.
+
+## 5. Relaciones
+
+```text
 Venta (1) ─────→ (N) ItemVenta
   │
-  ├─────→ (1) SeguimientoBO          [postventa — área BO]
-  │
-  ├─────→ (1) EstadoDespacho         [postventa — área Despacho]
-  │
-  ├─────→ (1) EstadoCourier          [postventa — área Courier]
-  │
-  └─────→ (1) Cliente (FK)
-  │
-  └─────→ (0..1) BaseLlamada (FK, opcional)
+  ├─────→ (1) SeguimientoBO          [BO]
+  ├─────→ (1) EstadoDespacho         [Despacho]
+  ├─────→ (1) EstadoCourier          [Courier]
+  ├─────→ (1) Cliente
+  └─────→ (0..1) BaseLlamada
 
 BaseLlamada (1) ─────→ (N) CallRecord
-  │
-  └─────→ (0..1) Venta (FK, opcional)
+BaseLlamada (0..1) ───→ (1) Venta
 
 User (1) ─────→ (1) UserProfile
-  │
-  └───→ (N) CallRecord (como agente)
-
+UserProfile (1) ────→ (N) UserProfile supervisados
+UserProfile (1) ────→ (N) CallRecord
 Proveedor (1) ─────→ (N) EstadoDespacho
-Proveedor (1) ─────→ (N) EstadoCourier
-
-UserProfile (1) ─────→ (N) UserProfile (supervisores → agentes)
+ProveedorCourier (1) ─→ (N) EstadoCourier
 ```
 
----
+## 6. Arquitectura por Áreas
 
-## 4. Arquitectura por Áreas
-
-El sistema se organiza por áreas de negocio independientes, cada una gestiona su propio flujo sobre la misma entidad `Venta`:
-
-```
+```text
 Lead (BaseLlamada) ────────── discador / WFM
-       │
-       ▼
-   Venta (Operaciones) ──── entrada de venta
-       │
-       ├── postventa ──── SeguimientoBO (validación, administrativo)
-       │
-       ├── despacho ──── EstadoDespacho (preparación, tránsito, entrega)
-       │
-       └── courier ──── EstadoCourier (proveedor, tracking, entrega)
+        │
+        ▼
+Venta (Operaciones) ───────── ventas
+        │
+        ├── BO ────────────── SeguimientoBO
+        ├── Despacho ─────── EstadoDespacho
+        └── Courier ──────── EstadoCourier
 ```
 
-Cada área registra sus propios estados y fechas sobre la misma venta, manteniendo trazabilidad completa del flujo.
+| Área | App | Modelos principales | Función |
+|---|---|---|---|
+| WFM / Discador | `apps.discador` | `BaseLlamada`, `CallRecord` | Gestión de leads y llamadas. |
+| Operaciones | `apps.ventas` | `Venta`, `ItemVenta`, `Cliente` | Registro de venta y cliente. |
+| BO | `apps.postventa` | `SeguimientoBO`, `HistorialEstado` | Validación administrativa. |
+| Despacho | `apps.despacho` | `Proveedor`, `EstadoDespacho` | Preparación, tránsito y entrega física. |
+| Courier | `apps.courier` | `ProveedorCourier`, `EstadoCourier` | Estado de entrega por proveedor courier. |
+| Catálogo | `apps.catalogo` | `Producto`, `Oferta`, `ProveedorCatalogo` | Catálogo comercial opcional. |
 
-**Tabla de responsabilidades por área:**
+## 7. Estructura del Proyecto
 
-| Área | Modelo | Función |
-|------|--------|---------|
-| WFM / Discador | BaseLlamada, CallRecord | Gestión de leads, llamadas, bases |
-| Operaciones | Venta, ItemVenta, Cliente | Registro de venta y cliente |
-| Postventa (BO) | SeguimientoBO | Validación, seguimiento administrativo |
-| Despacho | EstadoDespacho, Proveedor | Preparación, tránsito, entrega física |
-| Courier | EstadoCourier, Proveedor | Estado del proveedor de entrega |
-
----
-
-## 5. Estructura del Proyecto
-
-```
+```text
 Ventas_Porta/
-├── manage.py                                    # Punto de entrada Django
-├── requirements.txt                             # Dependencias: Django, PyMySQL, python-decouple
-├── README.md                                    # Documentación rápida
-├── DEPLOYMENT.md                                # Guía de despliegue
-├── .env                                         # Variables de entorno (NO versionar)
+├── manage.py
+├── requirements.txt
+├── README.md
+├── DEPLOYMENT.md
+├── HANDOFF_2026-06-11.md
+├── .env.example
 ├── config/
-│   ├── __init__.py                             # pymysql.install_as_MySQLdb()
-│   ├── settings.py                             # Configuración principal Django
-│   ├── urls.py                                 # URLs raíz del proyecto
-│   ├── wsgi.py                                 # WSGI para producción
-│   └── asgi.py                                 # ASGI para producción
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
 ├── apps/
-│   ├── __init__.py                             # Paquete apps
 │   ├── discador/
-│   │   ├── __init__.py
-│   │   ├── apps.py
-│   │   ├── models.py                           # BaseLlamada, CallRecord
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   ├── urls.py
-│   │   ├── tests.py
-│   │   └── migrations/
-│   ├── users/
-│   │   ├── __init__.py
-│   │   ├── apps.py
 │   │   ├── models.py
-│   │   ├── admin.py
 │   │   ├── views.py
 │   │   ├── urls.py
 │   │   ├── tests.py
-│   │   ├── signals.py
-│   │   └── migrations/
+│   │   └── migrations/0011_alter_basellamada_id_lead.py
+│   ├── users/
 │   ├── ventas/
-│   │   ├── __init__.py
-│   │   ├── apps.py
-│   │   ├── models.py                           # Venta, ItemVenta, Cliente
+│   │   ├── models.py
 │   │   ├── forms.py
-│   │   ├── admin.py
 │   │   ├── views.py
 │   │   ├── urls.py
 │   │   ├── ubigeo_peru.py
-│   │   ├── tests.py
-│   │   └── migrations/
+│   │   ├── catalogo_utils.py
+│   │   └── tests.py
 │   ├── postventa/
-│   │   ├── __init__.py
-│   │   ├── apps.py
-│   │   ├── models.py                           # SeguimientoBO, Proveedor
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   ├── urls.py
-│   │   └── migrations/
 │   ├── despacho/
-│   │   ├── __init__.py
-│   │   ├── apps.py
-│   │   ├── models.py                           # Proveedor, EstadoDespacho
-│   │   ├── forms.py
-│   │   ├── admin.py
-│   │   ├── views.py
-│   │   ├── urls.py
-│   │   ├── tests.py
-│   │   └── migrations/
 │   └── courier/
-│       ├── __init__.py
-│       ├── apps.py
-│       ├── models.py                           # ProveedorCourier, EstadoCourier
-│       ├── forms.py
-│       ├── admin.py
-│       ├── views.py
-│       ├── urls.py
-│       ├── tests.py
-│       └── migrations/
-└── templates/
-    ├── base.html
-    ├── home.html
-    ├── users/
-    │   └── registration/
-    │       └── login.html
-    ├── discador/
-    │   ├── agent_dashboard.html
-    │   ├── base_llamada_list.html
-    │   └── base_llamada_detail.html
-    ├── ventas/
-    │   ├── venta_list.html
-    │   ├── venta_detail.html
-    │   ├── venta_form.html
-    │   ├── venta_form_modal.html
-    │   ├── item_form.html
-    │   └── backoffice_list.html
-    ├── postventa/
-    │   └── backoffice_form.html
-    ├── despacho/
-    │   ├── proveedor_list.html
-    │   └── despacho_form.html
-    └── courier/
-        ├── proveedor_list.html
-        └── courier_form.html
+├── docs/
+│   ├── INDICE.md
+│   ├── documentacion.md
+│   ├── HISTORIAL.md
+│   ├── DEV_REFERENCE.md
+│   ├── queries_referenciadas.md
+│   └── HANDOFF_*.md
+├── static/
+│   ├── js/venta-form.js
+│   ├── css/form-data.css
+│   └── data/ubigeo-peru.json
+├── templates/
+│   ├── base.html
+│   ├── home.html
+│   ├── discador/
+│   ├── users/registration/
+│   ├── ventas/
+│   ├── postventa/
+│   ├── despacho/
+│   └── courier/
+└── venv/
 ```
 
-### Estructura de archivos estáticos
+## 8. Detalles por Archivo
 
-```
-Ventas_Porta/
-└── static/
-    └── css/
-        └── form-data.css
-```
+### `config/__init__.py`
 
----
-
-## 6. Detalles por Archivo
-
-### config/__init__.py
 Instala PyMySQL como driver MySQLdb para Django.
 
-### config/settings.py
-Configura BD con parámetros desde `.env`, charset utf8mb4, LANGUAGE_CODE='es-pe'.
-Apps registradas: `apps.discador`, `apps.ventas`, `apps.users`, `apps.postventa`, `apps.despacho`, `apps.courier`.
+### `config/settings.py`
 
-### config/urls.py
-Incluye URLs de las tres apps: `ventas` (raíz), `discador` y `users`.
+Carga configuración desde `.env`, usa MySQL/MariaDB, charset `utf8mb4`, `LANGUAGE_CODE='es-pe'` y registra apps operativas. No registra `apps.catalogo`.
 
-### apps/users/models.py
-Modelo `UserProfile` extendiendo `User` con roles (Agente/Supervisor/Administrador), estados operativos (estado), disponibilidad del agente (disponibilidad) y supervisión jerárquica.
+### `config/urls.py`
 
-### apps/users/admin.py
-UserAdmin custom con inline de UserProfile, fieldsets y list_display extendido.
+Incluye URLs raíz de `ventas`, `discador` y `users`. No incluye namespace `catalogo`.
 
-### apps/users/views.py
-HomeView (dashboard) con contexto de perfil, y logout_view personalizado.
+### `apps/discador/models.py`
 
-### apps/users/urls.py
-URLs de autenticación: login y logout.
+Define `HexUUIDField` y modelos `BaseLlamada`, `CallRecord`.
 
-### apps/discador/models.py
-Modelo `BaseLlamada` en tabla `discador_base` con `base_procedencia` y `base_manual`.
-Modelo `CallRecord` en tabla implícita con campos de llamada, ACW y tipificación.
+### `apps/discador/migrations/0011_alter_basellamada_id_lead.py`
 
-### apps/discador/admin.py
-BaseLlamadaAdmin con fieldsets, filters, readonly y búsqueda. CallRecordAdmin con fieldsets de información y ACW.
+Cambia `BaseLlamada.id_lead` a `HexUUIDField`.
 
-### apps/discador/views.py
-BaseLlamadaListView (paginado 50, filtrado por rol), BaseLlamadaDetailView.
+### `apps/discador/views.py`
 
-### apps/discador/urls.py
-URLs: dashboard del agente (/), listado de bases (/bases/), detalle de base (/base/<id>/), check-incoming (AJAX).
+Incluye:
 
-### apps/ventas/models.py
-Tres modelos: Venta (50+ campos + tipo_renta2 + multiples_lineas), ItemVenta (FK), Cliente.
+- `BaseLlamadaListView`
+- `BaseLlamadaDetailView`
+- `AgentDashboardView`
+- `ResultadoDiscadoListView`
+- `ResultadoDiscadoDetailView`
 
-### apps/ventas/forms.py
-VentaForm con widgets select/date/time/textarea, campos base_* readonly para visualización. ItemVentaForm, SeguimientoBOForm.
+`ResultadoDiscadoListView` y `ResultadoDiscadoDetailView` usan `prefetch_related('ventas_asociadas')`.
 
-### apps/ventas/views.py
-VentaCreateView con inlineformset_factory. `venta_modal_partial()` y `venta_api_create()` para modal. `_check_lead_access()` para seguridad UUID. `get_provincias()` y `get_distritos()` para combos jerárquicos de ubigeo. BackofficeListView para listado consolidado postventa.
+### `apps/ventas/models.py`
 
-### apps/ventas/urls.py
-URLs: /ventas/, /ventas/nueva/, /ventas/<id>/, /ventas/backoffice/
+Define `Cliente`, `Venta`, `ItemVenta`, matrices de precios, planes, modelos y `TIPO_RENTA_TABLE`.
 
-### apps/ventas/ubigeo_peru.py
-Datos de ubigeo Peruano: DEPTO_CHOICES, PROV_CHOICES, DISTRITOS_CHOICES.
+### `apps/ventas/forms.py`
 
-### apps/postventa/models.py
-Cuatro modelos: SeguimientoBO (estado BO), EstadoDespacho (etapa de entrega), EstadoCourier (estado courier), Proveedor.
+`VentaForm` implementa:
 
-### templates/ventas/venta_form.html
-Formulario organizado en cards VP.
+- búsqueda/registro de cliente
+- validación de producto y venta
+- integración con catálogo opcional
+- fallback legacy
+- normalización de `modelo_producto='0'`
+- manejo de `BlankChoiceIterator`
+- validación de portabilidad
+- validación de recibo electrónico
+- validación multilínea
+- validación de cliente existente
 
-### templates/ventas/venta_form_modal.html
-Formulario simplificado para modal via API.
+### `apps/ventas/views.py`
 
-### templates/ventas/backoffice_list.html
-Listado consolidado postventa con columnas: BASE, TIPO RENTA, TIPO RENTA2, BASE, Status BO, Fecha BO, Sts Courier, Fch. Courier.
+Endpoints principales:
 
----
+- `/ventas/buscar-cliente/`
+- `/ventas/validar-cliente/`
+- `/ventas/recargar-lead/<uuid:id_lead>/`
+- `/ventas/modal/<uuid:id_lead>/`
+- `/api/ventas/crear/<uuid:id_lead>/`
+- `/api/ventas/precio-venta/`
+- `/api/ventas/validar-producto/`
 
-## 7. Flujo de Trabajo del Agente
+### `apps/ventas/catalogo_utils.py`
 
-### 7.1 Estados de Disponibilidad
+Capa de integración comercial:
 
-| Estado | Color | Condición |
-|--------|-------|-----------|
-| `DISPONIBLE` | Verde | Puede obtener leads y contestar llamadas |
-| `PAUSA` | Amarillo | No disponible para llamadas |
-| `LISTO_NO` | Rojo | Llamada finalizada, pendiente tipificación |
-| `EN_LLAMADA` | Gris | Llamada en curso |
-| `COACH` | Azul | En coaching/entrenamiento |
+- retorna `None` si `apps.catalogo` no está instalada
+- consulta `Oferta` si está disponible
+- mantiene fallback legacy mediante `PLAN_PRECIO_MAP`
 
-### 7.2 Transiciones de Estado
+### `apps/ventas/ubigeo_peru.py`
 
-```
-DISPONIBLE → Obtener Lead → DISPONIBLE (lead asignado)
+Genera `DEPTO_CHOICES`, `PROV_CHOICES` y `DISTRITOS_CHOICES` desde `static/data/ubigeo-peru.json`.
+
+### `static/js/venta-form.js`
+
+Implementa:
+
+- búsqueda y registro de cliente
+- validación de cliente
+- validación de producto
+- sincronización de campos ocultos
+- bloqueo/desbloqueo de guardar
+- carga de ubigeo Perú
+- normalización de precios
+
+### `templates/ventas/venta_form.html`
+
+Formulario completo de nueva venta. Usa `btnGuardarVentaFull`.
+
+### `templates/ventas/venta_form_modal.html`
+
+Formulario modal de venta. Usa `btnGuardarVenta`.
+
+### `templates/home.html`
+
+Dashboard principal. No contiene enlaces al namespace `catalogo`.
+
+## 9. Flujo de Trabajo del Agente
+
+### Estados de disponibilidad
+
+| Estado | Uso |
+|---|---|
+| `DISPONIBLE` | Puede obtener leads y contestar llamadas. |
+| `PAUSA` | No disponible para llamadas. |
+| `LISTO_NO` | Llamada finalizada, pendiente tipificación. |
+| `EN_LLAMADA` | Llamada en curso. |
+| `COACH` | En coaching/entrenamiento. |
+
+### Transiciones
+
+```text
+DISPONIBLE → Obtener Lead → lead asignado
 DISPONIBLE → Llamada entrante → EN_LLAMADA
-EN_LLAMADA → Finalizar → LISTO_NO (pendiente tipificación)
+EN_LLAMADA → Finalizar → LISTO_NO
 LISTO_NO → Tipificar → DISPONIBLE
-LISTO_NO → Liberar Lead → DISPONIBLE + auditoría (liberado_sin_uso)
-PAUSA/COACH → Cambiar disponibilidad → DISPONIBLE
-Click "Registrar Venta" → Modal cargado vía API → Submit vía API → Recarga página
+LISTO_NO → Liberar Lead → DISPONIBLE + auditoría
 ```
 
----
+### Obtención de lead
 
-## 8. Flujo Postventa por Áreas
+Reglas actuales:
 
-```
+- el agente debe estar `DISPONIBLE`
+- no debe existir `current_lead_id`
+- no debe existir llamada en curso
+- se excluyen leads ya gestionados por el agente
+- se excluyen leads con `resultado_gestion='VENTA_CONVERTIDA'`
+
+`current_lead_id` almacena `str(lead.id_lead)`, es decir, UUID en formato hex.
+
+## 10. Flujo Postventa por Áreas
+
+```text
 Venta registrada
     │
     ▼
-Area BO: SeguimientoBO
-    EN_BASE → PDTE_BO → EN_BO → VALIDADO → EN_DESPACHO → DESPACHADO
+BO
+EN_BASE → PDTE_BO → EN_BO → VALIDADO → EN_DESPACHO → DESPACHADO
     │
-    ├── Area Despacho: EstadoDespacho
-    │       PDTE_DESPACHO → EN_PREPARACION → EN_TRANSITO → ENTREGADO / RECHAZADO
+    ├── Despacho
+    │   PDTE_DESPACHO → EN_PREPARACION → EN_TRANSITO → ENTREGADO / RECHAZADO
     │
-    └── Area Courier: EstadoCourier
-            PDTE_BO → EN_RUTA → ENTREGADO / RECHAZADO
+    └── Courier
+        PDTE_BO → EN_RUTA → ENTREGADO / RECHAZADO
 ```
 
-Cada área opera de forma independiente sobre la misma venta. Los datos de proveedor y tracking se registran en las entidades correspondientes.
+Reglas:
 
----
+1. `EstadoDespacho` requiere `SeguimientoBO.status_bo` en `VALIDADO` o `EN_DESPACHO`.
+2. `EstadoCourier` requiere `SeguimientoBO.status_bo == 'DESPACHADO'`.
+3. `tracking` no debe duplicarse entre despacho y courier de la misma venta.
+4. `HistorialEstado` registra cambios de estado.
 
-## 9. Rutas (URLs) y API Endpoints
+## 11. Rutas y API Endpoints
 
-### URLs Principales
+### URLs principales
 
-```
-/                           → HomeView (dashboard principal)
-/users/login/               → LoginView
-/users/logout/              → logout_view
-/discador/                  → AgentDashboardView
-/discador/bases/            → BaseLlamadaListView
-/discador/base/<int:pk>/    → BaseLlamadaDetailView
-/discador/check-incoming/   → AJAX polling
-/ventas/                    → VentaListView
-/ventas/<int:pk>/           → VentaDetailView
-/ventas/nueva/              → VentaCreateView
-/ventas/nueva/<uuid:id_lead>/ → VentaCreateView (con lead pre-cargado)
-/ventas/backoffice/         → BackofficeListView (listado consolidado postventa)
-/ventas/<int:venta_id>/item/nuevo/ → ItemVentaCreateView
-/postventa/                 → Dashboard BO (métricas y últimas ventas)
-/postventa/backoffice/         → BackofficeListView (listado consolidado postventa)
-/postventa/backoffice/venta/<id>/ → Formulario SeguimientoBO por venta
-/postventa/backoffice/<int:pk>/editar/ → Editar SeguimientoBO
-/postventa/dashboard/conversion/ → DashboardConversiónView
+```text
+/                                      → HomeView
+/users/login/                          → LoginView
+/users/logout/                         → logout_view
+/discador/                             → AgentDashboardView
+/discador/bases/                       → BaseLlamadaListView
+/discador/base/<int:pk>/               → BaseLlamadaDetailView
+/ventas/                               → VentaListView
+/ventas/<int:pk>/                      → VentaDetailView
+/ventas/nueva/                         → VentaCreateView
+/ventas/nueva/<uuid:id_lead>/          → VentaCreateView con lead pre-cargado
+/ventas/backoffice/                    → BackofficeListView
+/postventa/                            → Dashboard BO
+/postventa/backoffice/                 → BackofficeListView
+/postventa/backoffice/venta/<int:venta_id>/ → SeguimientoBOCreateView
+/postventa/backoffice/<int:pk>/editar/ → SeguimientoBOUpdateView
+/postventa/dashboard/conversion/       → DashboardConversionView
 /postventa/despacho/venta/<int:venta_id>/ → EstadoDespachoCreateView
 /postventa/despacho/venta/<int:pk>/editar/ → EstadoDespachoUpdateView
 /postventa/courier/venta/<int:venta_id>/ → EstadoCourierCreateView
 /postventa/courier/venta/<int:pk>/editar/ → EstadoCourierUpdateView
-/admin/                     → Panel administración
+/admin/                                → Admin
 ```
 
-### API Endpoints
+### API endpoints
 
 | Endpoint | Method | Descripción |
 |----------|--------|-----------|
@@ -603,14 +704,148 @@ Cada área opera de forma independiente sobre la misma venta. Los datos de prove
 | `/api/ventas/validar-producto/` | GET | Valida Producto y Venta; retorna precio, precio_plan y tipo_renta calculados |
 | `/api/ubigeo/provincias/` | GET | Obtiene provincias por departamento (AJAX) |
 | `/api/ubigeo/distritos/` | GET | Obtiene distritos por departamento+provincia (AJAX) |
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/ventas/buscar-cliente/` | GET | Busca cliente por tipo de documento y documento. |
+| `/ventas/validar-cliente/` | GET | Valida existencia de cliente. |
+| `/ventas/registrar-cliente/<uuid:id_lead>/` | POST | Registra cliente sin crear venta. |
+| `/ventas/recargar-lead/<uuid:id_lead>/` | GET | Recarga datos del lead. |
+| `/ventas/modal/<uuid:id_lead>/` | GET | Renderiza formulario modal de venta. |
+| `/api/ventas/crear/<uuid:id_lead>/` | POST | Crea venta vía API JSON. |
+| `/api/ventas/precio-venta/` | GET | Obtiene precio de venta. |
+| `/api/ventas/validar-producto/` | GET | Valida Producto y Venta. |
+| `/api/ubigeo/provincias/` | GET | Obtiene provincias por departamento. |
+| `/api/ubigeo/distritos/` | GET | Obtiene distritos por departamento y provincia. |
+| `/api/venta/<int:pk>/trazabilidad/` | GET | Retorna trazabilidad de venta, lead, BO, despacho, courier e historial. |
 
----
+## 12. Validación de Producto y Venta
 
-## 10. Configuración de Base de Datos
+### Endpoint de precio
 
-La configuración se carga exclusivamente desde `.env` (no hardcodeada).
-
+```text
+GET /api/ventas/precio-venta/?producto=PACK&modelo=MOTO_G_PLAY&plan=ENTEL_CONTROL_49_CONTROL&tipo_linea=POSTPAGO&origen=LINEA_NUEVA
 ```
+
+Respuesta exitosa:
+
+```json
+{
+  "ok": true,
+  "precio": 49,
+  "precio_plan": 49,
+  "catalogo": false
+}
+```
+
+### Endpoint de validación
+
+```text
+GET /api/ventas/validar-producto/?origen=LINEA_NUEVA&producto=PACK&modelo=MOTO_G_PLAY&plan=ENTEL_CONTROL_49_CONTROL&tipo_linea=POSTPAGO
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "ok": true,
+  "precio": "49",
+  "precio_plan": "49",
+  "tipo_renta": "R.BAJA",
+  "catalogo": false,
+  "oferta_id": null,
+  "mensaje": "Producto PACK validado correctamente."
+}
+```
+
+### Validaciones frontend
+
+`static/js/venta-form.js`:
+
+- `validarProducto()` llama a `/api/ventas/validar-producto/`
+- sincroniza campos ocultos:
+  - `id_precio_venta`
+  - `id_precio_plan`
+  - `id_tipo_renta`
+  - `id_tipo_linea`
+- marca `producto_validado=true`
+- llama `actualizarSubmitVenta()`
+- bloquea guardar si Cliente o Producto no están validados
+
+### Validaciones backend
+
+`VentaForm.clean()`:
+
+- valida documento de cliente
+- valida cliente existente o registrado previamente
+- valida portabilidad
+- valida `CHIP`
+- valida `PACK`
+- valida tipo de línea
+- valida recibo electrónico
+- valida multilínea
+- evita registrar venta si el lead ya fue `VENTA_CONVERTIDA`
+
+## 13. Reglas de Negocio Retail
+
+### Precio
+
+| Producto | Tipo de línea | Regla |
+|---|---|---|
+| `CHIP` | cualquiera | `precio_venta = 1`, sin modelo, plan obligatorio. |
+| `PACK` | `POSTPAGO` | `precio_venta = PRECIOS_POSTPAGO[(modelo, plan)]`. |
+| `PACK` | `PREPAGO` | `precio_venta = PRECIOS_PREPAGO[modelo]`. |
+
+### Planes CHIP
+
+`PLANES_CHIP`:
+
+```text
+ENTEL_CHIP_29_CONTROL
+ENTEL_CHIP_39_CONTROL
+ENTEL_CHIP_45_CONTROL
+ENTEL_CHIP_59_CONTROL
+ENTEL_CHIP_74_CONTROL
+ENTEL_CHIP_89_CONTROL
+ENTEL_CHIP_109_CONTROL
+ENTEL_CHIP_145_CONTROL
+```
+
+### Mapa legacy de precio de plan
+
+`PLAN_PRECIO_MAP`:
+
+| Plan | Precio |
+|---|---:|
+| `ENTEL_CHIP_29_CONTROL` | 29 |
+| `ENTEL_CHIP_39_CONTROL` | 39 |
+| `ENTEL_CHIP_45_CONTROL` | 45 |
+| `ENTEL_CHIP_59_CONTROL` | 59 |
+| `ENTEL_CHIP_74_CONTROL` | 74 |
+| `ENTEL_CHIP_89_CONTROL` | 89 |
+| `ENTEL_CHIP_109_CONTROL` | 109 |
+| `ENTEL_CHIP_145_CONTROL` | 145 |
+| `ENTEL_CONTROL_49_CONTROL` | 49 |
+| `ENTEL_CONTROL_75_CONTROL` | 75 |
+| `ENTEL_CONTROL_99_CONTROL` | 99 |
+| `ENTEL_CONTROL_149_CONTROL` | 149 |
+| `ENTEL_CONTROL_199_CONTROL` | 199 |
+| `ENTEL_75_CONTROL` | 75 |
+| `ENTEL_LIBRE_149_LIBRE` | 149 |
+| `ENTEL_LIBRE_99_LIBRE` | 99 |
+| `PREPAGO` | 0 |
+
+### Tipo de renta
+
+| Origen | Producto | Precio usado | R.BAJA | R.MEDIA | R.ALTA |
+|---|---|---|---|---|---|
+| `PORTABILIDAD` | `PACK` | `precio_venta` | 1, 4, 9, 13, 29, 49 | 74, 75, 89 | 99+ |
+| `PORTABILIDAD` | `CHIP` | `precio_plan` | 25, 29, 39, 45, 49 | 59, 74, 75, 89 | 99, 109, 145, 209 |
+| `LINEA_NUEVA` | `PACK` | `precio_venta` | 1, 4, 9, 13, 29, 49 | 75, 89 | 99+ |
+| `LINEA_NUEVA` | `CHIP` | `precio_plan` | 25, 29, 39, 45 | 59, 74, 89 | 109, 145, 209 |
+
+## 14. Configuración de Base de Datos
+
+```env
 DATABASE_ENGINE=django.db.backends.mysql
 DATABASE_NAME=<nombre_bd>
 DATABASE_USER=<usuario>
@@ -619,26 +854,24 @@ DATABASE_HOST=<host>
 DATABASE_PORT=3306
 ```
 
-- Motor: MySQL/MariaDB  
-- Charset: `utf8mb4`  
-- Variables requeridas: `DATABASE_ENGINE`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_HOST`, `DATABASE_PORT`
+Configuración:
 
----
+- Motor: MySQL/MariaDB
+- Charset: `utf8mb4`
+- `BaseLlamada.id_lead`: hex UUID compatible con `char(32)`
 
-## 11. Dependencias
+## 15. Dependencias
 
-```
+```text
 Django==4.2.13
 PyMySQL==1.1.0
 python-decouple==3.8
 ```
 
----
-
-## 12. Comandos
+## 16. Comandos
 
 ```bash
-# Setup inicial
+# Entorno
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -646,139 +879,107 @@ pip install -r requirements.txt
 # Migraciones
 python manage.py makemigrations
 python manage.py migrate
+python manage.py makemigrations --check --dry-run
 
-# Superusuario (requerido para Admin)
+# Validación
+python manage.py check
+
+# Superusuario
 python manage.py createsuperuser
 
-# Ejecutar servidor
+# Servidor
 python manage.py runserver
 
 # Tests
 python manage.py test
-
-# Shell Django (para crear usuarios con perfil)
-python manage.py shell
 ```
 
----
+## 17. Panel de Administración
 
-## 13. Panel de Administración
+URL: `http://localhost:8000/admin/`.
 
-Accesible en `http://localhost:8000/admin/`.
+Módulos disponibles:
 
-**Módulos disponibles:**
-- **Usuarios** (`User`): gestión de usuarios con perfil inline (rol, código, supervisor, estado)
-- **Perfiles de Usuario** (`UserProfile`): listado filtrable por activo, turno, zona; búsqueda por username y código
-- **Bases de Llamada** (`BaseLlamada`): listado con filtros por es_callable, tipo_valido, fecha; búsqueda por teléfono, nombres, documento
-- **Registros de Llamada** (`CallRecord`): historial con filtros por resultado, disposition, fecha
-- **Ventas** (`Venta`): con inlines para ítems y cliente
-- **Clientes** (`Cliente`): listado de clientes por documento
-- **Seguimiento BO** (`SeguimientoBO`)
-- **Estado Despacho** (`EstadoDespacho`)
-- **Estado Courier** (`EstadoCourier`)
-- **Proveedores** (`Proveedor`)
+- Usuarios
+- Perfiles de Usuario
+- Bases de Llamada
+- Registros de Llamada
+- Ventas
+- Clientes
+- Seguimiento BO
+- Estado Despacho
+- Estado Courier
+- Proveedores
 
----
+## 18. Trazabilidad Lead → Venta
 
-## 15. Trazabilidad Lead → Venta (2026-06-08)
+Relaciones:
 
-### 15.1 Relación Bidireccional Lead-Venta
+- `Venta.base_llamada` → `BaseLlamada`
+- `BaseLlamada.venta` → `Venta`
+- related_name de `Venta` hacia `BaseLlamada`: `ventas_asociadas`
+- related_name de `BaseLlamada` hacia `Venta`: `lead_venta`
 
-Relaciones implementadas (Sprint 1):
-- `Venta.base_llamada` → FK a BaseLlamada (related_name='ventas_asociadas')
-- `BaseLlamada.venta` → FK opcional a Venta (related_name='lead_venta')
-
-Propósito: Círculo completo de trazabilidad - desde el lead se accede a la venta generada y viceversa.
-
-### 15.2 Estados del Lead y Bloqueo
-
-| Estado | Descripción | Transiciones válidas |
-|--------|-------------|-------------------|
-| `SIN_GESTIONAR` | Lead sin llamada ni venta | → GESTIONADO, → VENTA |
-| `GESTIONADO` | Llamada realizada (sin venta) | → VENTA |
-| `VENTA_CONVERTIDA` | Lead convertido en venta | ESTADO_FINAL |
-
-**Regla implementada**: Los leads con `resultado_gestion == 'VENTA_CONVERTIDA'` no pueden asignarse a agentes en el discador (`apps/discador/views.py`).
-
-### 15.3 Queries de Trazabilidad
+Queries:
 
 ```python
-# Venta completa con historial (futuro)
 venta = Venta.objects.select_related(
     'base_llamada', 'cliente'
 ).prefetch_related(
     'bo_seguimiento', 'despacho_estado', 'courier_estado'
 ).get(id=venta_id)
 
-# Lead → Venta (cuando se implemente FK)
-if base_venta.venta:
-    venta = base_venta.venta
-    # Acceder a toda la trazabilidad
+base = BaseLlamada.objects.select_related('venta').prefetch_related(
+    'venta__bo_seguimiento',
+    'venta__despacho_estado',
+    'venta__courier_estado'
+).get(id_lead=uuid_val)
+```
 
-# Estadísticas de conversión por base
-from django.db.models import Count
-stats = BaseLlamada.objects.values('base_procedencia').annotate(
+## 19. Dashboard de Conversión
+
+URL:
+
+```text
+/postventa/dashboard/conversion/
+```
+
+Métricas:
+
+| Métrica | Fórmula |
+|---|---|
+| Total Leads | `COUNT(BaseLlamada)` |
+| Total Ventas | `COUNT(Venta)` |
+| Leads Convertidos | Leads con `venta` |
+| Tasa Conversión | Leads convertidos / total leads |
+
+Query base:
+
+```python
+BaseLlamada.objects.values('base_procedencia').annotate(
     total=Count('id'),
-    con_venta=Count('venta')
+    con_venta=Count('venta', distinct=True),
+    sin_venta=Count('id', filter=Q(venta__isnull=True))
 ).order_by('-total')
 ```
 
----
+## 20. Validaciones y Pruebas
 
-## 16. Servicio de Registro y Signals de Historial
+### Validaciones recomendadas
 
-### 16.1 Servicio `registrar_cambio_estado()` (`apps/postventa/services.py`)
-
-Helper para registrar cambios de estado en `HistorialEstado`.
-
-```python
-from apps.postventa.services import registrar_cambio_estado
-
-registrar_cambio_estado(
-    venta=venta,
-    area='BO',               # BO, DESPACHO, COURIER
-    estado_anterior='',
-    estado_nuevo='EN_BO',
-    usuario=request.user,
-    observaciones='Notas'
-)
+```bash
+venv/bin/python manage.py check
+venv/bin/python manage.py makemigrations --check --dry-run
 ```
 
-### 16.2 Signals de Persistencia Automática (`apps/postventa/signals.py`)
+### Pruebas conocidas
 
-Se registran automáticamente cambios en `HistorialEstado` vía Django signals:
-- `post_save` en `SeguimientoBO` → crea registro en área BO
-- `post_save` en `EstadoDespacho` → crea registro en área DESPACHO
-- `post_save` en `EstadoCourier` → crea registro en área COURIER
+`apps.discador` queda bloqueada por inestabilidad del test database MySQL:
 
-Los views de cada área llaman a `registrar_cambio_estado()` en `form_valid()` para registrar tanto el estado inicial (creación) como cambios posteriores (actualización).
-
----
-
-## 17. Historial de Estados Postventa
-
-### 18.1 Modelo `HistorialEstado` (`postventa_historial`)
-
-Registra cada cambio de estado en el flujo postventa.
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `venta` | ForeignKey | Venta relacionada |
-| `area` | CharField | BO/DESPACHO/COURIER |
-| `estado_anterior` | CharField | Estado previo |
-| `estado_nuevo` | CharField | Estado nuevo |
-| `usuario` | ForeignKey(User) | Usuario que realizó el cambio |
-| `fecha_cambio` | DateTimeField | Timestamp del cambio |
-| `observaciones` | TextField | Notas adicionales |
-
-### Queries de Historial
-
-```python
-# Historial de una venta
-historial = venta.historial_estados.all().order_by('-fecha_cambio')
-
-# Filtrar por área
-historial_bo = venta.historial_estados.filter(area='BO')
+```text
+test_ventas_20260601
+auth_user
+users_profile
 ```
 
 ---
@@ -884,4 +1085,9 @@ Para `CHIP`, `tipo_renta` se calcula con `precio_plan`, no con `precio_venta`.
 2. Verificar precios de venta y plan correspondientes al portafolio vigente
 3. Completar matrices comerciales `PRECIOS_POSTPAGO` y `PRECIOS_PREPAGO` con todos los casos vigentes
 
+### Pendientes
 
+- Confirmar portafolio ENTEL 2026 con área comercial.
+- Completar matrices `PRECIOS_POSTPAGO` y `PRECIOS_PREPAGO` con todos los casos vigentes.
+- Registrar `apps.catalogo` solo cuando la app esté lista para producción.
+- Completar tests estables para `apps.discador`.

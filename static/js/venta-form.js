@@ -271,7 +271,7 @@ window.initVentaFormFields = function() {
         if (!planSelect || !precioPlanInput) return;
         const plan = planSelect.value;
         if (planPrecioMap[plan]) {
-            precioPlanInput.value = planPrecioMap[plan];
+            precioPlanInput.value = normalizarPrecioSelect(planPrecioMap[plan]);
             precioPlanInput.readOnly = true;
         } else {
             precioPlanInput.value = '';
@@ -301,6 +301,11 @@ window.initVentaFormFields = function() {
         updateTipoRenta();
     }
 
+    function normalizarPrecioSelect(valor) {
+        const numero = Number(valor);
+        return Number.isFinite(numero) && Number.isInteger(numero) ? String(numero) : String(valor || '');
+    }
+
     function actualizarPrecioVenta() {
         if (!productoSelect || !precioVentaSelect) return;
         const producto = (productoSelect.value || '').trim();
@@ -324,6 +329,7 @@ window.initVentaFormFields = function() {
                 modelo: modelo,
                 plan: plan,
                 tipo_linea: tipoLinea,
+                origen: (origenSelect ? origenSelect.value : '').trim(),
             });
 
             fetch('/api/ventas/precio-venta/?' + params.toString(), {
@@ -332,7 +338,8 @@ window.initVentaFormFields = function() {
             .then(response => response.json())
             .then(data => {
                 if (data.ok) {
-                    precioVentaSelect.value = String(data.precio);
+                    const precio = normalizarPrecioSelect(data.precio);
+                    precioVentaSelect.value = precio;
                     syncHiddenField('id_precio_venta', data.precio);
                 } else {
                     precioVentaSelect.value = '';
@@ -429,7 +436,9 @@ window.initVentaFormFields = function() {
         const clienteOk = !clienteValidado || clienteValidado.value === 'true';
         const productoOk = !productoValidadoActual || productoValidadoActual.value === 'true';
         const submitBtn = document.querySelector('#ventaModalForm button[type="submit"]') ||
-                          document.querySelector('#ventaForm button[type="submit"]');
+                          document.querySelector('#ventaForm button[type="submit"]') ||
+                          document.querySelector('#btnGuardarVenta') ||
+                          document.querySelector('#btnGuardarVentaFull');
         if (submitBtn) {
             submitBtn.disabled = !(clienteOk && productoOk);
             if (clienteOk && productoOk) {
@@ -475,12 +484,14 @@ window.initVentaFormFields = function() {
         .then(response => response.json())
         .then(data => {
             if (data.ok) {
+                const precio = normalizarPrecioSelect(data.precio);
+                const precioPlan = normalizarPrecioSelect(data.precio_plan || '');
                 syncHiddenField('id_precio_venta', data.precio);
                 syncHiddenField('id_precio_plan', data.precio_plan || '');
                 syncHiddenField('id_tipo_renta', data.tipo_renta || '');
                 syncHiddenField('id_tipo_linea', tipoLinea);
-                if (precioVentaSelect && data.precio) precioVentaSelect.value = String(data.precio);
-                if (precioPlanInput && data.precio_plan) precioPlanInput.value = String(data.precio_plan);
+                if (precioVentaSelect && data.precio) precioVentaSelect.value = precio;
+                if (precioPlanInput && data.precio_plan) precioPlanInput.value = precioPlan;
                 if (tipoRentaInput && data.tipo_renta) tipoRentaInput.value = data.tipo_renta;
                 marcarProductoValido(true);
                 mostrarProductoMensaje(data.mensaje || 'Producto validado correctamente.', 'success');

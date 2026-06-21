@@ -5,6 +5,20 @@
     
     <div class="modal-form-buttons">
         <button type="button" class="btn btn-secondary" onclick="closeVentaModal()"><i class="bi bi-x-circle"></i> Cancelar</button>
-        <button type="submit" class="btn btn-primary" disabled><i class="bi bi-save"></i> Guardar Venta</button>
+        <button type="submit" class="btn btn-primary" id="btnGuardarVenta"><i class="bi bi-save"></i> Guardar Venta</button>
     </div>
+    <script>
+        // Initialize submit button state when modal loads
+        (function() {
+            const clienteValidado = document.getElementById('id_cliente_validado');
+            const productoValidado = document.getElementById('id_producto_validado');
+            const submitBtn = document.getElementById('btnGuardarVenta');
+            
+            if (submitBtn) {
+                const clienteOk = !clienteValidado || clienteValidado.value === 'true';
+                const productoOk = !productoValidado || productoValidado.value === 'true';
+                submitBtn.disabled = !(clienteOk && productoOk);
+            }
+        })();
+    </script>
 </form>

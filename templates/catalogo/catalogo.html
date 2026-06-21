@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="vp-page">
+    <div class="vp-wrapper">
+        <div class="vp-pagetitle">
+            <h1>
+                <div class="vp-page-icon">CAT</div>
+                Catálogo de Productos Retail
+            </h1>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Filtros de catálogo</div>
+            <div class="card-body">
+                <form id="catalogoForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="filtroOrigen" class="form-label">Origen</label>
+                        <select id="filtroOrigen" name="origen" class="form-select">
+                            <option value="">Todos</option>
+                            {% for valor, etiqueta in origenes %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtroTipoLinea" class="form-label">Tipo de línea</label>
+                        <select id="filtroTipoLinea" name="tipo_linea" class="form-select">
+                            <option value="">Todas</option>
+                            {% for valor, etiqueta in tipos_linea %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtroBuscar" class="form-label">Buscar</label>
+                        <input id="filtroBuscar" name="buscar" type="search" class="form-control" placeholder="SKU, marca, modelo o plan">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input id="filtroChips" name="incluir_chips" class="form-check-input" type="checkbox" value="true">
+                            <label class="form-check-label" for="filtroChips">Incluir chips</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary ms-3">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="catalogoEstado" class="alert alert-info">Cargando catálogo...</div>
+        <div id="catalogoProductos" class="vp-grid"></div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('catalogoForm');
+    const estado = document.getElementById('catalogoEstado');
+    const contenedor = document.getElementById('catalogoProductos');
+
+    function params() {
+        const data = new FormData(form);
+        data.set('incluir_chips', document.getElementById('filtroChips').checked ? 'true' : 'false');
+        return new URLSearchParams(data).toString();
+    }
+
+    function money(value) {
+        const numero = Number(value || 0);
+        return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(numero);
+    }
+
+    function csrfToken() {
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    function validarOferta(button) {
+        const payload = { sku: button.dataset.sku, oferta_id: button.dataset.ofertaId, origen: button.dataset.origen, tipo_linea: button.dataset.tipoLinea };
+        fetch('/api/catalogo/ofertas/validar/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken(), 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                alert(`Oferta válida: ${data.oferta.plan_codigo} - equipo ${money(data.oferta.precio_equipo)} - plan ${money(data.oferta.precio_plan_mensual)}`);
+            } else {
+                alert(data.mensaje || 'La oferta no es válida.');
+            }
+        })
+        .catch(function() { alert('Error al validar la oferta.'); });
+    }
+
+    function verChips(button) {
+        fetch(`/api/catalogo/equipos/${encodeURIComponent(button.dataset.sku)}/chips/`, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+        .then(response => response.json())
+        .then(data => {
+            const chips = (data.chips || []).map(chip => `${chip.sku} - ${chip.nombre}`).join('\n') || 'No hay chips compatibles registrados.';
+            alert(`Chips compatibles con ${button.dataset.sku}:\n\n${chips}`);
+        })
+        .catch(function() { alert('Error al cargar chips compatibles.'); });
+    }
+
+    function ofertaRow(oferta, producto) {
+        const revision = oferta.requiere_revision ? '<span class="badge text-bg-warning">Revisión</span>' : '<span class="badge text-bg-success">Activa</span>';
+        return `<tr>
+            <td>${oferta.plan_codigo}<br><small class="text-muted">${oferta.plan_nombre || ''}</small></td>
+            <td>${oferta.tipo_linea}</td>
+            <td>${oferta.origen}</td>
+            <td>${money(oferta.precio_equipo)}</td>
+            <td>${money(oferta.precio_plan_mensual)}</td>
+            <td>${oferta.meses_contrato || ''}</td>
+            <td>${revision}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary validar-oferta" type="button" data-sku="${producto.sku}" data-oferta-id="${oferta.id}" data-origen="${oferta.origen}" data-tipo-linea="${oferta.tipo_linea}">Validar</button>
+                ${producto.tipo === 'EQUIPO' ? `<button class="btn btn-sm btn-outline-secondary ver-chips" type="button" data-sku="${producto.sku}">Chips</button>` : ''}
+            </td>
+        </tr>`;
+    }
+
+    function render(data) {
+        const productos = data.productos || [];
+        estado.className = 'alert alert-info';
+        estado.textContent = `${productos.length} productos encontrados.`;
+        if (!productos.length) {
+            contenedor.innerHTML = '<div class="alert alert-warning">No hay productos con los filtros seleccionados.</div>';
+            return;
+        }
+        contenedor.innerHTML = productos.map(producto => `<div class="vp-item-card">
+            <div class="vp-item-title">${producto.tipo} - ${producto.marca || 'Sin marca'}</div>
+            <div class="vp-item-meta">${producto.nombre}</div>
+            <div class="mt-3"><span class="badge text-bg-secondary">${producto.sku}</span>${producto.requiere_stock ? '<span class="badge text-bg-info">Stock</span>' : ''}</div>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm table-striped">
+                    <thead><tr><th>Plan</th><th>Línea</th><th>Origen</th><th>Equipo</th><th>Plan mensual</th><th>Contrato</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody>${(producto.ofertas || []).map(oferta => ofertaRow(oferta, producto)).join('')}</tbody>
+                </table>
+            </div>
+        </div>`).join('');
+    }
+
+    function load() {
+        estado.className = 'alert alert-info';
+        estado.textContent = 'Cargando catálogo...';
+        fetch('/api/catalogo/productos/?' + params(), { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) { render(data); }
+            else { estado.className = 'alert alert-danger'; estado.textContent = data.mensaje || 'No se pudo cargar el catálogo.'; }
+        })
+        .catch(function() { estado.className = 'alert alert-danger'; estado.textContent = 'Error de conexión al cargar catálogo.'; });
+    }
+
+    form.addEventListener('submit', function(event) { event.preventDefault(); load(); });
+    contenedor.addEventListener('click', function(event) {
+        const validar = event.target.closest('.validar-oferta');
+        if (validar) { validarOferta(validar); return; }
+        const chips = event.target.closest('.ver-chips');
+        if (chips) { verChips(chips); }
+    });
+    load();
+});
+</script>
+{% endblock %}

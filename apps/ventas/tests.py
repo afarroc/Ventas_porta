@@ -209,7 +209,8 @@ class PrecioVentaApiTest(TestCase):
             {'producto': 'CHIP', 'modelo': '', 'plan': 'ENTEL_CHIP_45_CONTROL', 'tipo_linea': 'POSTPAGO'},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'ok': True, 'precio': 1})
+        # CHIP sin oferta catálica: solo precio=1, sin precio_plan
+        self.assertEqual(response.json(), {'ok': True, 'precio': 1, 'catalogo': False})
 
     def test_api_returns_pack_postpago_price(self):
         response = self.client.get(
@@ -217,7 +218,7 @@ class PrecioVentaApiTest(TestCase):
             {'producto': 'PACK', 'modelo': 'MOTO_G_PLAY', 'plan': 'ENTEL_CONTROL_49_CONTROL', 'tipo_linea': 'POSTPAGO'},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'ok': True, 'precio': 49})
+        self.assertEqual(response.json(), {'ok': True, 'precio': 49, 'catalogo': False})
 
     def test_api_returns_pack_prepago_price(self):
         response = self.client.get(
@@ -225,7 +226,7 @@ class PrecioVentaApiTest(TestCase):
             {'producto': 'PACK', 'modelo': 'MOTO_G_PLUS', 'plan': '', 'tipo_linea': 'PREPAGO'},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'ok': True, 'precio': 299})
+        self.assertEqual(response.json(), {'ok': True, 'precio': 299, 'catalogo': False})
 
     def test_api_rejects_invalid_tipo_linea(self):
         response = self.client.get(
@@ -256,8 +257,8 @@ class ValidarProductoApiTest(TestCase):
         data = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['ok'])
-        self.assertEqual(data['precio'], 1)
-        self.assertEqual(data['precio_plan'], 45)
+        self.assertEqual(data['precio'], '1')  # ahora string por integración catálogo
+        self.assertEqual(data['precio_plan'], '45')  # ahora string
         self.assertEqual(data['tipo_renta'], 'R.BAJA')
 
     def test_validar_producto_chip_normalizes_zero_model(self):
@@ -303,7 +304,7 @@ class ValidarProductoApiTest(TestCase):
         data = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['ok'])
-        self.assertEqual(data['precio'], 49)
+        self.assertEqual(data['precio'], '49')  # ahora string por integración catálogo
         self.assertEqual(data['tipo_renta'], 'R.BAJA')
 
     def test_validar_producto_pack_rejects_chip_model(self):

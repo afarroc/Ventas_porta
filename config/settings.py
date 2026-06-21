@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.postventa',
     'apps.despacho',
     'apps.courier',
+    'apps.catalogo',
 ]
 
 MIDDLEWARE = [

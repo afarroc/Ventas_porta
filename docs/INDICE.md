@@ -19,7 +19,15 @@
 - `HANDOFF_2026-06-08_estado_actual.md`: estado de sprints, bugs críticos y reglas retail.
 - `HANDOFF_2026-06-10_modelo_venta_refactor.md`: refactor del modelo Venta.
 - `HANDOFF_2026-06-21_consolidacion_ramas.md`: consolidación de ramas y estado actual.
-- `HANDOFF_2026-06-21_consolidacion_ramas.md`: consolidación de ramas y estado actual.
+- `historico_kilo/`: referencias históricas preservadas desde `.kilo/plans/` después de eliminar la carpeta `.kilo`.
+
+## `docs/historico_kilo/`
+
+- `README.md`: índice y contexto de las referencias históricas de `.kilo`.
+- `reglas_venta_precio_modelo_plan.md`: plan histórico de reglas canónicas de precio, modelo y plan.
+- `validacion-producto-venta.md`: plan histórico de validación de Producto y Venta.
+- `sincronizacion-documentacion.md`: plan histórico de sincronización de documentación.
+- `trazabilidad-lead-venta.md`: plan histórico de trazabilidad Lead → Venta → Postventa.
 
 ## Orden recomendado de lectura
 
@@ -30,4 +38,5 @@
 5. `queries_referenciadas.md`
 6. `HANDOFF_2026-06-21_consolidacion_ramas.md`
 7. `HANDOFF_2026-06-08_estado_actual.md`
-8. Handoffs anteriores según fecha.
+8. `historico_kilo/README.md`
+9. Handoffs anteriores según fecha.

@@ -1,6 +1,7 @@
 # Registro de Cambios (Changelog)
 
-## 2026-06-20
+## 2026-06-21
+- **feat(catalogo):** Integración catálogo Ventas_Porta consolidada. Modelos Producto, ProveedorCatalogo, Oferta, ChipCompatibilidad. 35 productos, 1106 ofertas, 66 compatibilidades. Endpoints API /api/catalogo/* implementados. Seed disponible: `python manage.py catalogo_seed`.
 
 - **feat(validation):** Integrar validación de Producto y Venta con catálogo comercial opcional. `apps/ventas/catalogo_utils.py` consulta `apps.catalogo` solo si la app está registrada y luego usa fallback legacy.
 - **feat(validation):** Actualizar `/api/ventas/precio-venta/` y `/api/ventas/validar-producto/` para retornar `precio`, `precio_plan`, `tipo_renta`, `catalogo` y `oferta_id` cuando aplica.
@@ -14,7 +15,7 @@
 - **fix(csrf):** Corregir obtención de CSRF token en `agent_dashboard.html`: agregada función `getCsrfToken()` que obtiene el token del formulario de disponibilidad.
 - **fix(modal-js):** Corregir obtención de CSRF token en submit del modal: ahora usa el token del propio formulario (`e.target.querySelector('[name=csrfmiddlewaretoken]')`).
 - **fix(button):** Agregar IDs `btnGuardarVenta` y `btnGuardarVentaFull` a botones de guardar venta para habilitarlos vía JavaScript cuando cliente y producto están validados.
-- **docs:** Actualizar `README.md`, `docs/documentacion.md` y `docs/HISTORIAL.md` con el estado actual de validaciones, catálogo opcional, UUID en hex y documentación ordenada.
+- **docs:** Actualizar `README.md`, `docs/documentacion.md`, `docs/HISTORIAL.md`, `docs/DEV_REFERENCE.md` y `docs/queries_referenciadas.md` con el estado actual de validaciones, catálogo opcional, UUID en hex y documentación ordenada.
 
 ## 2026-06-18
 - **feat(validation):** Implementar validación de sección Producto y Venta en formulario de ventas. Se agregó endpoint `/api/ventas/validar-producto/`, botón `btnValidarProducto`, campo `producto_validado`, mensajes de validación, bloqueo de Guardar para formulario completo y modal, y tests de API.
